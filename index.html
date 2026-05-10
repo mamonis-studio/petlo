@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)">
+<title>petlo. — うちの子のすべて、家族とAIで見守る</title>
+<meta name="description" content="petlo. は犬と猫のためのライフログアプリ。食事・健康・思い出を、家族とAIで見守ります。">
+<meta property="og:title" content="petlo.">
+<meta property="og:description" content="うちの子のすべて、家族とAIで見守る。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://petlo.mamonis.studio/">
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #FFFFFF;
+  --fg: #111111;
+  --muted: #888888;
+  --line: #E0E0E0;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111111;
+    --fg: #FFFFFF;
+    --muted: #888888;
+    --line: #2A2A2A;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 96px 24px 64px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 16px;
+}
+h1.brand {
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 72px;
+  line-height: 1.0;
+  letter-spacing: -0.04em;
+  margin: 0 0 24px;
+  color: var(--fg);
+}
+.tagline {
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-size: 24px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  margin: 0 0 40px;
+}
+.body-text {
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--fg);
+  margin: 0 0 16px;
+  max-width: 540px;
+}
+.body-text + .body-text { margin-top: 0; }
+.cta-row {
+  margin-top: 40px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.cta {
+  display: inline-block;
+  padding: 14px 22px;
+  border: 1px solid var(--fg);
+  color: var(--fg);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+.cta[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.cta:hover { opacity: 0.7; }
+.spacer { flex: 1; min-height: 80px; }
+footer {
+  border-top: 1px solid var(--line);
+  padding-top: 32px;
+  font-size: 13px;
+  color: var(--muted);
+}
+footer .links {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+footer .links a {
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+}
+footer .links a:hover {
+  color: var(--fg);
+  border-bottom-color: var(--fg);
+}
+footer .studio {
+  letter-spacing: 0.05em;
+  margin: 16px 0 0;
+}
+footer .studio a {
+  color: var(--muted);
+  text-decoration: none;
+}
+footer .studio a:hover { color: var(--fg); }
+@media (max-width: 600px) {
+  body { font-size: 15px; }
+  main { padding: 64px 20px 48px; }
+  h1.brand { font-size: 56px; }
+  .tagline { font-size: 20px; }
+  .body-text { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">For dogs &amp; cats</p>
+  <h1 class="brand">petlo.</h1>
+  <p class="tagline">うちの子のすべて、<br>家族とAIで見守る。</p>
+
+  <p class="body-text">
+    食事、うんち、体重、通院、ワクチン。日常の小さな記録が、いつか大事な手がかりになる。
+  </p>
+  <p class="body-text">
+    petlo. は、犬と猫のための、静かなライフログアプリです。家族と共有して、AIに相談して、思い出として残す。
+  </p>
+
+  <div class="cta-row">
+    <a class="cta" href="#" aria-disabled="true" onclick="return false;">App Store — Coming soon</a>
+  </div>
+
+  <div class="spacer"></div>
+
+  <footer>
+    <ul class="links">
+      <li><a href="/privacy_policy.html">プライバシーポリシー</a></li>
+      <li><a href="/terms_of_use.html">利用規約</a></li>
+      <li><a href="mailto:contact@mamonis.studio">お問い合わせ</a></li>
+    </ul>
+    <p class="studio">
+      <a href="https://x.com/mamonis_studio" rel="noopener">X</a> &middot;
+      <a href="https://instagram.com/mamonis.studio" rel="noopener">Instagram</a> &middot;
+      <a href="https://tiktok.com/@mamonis.studio" rel="noopener">TikTok</a>
+    </p>
+    <p class="studio">© mamonis.studio</p>
+  </footer>
+</main>
+</body>
+</html>
