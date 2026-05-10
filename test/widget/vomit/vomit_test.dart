@@ -1,0 +1,333 @@
+// ============================================================================
+// petlo - Vomit Tests (rev5.5)
+// ============================================================================
+
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:petlo/data/local/app_database.dart';
+import 'package:petlo/data/local/database_enums.dart';
+import 'package:petlo/data/repositories/vomits_repository.dart';
+import 'package:petlo/presentation/providers/database_provider.dart';
+import 'package:petlo/presentation/providers/scope_providers.dart';
+import 'package:petlo/presentation/screens/vomit/vomit_form_controller.dart';
+import 'package:petlo/presentation/screens/vomit/vomit_form_state.dart';
+import 'package:petlo/presentation/screens/vomit/vomit_record_screen.dart';
+import 'package:petlo/presentation/widgets/vomit/vomit_color_selector.dart';
+
+import '../../helpers/test_app.dart';
+
+void main() {
+  // ==========================================================================
+  // VomitFormState
+  // ==========================================================================
+  group('VomitFormState', () {
+    test('rejects when color=other but colorOtherText empty', () {
+      const VomitFormState s = VomitFormState(
+        color: VomitColor.other,
+        colorOtherText: '',
+        amount: RecordAmount.normal,
+      );
+      expect(s.validate().errors.colorOtherText, isNotNull);
+    });
+
+    test('accepts when color=other with description', () {
+      final s = VomitFormState(
+        color: VomitColor.other,
+        colorOtherText: 'Orange-ish',
+        amount: RecordAmount.normal,
+        vomitedAt: DateTime.now().subtract(const Duration(minutes: 1)),
+      );
+      expect(s.validate().errors.hasAny, isFalse);
+    });
+
+    test('valid mainColor state passes', () {
+      final s = VomitFormState(
+        color: VomitColor.yellow,
+        amount: RecordAmount.little,
+        vomitedAt: DateTime.now().subtract(const Duration(minutes: 1)),
+      );
+      expect(s.validate().errors.hasAny, isFalse);
+    });
+  });
+
+  // ==========================================================================
+  // VomitColorSelector (rev5.5 2階層UI)
+  // ==========================================================================
+  group('VomitColorSelector (rev5.5 2-tier)', () {
+    testWidgets('shows 4 main colors initially',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        wrapWithApp(
+          child: VomitColorSelector(
+            value: null,
+            colorOtherText: '',
+            onChanged: (_) {},
+            onOtherTextChanged: (_) {},
+          ),
+        ),
+      );
+      expect(find.text('Clear'), findsOneWidget);
+      expect(find.text('Yellow'), findsOneWidget);
+      expect(find.text('Brown'), findsOneWidget);
+      expect(find.text('Food'), findsOneWidget);
+      // 詳細色は最初は隠れている
+      expect(find.text('White foam'), findsNothing);
+      expect(find.text('Red'), findsNothing);
+      expect(find.text('Black'), findsNothing);
+      // Otherボタンが見える
+      expect(find.text('Other'), findsOneWidget);
+    });
+
+    testWidgets('reveals 5 detail colors when Other tapped',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        wrapWithApp(
+          child: VomitColorSelector(
+            value: null,
+            colorOtherText: '',
+            onChanged: (_) {},
+            onOtherTextChanged: (_) {},
+          ),
+        ),
+      );
+      await tester.tap(find.text('Other'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('White foam'), findsOneWidget);
+      expect(find.text('Red'), findsOneWidget);
+      expect(find.text('Green'), findsOneWidget);
+      expect(find.text('Black'), findsOneWidget);
+      expect(find.textContaining('Other (describe)'), findsOneWidget);
+    });
+
+    testWidgets('shows free-text field when "other" selected',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        wrapWithApp(
+          child: VomitColorSelector(
+            value: VomitColor.other,
+            colorOtherText: '',
+            onChanged: (_) {},
+            onOtherTextChanged: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('DESCRIBE THE COLOR'), findsOneWidget);
+    });
+
+    testWidgets('auto-expands details when value is detail color',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        wrapWithApp(
+          child: VomitColorSelector(
+            value: VomitColor.red,
+            colorOtherText: '',
+            onChanged: (_) {},
+            onOtherTextChanged: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // valueがredなのでdetail色エリアが自動展開
+      expect(find.text('Red'), findsOneWidget);
+      expect(find.text('White foam'), findsOneWidget);
+    });
+
+    testWidgets('triggers onChanged on color tap',
+        (WidgetTester tester) async {
+      VomitColor? captured;
+      await tester.pumpWidget(
+        wrapWithApp(
+          child: VomitColorSelector(
+            value: null,
+            colorOtherText: '',
+            onChanged: (VomitColor c) => captured = c,
+            onOtherTextChanged: (_) {},
+          ),
+        ),
+      );
+      await tester.tap(find.text('Yellow'));
+      expect(captured, VomitColor.yellow);
+    });
+  });
+
+  // ==========================================================================
+  // VomitsRepository
+  // ==========================================================================
+  group('VomitsRepository', () {
+    late AppDatabase db;
+    late VomitsRepository repo;
+
+    int now() => DateTime.now().toUtc().millisecondsSinceEpoch;
+
+    setUp(() {
+      db = AppDatabase.forTesting(NativeDatabase.memory());
+      repo = VomitsRepository(db);
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    test('rejects color=other without text', () async {
+      expect(
+        () => repo.create(
+          groupId: 'personal',
+          petId: 1,
+          color: VomitColor.other,
+          colorOtherText: null,
+          amount: RecordAmount.normal,
+          count: 1,
+          containsFood: false,
+          suspectIngestion: false,
+          vomitedAtMsec: now(),
+        ),
+        throwsArgumentError,
+      );
+    }, tags: <String>['needs_codegen']);
+
+    test('rejects count < 1', () async {
+      expect(
+        () => repo.create(
+          groupId: 'personal',
+          petId: 1,
+          color: VomitColor.yellow,
+          amount: RecordAmount.normal,
+          count: 0,
+          containsFood: false,
+          suspectIngestion: false,
+          vomitedAtMsec: now(),
+        ),
+        throwsArgumentError,
+      );
+    }, tags: <String>['needs_codegen']);
+
+    test('persists rev5.5 fields', () async {
+      final int id = await repo.create(
+        groupId: 'personal',
+        petId: 1,
+        color: VomitColor.other,
+        colorOtherText: 'Orange',
+        amount: RecordAmount.alot,
+        count: 3,
+        containsFood: true,
+        suspectIngestion: true,
+        vomitedAtMsec: now(),
+      );
+      final v = await repo.getById(id);
+      expect(v, isNotNull);
+      expect(v!.color, VomitColor.other);
+      expect(v.colorOtherText, 'Orange');
+      expect(v.count, 3);
+      expect(v.containsFood, isTrue);
+      expect(v.suspectIngestion, isTrue);
+    }, tags: <String>['needs_codegen']);
+  });
+
+  // ==========================================================================
+  // VomitFormController
+  // ==========================================================================
+  group('VomitFormController', () {
+    late AppDatabase db;
+    late ProviderContainer container;
+
+    setUp(() {
+      db = AppDatabase.forTesting(NativeDatabase.memory());
+      container = ProviderContainer(
+        overrides: <Override>[
+          appDatabaseProvider.overrideWithValue(db),
+        ],
+      );
+    });
+
+    tearDown(() async {
+      container.dispose();
+      await db.close();
+    });
+
+    Future<int> createPet() async {
+      final t = DateTime.now().millisecondsSinceEpoch;
+      return db.into(db.pets).insert(
+            PetsCompanion.insert(
+              groupId: const Value('personal'),
+              name: 'T',
+              type: PetType.dog,
+              breed: 'b',
+              sex: PetSex.male,
+              createdAt: t,
+              updatedAt: t,
+            ),
+          );
+    }
+
+    test('updateColor clears colorOtherText when not "other"', () async {
+      final petId = await createPet();
+      await container.read(currentPetIdProvider.notifier).selectPet(petId);
+      final ctrl = container.read(vomitFormControllerProvider(null).notifier);
+
+      ctrl.updateColor(VomitColor.other);
+      ctrl.updateColorOtherText('Orange');
+      expect(
+        container.read(vomitFormControllerProvider(null)).colorOtherText,
+        'Orange',
+      );
+
+      // 別の色を選んだら自動でクリア
+      ctrl.updateColor(VomitColor.yellow);
+      expect(
+        container.read(vomitFormControllerProvider(null)).colorOtherText,
+        '',
+      );
+    }, tags: <String>['needs_codegen']);
+
+    test('save creates vomit record with rev5.5 fields', () async {
+      final petId = await createPet();
+      await container.read(currentPetIdProvider.notifier).selectPet(petId);
+
+      final ctrl = container.read(vomitFormControllerProvider(null).notifier);
+      ctrl
+        ..updateColor(VomitColor.yellow)
+        ..updateAmount(RecordAmount.little)
+        ..updateCount(2)
+        ..updateContainsFood(true)
+        ..updateSuspectIngestion(false);
+
+      final r = await ctrl.save();
+      expect(r, VomitFormSaveOutcome.success);
+
+      final repo = VomitsRepository(db);
+      final list = await repo.watchForPet(petId).first;
+      expect(list.length, 1);
+      expect(list.first.containsFood, isTrue);
+      expect(list.first.count, 2);
+    }, tags: <String>['needs_codegen']);
+  });
+
+  // ==========================================================================
+  // VomitRecordScreen
+  // ==========================================================================
+  group('VomitRecordScreen', () {
+    late AppDatabase db;
+
+    setUp(() {
+      db = AppDatabase.forTesting(NativeDatabase.memory());
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    testWidgets('shows NEW VOMIT header', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        wrapWithAppAndDb(db: db, child: const VomitRecordScreen()),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('NEW VOMIT'), findsOneWidget);
+    }, tags: <String>['needs_codegen']);
+  });
+}

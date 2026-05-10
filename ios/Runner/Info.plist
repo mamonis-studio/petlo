@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- ===== App basic info ===== -->
+    <key>CFBundleDevelopmentRegion</key>
+    <string>$(DEVELOPMENT_LANGUAGE)</string>
+    <key>CFBundleDisplayName</key>
+    <string>petlo</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>petlo</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(FLUTTER_BUILD_NAME)</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleVersion</key>
+    <string>$(FLUTTER_BUILD_NUMBER)</string>
+
+    <!-- ===== Localization ===== -->
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>ja</string>
+        <string>en</string>
+        <string>zh-Hans</string>
+    </array>
+
+    <!-- ===== Launch / Main ===== -->
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    <key>UIMainStoryboardFile</key>
+    <string>Main</string>
+
+    <!-- ===== Orientations =====
+         CRITICAL: iPad multitasking審査用に全orientations列挙する必要あり
+         (mamonis共通ルール、portrait-onlyアプリでも必須)
+    -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+
+    <!-- ===== View controller ===== -->
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <false/>
+
+    <!-- ===== File sharing ===== -->
+    <key>CADisableMinimumFrameDurationOnPhone</key>
+    <true/>
+    <key>UIApplicationSupportsIndirectInputEvents</key>
+    <true/>
+
+    <!-- ===== Permissions / Privacy ===== -->
+    <!-- 写真ライブラリ (記録時の写真添付) -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>記録に写真を添付するためアクセスを求めます。</string>
+
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>記録した写真を保存するためアクセスを求めます。</string>
+
+    <!-- カメラ (記録時の撮影) -->
+    <key>NSCameraUsageDescription</key>
+    <string>うんちや日記の写真撮影のためカメラを使用します。</string>
+
+    <!-- マイク不要だが、ImagePickerなどでリンクされるためダミー記述 -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>petloはマイクを使用しません。</string>
+
+    <!-- カレンダー (rev5.2: OSカレンダー連携) -->
+    <key>NSCalendarsUsageDescription</key>
+    <string>ペットの予定をあなたのカレンダーアプリに書き出すためアクセスを求めます。</string>
+
+    <!-- 位置情報は不要 (mamonisの local-first 哲学) -->
+    <!-- NSLocationWhenInUseUsageDescription は記載しない -->
+
+    <!-- 連絡先(緊急連絡先発信時のtelスキーム) -->
+    <!-- url_launcher使用、特別な権限は不要 -->
+
+    <!-- ===== App Store カテゴリ ===== -->
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.lifestyle</string>
+
+    <!-- ===== Sign in with Apple ===== -->
+    <!-- v1.1 で実装予定 (Anonymous JWT のみで v1.0 リリース) -->
+
+    <!-- ===== Background modes ===== -->
+    <!-- v1.0 はローカル通知のみ。Push (remote-notification) と background fetch は v1.1 で追加予定 -->
+
+    <!-- ===== AppTransportSecurity ===== -->
+    <!-- 全API通信はHTTPS、ATSはデフォルト動作のまま -->
+
+    <!-- ===== Status bar ===== -->
+    <key>UIStatusBarHidden</key>
+    <false/>
+    <key>UIStatusBarStyle</key>
+    <string>UIStatusBarStyleDefault</string>
+
+    <!-- ===== Capabilities (Sign in with Apple/Push) ===== -->
+    <!-- entitlementsファイルで管理 -->
+</dict>
+</plist>

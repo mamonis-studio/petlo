@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Firebase Messaging のデフォルト通知色(プロジェクトのアクセント色 = 黒) -->
+    <color name="notification_color">#0A0A0A</color>
+</resources>

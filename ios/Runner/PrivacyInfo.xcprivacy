@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+    petlo - Privacy Manifest
+
+    Apple App Store 審査要件 (2024 春以降必須)。
+    https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
+
+    依拠する API は Flutter Engine + 各種プラグインが内部で使うもの。
+    自前コードでは collected data の収集や tracking は行わない。
+
+    NSPrivacyAccessedAPITypes は「使用していい理由コード」を Apple 公式から
+    選ぶ必要がある。代表的な reason code を採用:
+      - C617.1: Inside app, file timestamp comparisons (drift / path_provider)
+      - 35F9.1: Inside app, system uptime measurement (logger / firebase)
+      - E174.1: Inside app, disk space check before write (drift / image_picker)
+      - CA92.1: Inside app, app's own user defaults read/write (shared_preferences)
+
+    NSPrivacyCollectedDataTypes:
+      - Crash Data: 収集 (Cloudflare logs)、ユーザーに紐付けない、tracking 不使用
+      - Performance Data: 同上
+-->
+<plist version="1.0">
+<dict>
+    <key>NSPrivacyTracking</key>
+    <false/>
+
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array>
+        <!-- Crash Data -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeCrashData</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+        <!-- Performance Data -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypePerformanceData</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+    </array>
+
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <!-- File Timestamp: drift / path_provider 等が SQLite ファイルの更新時刻参照 -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>C617.1</string>
+            </array>
+        </dict>
+
+        <!-- System Boot Time: ログのタイムスタンプ計算等 -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>35F9.1</string>
+            </array>
+        </dict>
+
+        <!-- Disk Space: drift / image_picker が書き込み前に空き容量確認 -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>E174.1</string>
+            </array>
+        </dict>
+
+        <!-- User Defaults: shared_preferences の内部実装 -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>CA92.1</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>
