@@ -27,6 +27,7 @@ import '../../../data/models/day_summary.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/calendar_provider.dart';
 import '../../providers/medication_reminders_providers.dart';
+import '../../providers/pets_providers.dart';
 import '../../providers/schedules_providers.dart';
 import '../../providers/scope_providers.dart';
 import '../../providers/vaccinations_providers.dart';
@@ -64,7 +65,14 @@ class _PlansTabScreenState extends ConsumerState<PlansTabScreen> {
     final AppColors colors = AppColors.of(context);
     final AppLocalizations l10n = AppLocalizations.of(context);
     final String? currentPetId = ref.watch(currentPetIdProvider);
-    final bool hasPet = currentPetId != null && currentPetId != kAllPetsId;
+    final bool isAllPets = currentPetId == kAllPetsId;
+    // build 9: ペットが 1匹以上いればカレンダーを表示(All Pets でも個別でも)。
+    // 0匹の場合のみ select-pet 空状態。
+    final bool noPets = ref.watch(hasNoPetsProvider).maybeWhen(
+          data: (bool v) => v,
+          orElse: () => false,
+        );
+    final bool canShow = !noPets;
 
     final double bottomInset = MediaQuery.of(context).padding.bottom;
     return PetloScaffold(
@@ -80,41 +88,22 @@ class _PlansTabScreenState extends ConsumerState<PlansTabScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const SizedBox(height: 16),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      EyebrowText(l10n.plans_eyebrow),
-                      const SizedBox(height: 4),
-                      Text(
-                        l10n.plans_hero,
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontFamily: 'Fraunces',
-                          fontStyle: FontStyle.italic,
-                          fontSize: 44,
-                          letterSpacing: -44 * 0.04,
-                          height: 1.0,
-                          color: colors.fg,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (hasPet)
-                  _ViewToggle(
-                    current: _view,
-                    onChanged: (_PlanView v) => setState(() => _view = v),
-                  ),
-              ],
+            SectionLabel(
+              l10n.tab_eyebrow_schedule,
+              padding: const EdgeInsets.fromLTRB(0, 16, 0, 16),
             ),
-            const SizedBox(height: 24),
+            // 月/リスト切替トグル(右寄せ単独配置)
+            if (canShow)
+              Align(
+                alignment: Alignment.centerRight,
+                child: _ViewToggle(
+                  current: _view,
+                  onChanged: (_PlanView v) => setState(() => _view = v),
+                ),
+              ),
+            const SizedBox(height: 16),
 
-            if (!hasPet)
+            if (!canShow)
               _SelectPetEmpty(colors: colors, typo: typo)
             else if (_view == _PlanView.month) ...<Widget>[
               // ===== 月表示 =====
@@ -767,7 +756,7 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _ScheduleListRow extends StatelessWidget {
+class _ScheduleListRow extends ConsumerWidget {
   const _ScheduleListRow({required this.s});
 
   final ScheduleEntity s;
@@ -785,12 +774,31 @@ class _ScheduleListRow extends StatelessWidget {
     return '${t.month}/${t.day}';
   }
 
+  String? _resolvePetName(WidgetRef ref) {
+    if (s.relatedPetIds.isEmpty) return null;
+    final int? firstId = int.tryParse(s.relatedPetIds.first);
+    if (firstId == null) return null;
+    final List<PetEntity>? pets =
+        ref.watch(currentGroupPetsProvider).valueOrNull;
+    if (pets == null) return null;
+    for (final PetEntity p in pets) {
+      if (p.id == firstId) return p.name;
+    }
+    return null;
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
     final AppLocalizations l10n = AppLocalizations.of(context);
     final DateTime t = DateTime.fromMillisecondsSinceEpoch(s.scheduledAt);
+
+    final String? petIdStr = ref.watch(currentPetIdProvider);
+    final bool isAllPets = petIdStr == kAllPetsId;
+    final String? petName = isAllPets ? _resolvePetName(ref) : null;
+    final String displayTitle =
+        petName != null ? '$petName: ${s.title}' : s.title;
 
     return InkWell(
       onTap: () =>
@@ -825,7 +833,7 @@ class _ScheduleListRow extends StatelessWidget {
             ),
             Expanded(
               child: Text(
-                s.title,
+                displayTitle,
                 style: typo.bodyMedium,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

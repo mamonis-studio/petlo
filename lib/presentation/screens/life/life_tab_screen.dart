@@ -28,6 +28,7 @@ import '../../providers/pees_providers.dart';
 import '../../providers/poops_providers.dart';
 import '../../providers/scope_providers.dart';
 import '../../providers/vomits_providers.dart';
+import '../../providers/tab_provider.dart';
 import '../../widgets/pet_selector/auto_select_first_pet.dart';
 import '../../widgets/petlo_scaffold.dart';
 import '../meal/meal_record_screen.dart';
@@ -117,7 +118,7 @@ class LifeTabScreen extends ConsumerWidget {
     final _LifeFilter filter = ref.watch(_lifeFilterProvider);
     final AppLocalizations l10n = AppLocalizations.of(context);
 
-    autoSelectFirstPetIfAllSelected(ref);
+    autoSelectFirstPetIfAllSelected(ref, forTab: AppTab.life);
 
     final double bottomInset = MediaQuery.of(context).padding.bottom;
     return PetloScaffold(
@@ -125,21 +126,17 @@ class LifeTabScreen extends ConsumerWidget {
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           28,
-          28,
+          16,
           28,
           28 + bottomInset + kBottomNavigationBarHeight,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const SizedBox(height: 12),
-            EyebrowText(l10n.life_eyebrow),
-            const SizedBox(height: 12),
-            Text(
-              l10n.life_hero,
-              style: typo.heroName.copyWith(height: 0.95),
+            SectionLabel(
+              l10n.tab_eyebrow_life,
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
             ),
-            const SizedBox(height: 32),
 
             if (!hasPet)
               _SelectPetEmptyState(colors: colors, typo: typo)

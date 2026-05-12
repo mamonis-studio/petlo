@@ -33,6 +33,7 @@ import '../../providers/temperatures_providers.dart';
 import '../../providers/vaccinations_providers.dart';
 import '../../providers/visits_providers.dart';
 import '../../providers/weights_providers.dart';
+import '../../providers/tab_provider.dart';
 import '../../widgets/pet_selector/auto_select_first_pet.dart';
 import '../../widgets/petlo_scaffold.dart';
 import '../temperature/temperature_chart_screen.dart';
@@ -54,7 +55,7 @@ class HealthTabScreen extends ConsumerWidget {
     final bool canEdit = ref.watch(canEditProvider);
     final bool hasPet = currentPetId != null && currentPetId != kAllPetsId;
 
-    autoSelectFirstPetIfAllSelected(ref);
+    autoSelectFirstPetIfAllSelected(ref, forTab: AppTab.health);
 
     final double bottomInset = MediaQuery.of(context).padding.bottom;
     return PetloScaffold(
@@ -62,22 +63,17 @@ class HealthTabScreen extends ConsumerWidget {
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           28,
-          28,
+          16,
           28,
           28 + bottomInset + kBottomNavigationBarHeight,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const SizedBox(height: 12),
-            EyebrowText(l10n.health_eyebrow_health),
-            const SizedBox(height: 12),
-            Text(
-              l10n.health_hero,
-              style: typo.heroName.copyWith(height: 0.95),
+            SectionLabel(
+              l10n.tab_eyebrow_health,
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
             ),
-            const SizedBox(height: 32),
-
             if (!hasPet)
               _SelectPetEmpty(colors: colors, typo: typo)
             else ...<Widget>[
@@ -237,18 +233,19 @@ class _TrendLinks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Row(
       children: <Widget>[
         Expanded(
           child: _TrendLinkButton(
-            label: 'Weight trend',
+            label: l10n.health_weight_trend,
             onTap: () => WeightChartScreen.push(context),
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: _TrendLinkButton(
-            label: 'Temp trend',
+            label: l10n.health_temp_trend,
             onTap: () => TemperatureChartScreen.push(context),
           ),
         ),
@@ -380,7 +377,7 @@ class _WeightCard extends ConsumerWidget {
                 final DateTime t =
                     DateTime.fromMillisecondsSinceEpoch(w.measuredAt);
                 return Text(
-                  _formatRelativeDate(t),
+                  _formatRelativeDate(context, t),
                   style: TextStyle(
                     fontFamily: 'Manrope',
                     fontSize: 11,
@@ -493,7 +490,7 @@ class _TemperatureCard extends ConsumerWidget {
                 final DateTime d =
                     DateTime.fromMillisecondsSinceEpoch(t.measuredAt);
                 return Text(
-                  _formatRelativeDate(d),
+                  _formatRelativeDate(context, d),
                   style: TextStyle(
                     fontFamily: 'Manrope',
                     fontSize: 11,
@@ -522,14 +519,15 @@ Color _statusToColor(TemperatureStatus s, AppColors c) {
   };
 }
 
-String _formatRelativeDate(DateTime t) {
+String _formatRelativeDate(BuildContext context, DateTime t) {
+  final AppLocalizations l10n = AppLocalizations.of(context);
   final DateTime now = DateTime.now();
   final Duration diff = now.difference(t);
-  if (diff.inDays == 0) return 'Today';
-  if (diff.inDays == 1) return 'Yesterday';
-  if (diff.inDays < 7) return '${diff.inDays} days ago';
-  if (diff.inDays < 30) return '${(diff.inDays / 7).floor()} wk ago';
-  return '${(diff.inDays / 30).floor()} mo ago';
+  if (diff.inDays == 0) return l10n.record_today_label;
+  if (diff.inDays == 1) return l10n.record_yesterday_label;
+  if (diff.inDays < 7) return l10n.health_days_ago(diff.inDays);
+  if (diff.inDays < 30) return l10n.health_weeks_ago((diff.inDays / 7).floor());
+  return l10n.health_months_ago((diff.inDays / 30).floor());
 }
 
 // ============================================================================
@@ -549,7 +547,7 @@ class _VisitsList extends ConsumerWidget {
       data: (List<VisitEntity> list) {
         if (list.isEmpty) {
           return Text(
-            'No visits recorded yet.',
+            AppLocalizations.of(context).health_no_visits,
             style: typo.bodySmall.copyWith(color: colors.fgMuted),
           );
         }
@@ -612,7 +610,7 @@ class _VaccinationsList extends ConsumerWidget {
       data: (List<VaccinationEntity> list) {
         if (list.isEmpty) {
           return Text(
-            'No vaccinations recorded yet.',
+            AppLocalizations.of(context).health_no_vaccinations,
             style: typo.bodySmall.copyWith(color: colors.fgMuted),
           );
         }

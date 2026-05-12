@@ -71,6 +71,7 @@ class UserPreferences {
   static const String _kBackupLastError = 'pref.backup.last_error';
   static const String _kBackupRemindLaterAt = 'pref.backup.remind_later_at';
   static const String _kOnboardingCompleted = 'pref.onboarding.completed';
+  static const String _kForcePro = 'pref.dev.force_pro';
 
   /// アプリ起動時に1度だけ呼ぶ
   Future<void> initialize() async {
@@ -204,6 +205,23 @@ class UserPreferences {
       await _prefs!.setBool(_kOnboardingCompleted, value);
     } catch (e) {
       PetloLogger.instance.d('setOnboardingCompleted failed: $e');
+    }
+  }
+
+  // ==========================================================================
+  // Developer: Force Pro (build 11)
+  // ==========================================================================
+
+  bool get forcePro {
+    return _prefs?.getBool(_kForcePro) ?? false;
+  }
+
+  Future<void> setForcePro(bool value) async {
+    if (_prefs == null) return;
+    try {
+      await _prefs!.setBool(_kForcePro, value);
+    } catch (e) {
+      PetloLogger.instance.d('setForcePro failed: $e');
     }
   }
 }

@@ -21,6 +21,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/local/app_database.dart';
 import '../providers/groups_providers.dart';
+import '../providers/pet_selection_controller.dart';
+import '../providers/pets_providers.dart';
+import '../providers/scope_providers.dart';
 import '../providers/tab_provider.dart';
 import '../widgets/groups/group_closure_banner.dart';
 import '../widgets/tabs/petlo_tab_bar.dart';
@@ -108,6 +111,23 @@ class _TabShellState extends ConsumerState<TabShell> {
     final AppColors colors = AppColors.of(context);
     final AppTab currentTab = ref.watch(currentTabProvider);
 
+    // build 10: タブ切替時に showAllPets=false タブへ移動 + 現在 petId="all" なら
+    // 先頭ペットを自動選択。ref.listen は build 内で安全に再登録可能。
+    ref.listen<AppTab>(currentTabProvider, (AppTab? prev, AppTab next) {
+      if (prev == next) return;
+      if (_tabShowsAllPets(next)) return; // よていなどは All Pets を許容
+      final String? petIdStr = ref.read(currentPetIdProvider);
+      if (petIdStr != kAllPetsId) return;
+      final List<PetEntity>? pets =
+          ref.read(currentGroupPetsProvider).valueOrNull;
+      if (pets == null || pets.isEmpty) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(petSelectionControllerProvider.notifier)
+            .selectPet(pets.first.id);
+      });
+    });
+
     // Material で外側を colors.bg に塗ることで、edge-to-edge 化された
     // ステータスバー / Dynamic Island / ホームインジケーター領域も
     // 白背景で塗られる(問題 1: 黒帯解消)。
@@ -139,6 +159,10 @@ class _TabShellState extends ConsumerState<TabShell> {
     );
   }
 }
+
+/// このタブが All Pets ピル表示を許容するか。
+/// 現状は plans (よてい) のみ。
+bool _tabShowsAllPets(AppTab tab) => tab == AppTab.plans;
 
 // ============================================================================
 // _BrandWarningPainter — SnackBar / BrandBar 共用の線画警告アイコン

@@ -20,7 +20,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/outlined_action_button.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_label.dart';
@@ -38,6 +37,7 @@ import '../diary/diary_record_screen.dart';
 import '../gallery/pet_gallery_screen.dart';
 import '../meal/meal_record_screen.dart';
 import '../../providers/pets_providers.dart';
+import '../../providers/tab_provider.dart';
 import '../../widgets/pet_selector/auto_select_first_pet.dart';
 import '../pee/pee_record_screen.dart';
 import '../pet/pet_form_screen.dart';
@@ -49,8 +49,8 @@ class HomeTabScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AppTypography typo = AppTypography.of(context);
     final AppColors colors = AppColors.of(context);
+    final AppTypography typo = AppTypography.of(context);
     final AppLocalizations l10n = AppLocalizations.of(context);
     final String? currentPetId = ref.watch(currentPetIdProvider);
     final bool canEdit = ref.watch(canEditProvider);
@@ -62,8 +62,8 @@ class HomeTabScreen extends ConsumerWidget {
           orElse: () => false,
         );
 
-    // ホームでは All Pets を出さず、個別ペットを強制選択
-    autoSelectFirstPetIfAllSelected(ref);
+    // ホームでは All Pets を出さず、個別ペットを強制選択(他タブと干渉しないよう forTab で gate)
+    autoSelectFirstPetIfAllSelected(ref, forTab: AppTab.home);
 
     final double bottomInset = MediaQuery.of(context).padding.bottom;
     return PetloScaffold(
@@ -72,20 +72,18 @@ class HomeTabScreen extends ConsumerWidget {
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           28,
-          28,
+          16,
           28,
           28 + bottomInset + kBottomNavigationBarHeight,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const SizedBox(height: 12),
-            EyebrowText(l10n.home_eyebrow_today),
-            const SizedBox(height: 12),
-            // ヒーロー: petlo (英字維持)
-            Text('petlo', style: typo.heroName),
-            const SizedBox(height: 32),
-
+            // タブ識別 eyebrow (§ ホーム)
+            SectionLabel(
+              l10n.tab_eyebrow_home,
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
+            ),
             if (hasPet && canEdit) ...<Widget>[
               SectionLabel(l10n.home_section_quick_log),
               const SizedBox(height: 12),

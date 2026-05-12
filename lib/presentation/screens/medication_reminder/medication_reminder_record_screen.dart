@@ -123,7 +123,13 @@ class _MedicationReminderRecordScreenState
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          s.isEditing ? 'EDIT REMINDER' : 'NEW REMINDER',
+          s.isEditing
+              ? AppLocalizations.of(context)
+                  .medication_reminder_form_app_bar_edit
+                  .toUpperCase()
+              : AppLocalizations.of(context)
+                  .medication_reminder_form_app_bar_new
+                  .toUpperCase(),
           style: TextStyle(
             fontFamily: 'JetBrainsMono',
             fontSize: 10,
@@ -135,7 +141,7 @@ class _MedicationReminderRecordScreenState
         leading: TextButton(
           onPressed: () => Navigator.of(context).pop(false),
           child: Text(
-            'CANCEL',
+            AppLocalizations.of(context).common_cancel.toUpperCase(),
             style: TextStyle(
               fontFamily: 'JetBrainsMono',
               fontSize: 9,
@@ -160,13 +166,16 @@ class _MedicationReminderRecordScreenState
               EyebrowText(AppLocalizations.of(context).medication_reminders_eyebrow),
               const SizedBox(height: 8),
               Text(
-                s.isEditing ? 'Update' : 'Medication,\nscheduled.',
+                s.isEditing
+                    ? AppLocalizations.of(context).common_update
+                    : AppLocalizations.of(context).medication_reminder_form_hero,
+                maxLines: 1,
                 style: TextStyle(
                   fontFamily: 'Fraunces',
                   fontStyle: FontStyle.italic,
-                  fontSize: 40,
-                  letterSpacing: -40 * 0.04,
-                  height: 0.95,
+                  fontSize: 44,
+                  letterSpacing: -44 * 0.04,
+                  height: 1.0,
                   color: colors.fg,
                 ),
               ),
@@ -188,7 +197,7 @@ class _MedicationReminderRecordScreenState
 
               // ===== 薬名 =====
               EditorialTextField(
-                label: 'Medicine name',
+                label: AppLocalizations.of(context).medication_reminder_form_medicine_label,
                 controller: _medicineNameC,
                 hint: '例: フィラリア錠 / インスリン',
                 required: true,
@@ -200,9 +209,9 @@ class _MedicationReminderRecordScreenState
 
               // ===== 量 =====
               EditorialTextField(
-                label: 'Dosage (optional)',
+                label: AppLocalizations.of(context).medication_reminder_form_dosage_label_optional,
                 controller: _dosageC,
-                hint: '例: 1錠 / 0.5ml / 半錠',
+                hint: AppLocalizations.of(context).medication_reminder_dosage_hint,
                 maxLength: 30,
                 onChanged: controller.updateDosage,
               ),
@@ -238,7 +247,7 @@ class _MedicationReminderRecordScreenState
                 children: <Widget>[
                   Expanded(
                     child: DateField(
-                      label: 'Start',
+                      label: AppLocalizations.of(context).medication_reminder_form_start_label,
                       value: s.startDate,
                       onChanged: controller.updateStartDate,
                       firstDate: DateTime(DateTime.now().year - 1),
@@ -248,7 +257,7 @@ class _MedicationReminderRecordScreenState
                   const SizedBox(width: 12),
                   Expanded(
                     child: DateField(
-                      label: 'End',
+                      label: AppLocalizations.of(context).medication_reminder_form_end_label,
                       value: s.endDate,
                       onChanged: controller.updateEndDate,
                       errorText: s.errors.dateRange,
@@ -262,9 +271,9 @@ class _MedicationReminderRecordScreenState
 
               // ===== メモ =====
               EditorialTextField(
-                label: 'Notes (optional)',
+                label: AppLocalizations.of(context).medication_reminder_form_notes_label_optional,
                 controller: _notesC,
-                hint: '空腹時に / 食後 など',
+                hint: AppLocalizations.of(context).medication_reminder_notes_hint,
                 maxLength: 200,
                 maxLines: 3,
                 minLines: 1,
@@ -284,8 +293,10 @@ class _MedicationReminderRecordScreenState
               // ===== Save =====
               PrimaryButton(
                 label: s.isSubmitting
-                    ? 'Saving...'
-                    : (s.isEditing ? 'Update' : 'Save'),
+                    ? AppLocalizations.of(context).common_saving
+                    : (s.isEditing
+                        ? AppLocalizations.of(context).common_update
+                        : AppLocalizations.of(context).common_save),
                 onPressed: s.isSubmitting ? null : () => _onSave(controller),
               ),
             ],
@@ -312,10 +323,10 @@ class _MedicationReminderRecordScreenState
       case MedicationReminderSaveOutcome.freeLimitReached:
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('無料プランは1件までです'),
+            content: Text(AppLocalizations.of(context).medication_reminder_free_limit),
             behavior: SnackBarBehavior.floating,
             action: SnackBarAction(
-              label: 'VIEW PLANS',
+              label: AppLocalizations.of(context).medication_reminder_view_plans,
               onPressed: () => PaywallScreen.push(context),
             ),
           ),
@@ -495,13 +506,12 @@ class _TimesEditor extends StatelessWidget {
                     Icon(Icons.add, size: 14, color: colors.fg),
                     const SizedBox(width: 4),
                     Text(
-                      'ADD',
+                      AppLocalizations.of(context).medication_reminder_form_add_time,
                       style: TextStyle(
-                        fontFamily: 'JetBrainsMono',
-                        fontSize: 10,
-                        letterSpacing: 10 * 0.18,
+                        fontFamily: 'Manrope',
+                        fontSize: 12,
                         color: colors.fg,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -543,13 +553,21 @@ class _WeekdayChips extends StatelessWidget {
   final ValueChanged<int> onToggle;
   final VoidCallback onSetEveryday;
 
-  static const List<String> _labels = <String>[
-    'SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT',
-  ];
+  static List<String> _labels(AppLocalizations l10n) => <String>[
+        l10n.medication_reminder_weekday_sun,
+        l10n.medication_reminder_weekday_mon,
+        l10n.medication_reminder_weekday_tue,
+        l10n.medication_reminder_weekday_wed,
+        l10n.medication_reminder_weekday_thu,
+        l10n.medication_reminder_weekday_fri,
+        l10n.medication_reminder_weekday_sat,
+      ];
 
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final List<String> labels = _labels(l10n);
 
     return Wrap(
       spacing: 6,
@@ -566,11 +584,10 @@ class _WeekdayChips extends StatelessWidget {
               border: Border.all(color: colors.fg, width: 1),
             ),
             child: Text(
-              'EVERY DAY',
+              l10n.medication_reminder_form_every_day,
               style: TextStyle(
-                fontFamily: 'JetBrainsMono',
-                fontSize: 10,
-                letterSpacing: 10 * 0.18,
+                fontFamily: 'Manrope',
+                fontSize: 12,
                 color: isEveryday ? colors.bg : colors.fg,
                 fontWeight: isEveryday ? FontWeight.w700 : FontWeight.w500,
               ),
@@ -593,7 +610,7 @@ class _WeekdayChips extends StatelessWidget {
                 border: Border.all(color: colors.fg, width: 1),
               ),
               child: Text(
-                _labels[wd],
+                labels[wd],
                 style: TextStyle(
                   fontFamily: 'JetBrainsMono',
                   fontSize: 9,

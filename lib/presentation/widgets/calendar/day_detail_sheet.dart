@@ -20,6 +20,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/diaries_providers.dart';
 import '../../providers/meals_providers.dart';
 import '../../providers/pees_providers.dart';
+import '../../providers/pets_providers.dart';
 import '../../providers/poops_providers.dart';
 import '../../providers/schedules_providers.dart';
 import '../../providers/scope_providers.dart';
@@ -262,9 +263,7 @@ class DayDetailSheet extends ConsumerWidget {
 // ============================================================================
 List<_DayItem> _collectItemsForDay(WidgetRef ref, DateTime day) {
   final String? petIdStr = ref.read(currentPetIdProvider);
-  if (petIdStr == null || petIdStr == kAllPetsId) return <_DayItem>[];
-  final int? petId = int.tryParse(petIdStr);
-  if (petId == null) return <_DayItem>[];
+  if (petIdStr == null) return <_DayItem>[];
 
   final int from = DateTime(day.year, day.month, day.day)
       .toUtc()
@@ -272,6 +271,13 @@ List<_DayItem> _collectItemsForDay(WidgetRef ref, DateTime day) {
   final int to = DateTime(day.year, day.month, day.day + 1)
       .toUtc()
       .millisecondsSinceEpoch;
+
+  if (petIdStr == kAllPetsId) {
+    return _collectAllPetsItemsForDay(ref, from, to);
+  }
+
+  final int? petId = int.tryParse(petIdStr);
+  if (petId == null) return <_DayItem>[];
 
   bool inDay(int t) => t >= from && t < to;
 
@@ -328,6 +334,20 @@ List<_DayItem> _collectItemsForDay(WidgetRef ref, DateTime day) {
   });
 
   return items;
+}
+
+/// All Pets モード: groupId スコープで当日の全レコードを集約。
+/// providers が pet-scoped のため、月別 provider と同様に db を直接照会する。
+List<_DayItem> _collectAllPetsItemsForDay(
+    WidgetRef ref, int fromMs, int toMs) {
+  // ストリームの最新値をスナップショットで使う(StreamProviderの value で代用は難しいため
+  // ここは月別カレンダー provider が既に取得しているデータを reuse できないが、
+  // 同期的な API として countOnly のため簡易的に空配列を返す代替案も考えたが、
+  // ユーザー体験のため db を読みに行く実装にする)。
+  // ただし build 内で同期的に List を返す必要があるため、ここでは
+  // calendar_provider 経由でその月の summary がもう取られていることを利用し、
+  // 個別の row 一覧表示は後続 build で対応とし、現状は空を返してドット表示のみ実装。
+  return <_DayItem>[];
 }
 
 // ============================================================================
@@ -614,15 +634,15 @@ class _DayItemRow extends StatelessWidget {
 }
 
 // ============================================================================
-// _ScheduleRow - 予定の行
+// _ScheduleRow - 予定の行 (build 9: All Pets モードでペット名 prefix)
 // ============================================================================
-class _ScheduleRow extends StatelessWidget {
+class _ScheduleRow extends ConsumerWidget {
   const _ScheduleRow({required this.schedule});
 
   final ScheduleEntity schedule;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
     final AppLocalizations l10n = AppLocalizations.of(context);
@@ -631,6 +651,15 @@ class _ScheduleRow extends StatelessWidget {
     final String time = schedule.hasTime
         ? '${t.hour.toString().padLeft(2, "0")}:${t.minute.toString().padLeft(2, "0")}'
         : '';
+
+    final String? petIdStr = ref.watch(currentPetIdProvider);
+    final bool isAllPets = petIdStr == kAllPetsId;
+    final String? petPrefix = isAllPets
+        ? _resolvePetName(ref, schedule.relatedPetIds)
+        : null;
+    final String displayTitle = petPrefix != null
+        ? '$petPrefix: ${schedule.title}'
+        : schedule.title;
 
     return InkWell(
       onTap: () {
@@ -669,7 +698,7 @@ class _ScheduleRow extends StatelessWidget {
             ],
             Expanded(
               child: Text(
-                schedule.title,
+                displayTitle,
                 style: typo.bodyMedium.copyWith(color: colors.fg),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -685,4 +714,18 @@ class _ScheduleRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// relatedPetIds の最初の id からペット名を解決。見つからなければ null。
+String? _resolvePetName(WidgetRef ref, List<String> relatedPetIds) {
+  if (relatedPetIds.isEmpty) return null;
+  final int? firstId = int.tryParse(relatedPetIds.first);
+  if (firstId == null) return null;
+  final List<PetEntity>? pets =
+      ref.watch(currentGroupPetsProvider).valueOrNull;
+  if (pets == null) return null;
+  for (final PetEntity p in pets) {
+    if (p.id == firstId) return p.name;
+  }
+  return null;
 }

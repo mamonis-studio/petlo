@@ -16,11 +16,13 @@
 
 import 'dart:async';
 
+import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/app_database.dart';
 import '../../data/models/day_summary.dart';
+import 'database_provider.dart';
 import 'diaries_providers.dart';
 import 'meals_providers.dart';
 import 'pees_providers.dart';
@@ -113,51 +115,113 @@ final ProviderFamily<Map<DateTime, List<String>>, YearMonth>
 // ============================================================================
 
 /// 指定月の DaySummary Map を返す。
+/// build 11: All Pets 選択時は groupId 単位で全ペットのレコードを集約。
 final StreamProviderFamily<Map<DateTime, DaySummary>, YearMonth>
     calendarMonthProvider =
     StreamProviderFamily<Map<DateTime, DaySummary>, YearMonth>(
   (Ref ref, YearMonth ym) {
     final String? petIdStr = ref.watch(currentPetIdProvider);
-    if (petIdStr == null || petIdStr == kAllPetsId) {
-      return Stream<Map<DateTime, DaySummary>>.value(
-          <DateTime, DaySummary>{});
-    }
-    final int? petId = int.tryParse(petIdStr);
-    if (petId == null) {
-      return Stream<Map<DateTime, DaySummary>>.value(
-          <DateTime, DaySummary>{});
-    }
-
     final ({int from, int to}) range = ym.rangeUtcMsec;
+    final bool isAllPets = petIdStr == kAllPetsId;
 
-    // 9種のRepoから月内ストリーム
-    final Stream<List<MealEntity>> meals = ref
-        .watch(mealsRepositoryProvider)
-        .watchMealsInRange(
-            petId: petId, fromMsec: range.from, toMsec: range.to);
-    final Stream<List<PoopEntity>> poops = ref
-        .watch(poopsRepositoryProvider)
-        .watchInRange(petId: petId, fromMsec: range.from, toMsec: range.to);
-    // pees/vomits は Repo に watchInRange が無いので watchForPet で全件→月フィルタ
-    final Stream<List<PeeEntity>> pees =
-        ref.watch(peesRepositoryProvider).watchForPet(petId);
-    final Stream<List<VomitEntity>> vomits =
-        ref.watch(vomitsRepositoryProvider).watchForPet(petId);
-    final Stream<List<WeightEntity>> weights = ref
-        .watch(weightsRepositoryProvider)
-        .watchInRange(petId: petId, fromMsec: range.from, toMsec: range.to);
-    final Stream<List<TemperatureEntity>> temps = ref
-        .watch(temperaturesRepositoryProvider)
-        .watchInRange(petId: petId, fromMsec: range.from, toMsec: range.to);
-    final Stream<List<VisitEntity>> visits = ref
-        .watch(visitsRepositoryProvider)
-        .watchInRange(petId: petId, fromMsec: range.from, toMsec: range.to);
-    // vaccinations は administeredAt 月フィルタ
-    final Stream<List<VaccinationEntity>> vaccinations =
-        ref.watch(vaccinationsRepositoryProvider).watchForPet(petId);
-    final Stream<List<DiaryEntity>> diaries = ref
-        .watch(diariesRepositoryProvider)
-        .watchInRange(petId: petId, fromMsec: range.from, toMsec: range.to);
+    final Stream<List<MealEntity>> meals;
+    final Stream<List<PoopEntity>> poops;
+    final Stream<List<PeeEntity>> pees;
+    final Stream<List<VomitEntity>> vomits;
+    final Stream<List<WeightEntity>> weights;
+    final Stream<List<TemperatureEntity>> temps;
+    final Stream<List<VisitEntity>> visits;
+    final Stream<List<VaccinationEntity>> vaccinations;
+    final Stream<List<DiaryEntity>> diaries;
+
+    if (isAllPets) {
+      // All Pets: groupId スコープで全ペットを集約 (drift クエリを直書き)
+      final String groupId = ref.watch(currentGroupIdProvider);
+      final AppDatabase db = ref.watch(appDatabaseProvider);
+      meals = (db.select(db.meals)
+            ..where((Meals t) =>
+                t.groupId.equals(groupId) &
+                t.deletedAt.isNull() &
+                t.eatenAt.isBetweenValues(range.from, range.to)))
+          .watch();
+      poops = (db.select(db.poops)
+            ..where((Poops t) =>
+                t.groupId.equals(groupId) &
+                t.deletedAt.isNull() &
+                t.pooedAt.isBetweenValues(range.from, range.to)))
+          .watch();
+      pees = (db.select(db.pees)
+            ..where((Pees t) =>
+                t.groupId.equals(groupId) &
+                t.deletedAt.isNull() &
+                t.peedAt.isBetweenValues(range.from, range.to)))
+          .watch();
+      vomits = (db.select(db.vomits)
+            ..where((Vomits t) =>
+                t.groupId.equals(groupId) &
+                t.deletedAt.isNull() &
+                t.vomitedAt.isBetweenValues(range.from, range.to)))
+          .watch();
+      weights = (db.select(db.weights)
+            ..where((Weights t) =>
+                t.groupId.equals(groupId) &
+                t.deletedAt.isNull() &
+                t.measuredAt.isBetweenValues(range.from, range.to)))
+          .watch();
+      temps = (db.select(db.temperatures)
+            ..where((Temperatures t) =>
+                t.groupId.equals(groupId) &
+                t.deletedAt.isNull() &
+                t.measuredAt.isBetweenValues(range.from, range.to)))
+          .watch();
+      visits = (db.select(db.visits)
+            ..where((Visits t) =>
+                t.groupId.equals(groupId) &
+                t.deletedAt.isNull() &
+                t.visitedAt.isBetweenValues(range.from, range.to)))
+          .watch();
+      vaccinations = (db.select(db.vaccinations)
+            ..where((Vaccinations t) =>
+                t.groupId.equals(groupId) &
+                t.deletedAt.isNull() &
+                t.administeredAt.isBetweenValues(range.from, range.to)))
+          .watch();
+      diaries = (db.select(db.diaries)
+            ..where((Diaries t) =>
+                t.groupId.equals(groupId) &
+                t.deletedAt.isNull() &
+                t.eventAt.isBetweenValues(range.from, range.to)))
+          .watch();
+    } else {
+      final int? petId = int.tryParse(petIdStr ?? '');
+      if (petId == null) {
+        return Stream<Map<DateTime, DaySummary>>.value(
+            <DateTime, DaySummary>{});
+      }
+      meals = ref
+          .watch(mealsRepositoryProvider)
+          .watchMealsInRange(
+              petId: petId, fromMsec: range.from, toMsec: range.to);
+      poops = ref
+          .watch(poopsRepositoryProvider)
+          .watchInRange(petId: petId, fromMsec: range.from, toMsec: range.to);
+      pees = ref.watch(peesRepositoryProvider).watchForPet(petId);
+      vomits = ref.watch(vomitsRepositoryProvider).watchForPet(petId);
+      weights = ref
+          .watch(weightsRepositoryProvider)
+          .watchInRange(petId: petId, fromMsec: range.from, toMsec: range.to);
+      temps = ref
+          .watch(temperaturesRepositoryProvider)
+          .watchInRange(petId: petId, fromMsec: range.from, toMsec: range.to);
+      visits = ref
+          .watch(visitsRepositoryProvider)
+          .watchInRange(petId: petId, fromMsec: range.from, toMsec: range.to);
+      vaccinations =
+          ref.watch(vaccinationsRepositoryProvider).watchForPet(petId);
+      diaries = ref
+          .watch(diariesRepositoryProvider)
+          .watchInRange(petId: petId, fromMsec: range.from, toMsec: range.to);
+    }
 
     return _combineLatest9(
       meals,

@@ -52,31 +52,34 @@ class MoreTabScreen extends ConsumerWidget {
       showGroupSelector: false,
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
-          28,
-          28,
-          28,
+          0,
+          0,
+          0,
           28 + bottomInset + kBottomNavigationBarHeight,
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const SizedBox(height: 12),
-            EyebrowText(l10n.more_eyebrow),
-            const SizedBox(height: 12),
-            Text(
-              'More.',
-              style: typo.heroName.copyWith(height: 0.95),
+            // タブ識別 eyebrow (§ その他)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child: SectionLabel(
+                l10n.tab_eyebrow_other,
+                padding: const EdgeInsets.fromLTRB(0, 16, 0, 16),
+              ),
             ),
-            const SizedBox(height: 24),
-
-            const BackupBanner(),
+            // バナー類は左右 28 padding 内、行 (_Row) は罫線フルワイド
+            Padding(
+              padding: const EdgeInsets.fromLTRB(28, 0, 28, 16),
+              child: const BackupBanner(),
+            ),
 
             // ===== Pro CTA バナー (無料時のみ) =====
-            if (!isPro) ...<Widget>[
-              const SizedBox(height: 16),
-              _ProCtaBanner(colors: colors, typo: typo),
-              const SizedBox(height: 24),
-            ],
+            if (!isPro)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
+                child: _ProCtaBanner(colors: colors, typo: typo),
+              ),
 
             // ===== アカウント =====
             _Row(
@@ -204,7 +207,8 @@ class _Row extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        // 罫線は画面端まで、テキストは内側に padding を持つ
+        padding: const EdgeInsets.fromLTRB(28, 14, 28, 14),
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: colors.line)),
         ),

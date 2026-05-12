@@ -51,7 +51,7 @@ class MedicationRemindersListScreen extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'MEDICATIONS',
+          AppLocalizations.of(context).medication_reminders_app_bar,
           style: TextStyle(
             fontFamily: 'JetBrainsMono',
             fontSize: 10,
@@ -74,7 +74,7 @@ class MedicationRemindersListScreen extends ConsumerWidget {
               EyebrowText(AppLocalizations.of(context).health_record_medication),
               const SizedBox(height: 8),
               Text(
-                'Reminders.',
+                AppLocalizations.of(context).medication_reminders_hero,
                 style: typo.heroName.copyWith(height: 0.95),
               ),
               const SizedBox(height: 24),
@@ -82,7 +82,7 @@ class MedicationRemindersListScreen extends ConsumerWidget {
               // Add ボタン
               if (canEdit) ...<Widget>[
                 OutlinedActionButton(
-                  label: 'Add reminder',
+                  label: AppLocalizations.of(context).medication_reminders_add,
                   onPressed: () =>
                       MedicationReminderRecordScreen.push(context),
                 ),
@@ -106,7 +106,8 @@ class MedicationRemindersListScreen extends ConsumerWidget {
                     children: <Widget>[
                       if (active.isNotEmpty) ...<Widget>[
                         _SectionHeader(
-                            label: 'ACTIVE · ${active.length}',
+                            label:
+                                '${AppLocalizations.of(context).medication_reminders_section_active} · ${active.length}',
                             color: colors.fgMuted),
                         const SizedBox(height: 8),
                         for (final MedicationReminderEntity r in active)
@@ -115,7 +116,8 @@ class MedicationRemindersListScreen extends ConsumerWidget {
                       if (paused.isNotEmpty) ...<Widget>[
                         const SizedBox(height: 24),
                         _SectionHeader(
-                            label: 'PAUSED · ${paused.length}',
+                            label:
+                                '${AppLocalizations.of(context).medication_reminders_section_paused} · ${paused.length}',
                             color: colors.fgFaint),
                         const SizedBox(height: 8),
                         for (final MedicationReminderEntity r in paused)
@@ -124,7 +126,7 @@ class MedicationRemindersListScreen extends ConsumerWidget {
                       // 無料制限の注意書き(将来 Pro判定で出し分け)
                       const SizedBox(height: 32),
                       Text(
-                        'Free plan: up to $kFreeReminderLimit active reminder.\nPro plan: unlimited.',
+                        AppLocalizations.of(context).medication_reminder_free_limit,
                         style: typo.bodySmall.copyWith(
                           color: colors.fgFaint,
                           height: 1.5,
@@ -146,7 +148,7 @@ class MedicationRemindersListScreen extends ConsumerWidget {
                 error: (Object e, _) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 40),
                   child: Text(
-                    'Failed to load reminders',
+                    AppLocalizations.of(context).common_load_failed,
                     style: typo.bodySmall.copyWith(color: colors.fgMuted),
                   ),
                 ),
@@ -173,7 +175,7 @@ class _EmptyState extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            'No reminders yet.',
+            AppLocalizations.of(context).medication_reminders_empty,
             style: TextStyle(
               fontFamily: 'Fraunces',
               fontStyle: FontStyle.italic,
@@ -183,7 +185,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Add your pet\'s medication schedule\nand never miss a dose.',
+            AppLocalizations.of(context).medication_reminders_description,
             style:
                 typo.bodyMedium.copyWith(color: colors.fgMuted, height: 1.5),
           ),
@@ -222,10 +224,6 @@ class _ReminderRow extends ConsumerWidget {
 
   final MedicationReminderEntity reminder;
 
-  static const List<String> _wdShort = <String>[
-    'S', 'M', 'T', 'W', 'T', 'F', 'S',
-  ];
-
   String _formatTimes() {
     if (reminder.times.length <= 4) {
       return reminder.times.join(' · ');
@@ -233,10 +231,22 @@ class _ReminderRow extends ConsumerWidget {
     return '${reminder.times.take(3).join(' · ')} +${reminder.times.length - 3}';
   }
 
-  String _formatWeekdays() {
-    if (reminder.weekdaysBits.isEmpty) return 'Every day';
+  String _formatWeekdays(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    if (reminder.weekdaysBits.isEmpty) {
+      return l10n.medication_reminder_form_every_day;
+    }
+    final List<String> labels = <String>[
+      l10n.medication_reminder_weekday_sun,
+      l10n.medication_reminder_weekday_mon,
+      l10n.medication_reminder_weekday_tue,
+      l10n.medication_reminder_weekday_wed,
+      l10n.medication_reminder_weekday_thu,
+      l10n.medication_reminder_weekday_fri,
+      l10n.medication_reminder_weekday_sat,
+    ];
     final List<int> sorted = reminder.weekdaysBits.toList()..sort();
-    return sorted.map((int wd) => _wdShort[wd]).join(' ');
+    return sorted.map((int wd) => labels[wd]).join(' ');
   }
 
   @override
@@ -280,7 +290,7 @@ class _ReminderRow extends ConsumerWidget {
                   ],
                   const SizedBox(height: 6),
                   Text(
-                    '${_formatTimes()} · ${_formatWeekdays()}',
+                    '${_formatTimes()} · ${_formatWeekdays(context)}',
                     style: TextStyle(
                       fontFamily: 'JetBrainsMono',
                       fontSize: 10,

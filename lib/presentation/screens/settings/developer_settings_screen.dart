@@ -113,6 +113,9 @@ class DeveloperSettingsScreen extends ConsumerWidget {
                 typo: typo,
                 isDestructive: true,
               ),
+
+              const SizedBox(height: 24),
+              _ForceProToggle(colors: colors, typo: typo),
             ],
           ),
         ),
@@ -181,6 +184,60 @@ class DeveloperSettingsScreen extends ConsumerWidget {
       SnackBar(
         content: Text(AppLocalizations.of(context).developer_snackbar_pro_reset),
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// _ForceProToggle (build 11) - Pro 状態強制 ON で課金フローをテスト
+// ============================================================================
+class _ForceProToggle extends ConsumerWidget {
+  const _ForceProToggle({required this.colors, required this.typo});
+
+  final AppColors colors;
+  final AppTypography typo;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bool enabled = ref.watch(forceProProvider);
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: colors.line),
+          bottom: BorderSide(color: colors.line),
+        ),
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'Force Pro (テスト用)',
+                  style: typo.bodyLarge.copyWith(color: colors.fg),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'ON で課金状態に関わらず Pro 機能を有効化します。'
+                  '\n本番リリース前に必ず OFF に戻してください。',
+                  style: typo.bodySmall
+                      .copyWith(color: colors.fgMuted, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: enabled,
+            onChanged: (bool v) async {
+              await ref.read(forceProProvider.notifier).setEnabled(v);
+            },
+            activeThumbColor: colors.bg,
+            activeTrackColor: colors.fg,
+          ),
+        ],
       ),
     );
   }

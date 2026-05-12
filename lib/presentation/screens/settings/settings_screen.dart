@@ -22,9 +22,10 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/pro_status_provider.dart';
 import '../backup/backup_settings_screen.dart';
 import '../paywall/paywall_screen.dart';
+import 'developer_settings_screen.dart';
 import 'theme_settings_screen.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   static Future<void> push(BuildContext context) {
@@ -34,7 +35,23 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  int _versionTapCount = 0;
+
+  void _onVersionTap() {
+    setState(() => _versionTapCount++);
+    if (_versionTapCount >= 5) {
+      _versionTapCount = 0;
+      DeveloperSettingsScreen.push(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final WidgetRef ref = this.ref;
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
     final AppLocalizations l10n = AppLocalizations.of(context);
@@ -147,7 +164,7 @@ class SettingsScreen extends ConsumerWidget {
                 title: l10n.settings_item_version,
                 subtitle:
                     '${AppConstants.appVersion} (build ${AppConstants.appBuildNumber})',
-                onTap: null,
+                onTap: _onVersionTap,
               ),
               const SizedBox(height: 48),
             ],
