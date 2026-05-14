@@ -27,11 +27,11 @@ import '../providers/scope_providers.dart';
 import '../providers/tab_provider.dart';
 import '../widgets/groups/group_closure_banner.dart';
 import '../widgets/tabs/petlo_tab_bar.dart';
+import 'ai_chat/ai_tab_screen.dart';
 import 'groups/group_detail_screen.dart';
 import 'health/health_tab_screen.dart';
 import 'home/home_tab_screen.dart';
 import 'life/life_tab_screen.dart';
-import 'more/more_tab_screen.dart';
 import 'plans/plans_tab_screen.dart';
 
 class TabShell extends ConsumerStatefulWidget {
@@ -146,7 +146,7 @@ class _TabShellState extends ConsumerState<TabShell> {
               LifeTabScreen(),
               HealthTabScreen(),
               PlansTabScreen(),
-              MoreTabScreen(),
+              AiTabScreen(),
             ],
           ),
         ),

@@ -23,6 +23,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -160,13 +161,60 @@ class PetPhotoPicker extends StatelessWidget {
         maxHeight: 2048,
         imageQuality: 95,
       );
-      if (picked != null) {
-        onPicked(File(picked.path));
+      if (picked == null) return;
+
+      if (!context.mounted) return;
+      // build 12: クロップ → アバターは円形表示なので 1:1 で長辺 1024 + 品質 85
+      final File? cropped = await _cropToSquare(context, picked.path);
+      if (cropped != null) {
+        onPicked(cropped);
       }
     } catch (e, st) {
       PetloLogger.instance
           .w('Image picker failed', error: e, stackTrace: st);
       // 親側に通知する仕組みは必要に応じて追加 (現状はサイレント)
+    }
+  }
+
+  /// 1:1 でクロップして長辺 1024px 上限の JPEG を返す。
+  /// キャンセル時は null。
+  Future<File?> _cropToSquare(BuildContext context, String path) async {
+    final AppColors colors = AppColors.of(context);
+    try {
+      final CroppedFile? cropped = await ImageCropper().cropImage(
+        sourcePath: path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        compressFormat: ImageCompressFormat.jpg,
+        compressQuality: 85,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        uiSettings: <PlatformUiSettings>[
+          IOSUiSettings(
+            title: 'トリミング',
+            doneButtonTitle: '確定',
+            cancelButtonTitle: 'キャンセル',
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+          ),
+          AndroidUiSettings(
+            toolbarTitle: 'トリミング',
+            toolbarColor: colors.fg,
+            toolbarWidgetColor: colors.bg,
+            backgroundColor: colors.bg,
+            statusBarColor: colors.fg,
+            initAspectRatio: CropAspectRatioPreset.square,
+            lockAspectRatio: true,
+            hideBottomControls: false,
+          ),
+        ],
+      );
+      if (cropped == null) return null;
+      return File(cropped.path);
+    } catch (e, st) {
+      PetloLogger.instance
+          .w('Image cropper failed', error: e, stackTrace: st);
+      // クロップ失敗時は元ファイルをそのまま使う
+      return File(path);
     }
   }
 }

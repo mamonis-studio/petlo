@@ -17,7 +17,7 @@ enum AppTab {
   life,
   health,
   plans,
-  more;
+  ai;
 
   /// JetBrainsMono大文字ラベル(タブバー表示用)
   String get label {
@@ -30,8 +30,8 @@ enum AppTab {
         return 'Health';
       case AppTab.plans:
         return 'Plans';
-      case AppTab.more:
-        return 'More';
+      case AppTab.ai:
+        return 'AI';
     }
   }
 }

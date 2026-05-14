@@ -103,7 +103,7 @@ class _TemperatureChartScreenState
               EyebrowText(AppLocalizations.of(context).common_trend),
               const SizedBox(height: 8),
               Text(
-                'Temperature,\nover time.',
+                AppLocalizations.of(context).temperature_chart_hero,
                 style: typo.heroName.copyWith(height: 0.95),
               ),
               const SizedBox(height: 24),

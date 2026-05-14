@@ -1,9 +1,19 @@
 // ============================================================================
-// petlo - Settings Screen
+// petlo - Settings Screen (build 13 rev)
 // ============================================================================
 //
-// アプリの設定画面。歯車アイコンから遷移する。
-// 「その他」タブの § 設定 行からも到達。
+// 全タブ AppBar 右上の歯車から push される統合設定画面。
+// build 13 で「その他」タブを廃止し、その中身をすべてここに集約。
+//
+// セクション構成:
+//   - Pro バナー (無料時のみ)
+//   - アカウント (ゲスト + バックアップ)
+//   - 機能 (家族共有 / 投薬リマインダー)
+//   - アプリ (テーマ / 言語 / 通知 / サブスク)
+//   - サポート (お問い合わせ)
+//   - 法的 (利用規約 / プライバシー)
+//   - アプリについて (バージョン — 5タップで開発者設定)
+//   - mamonis.studio (SNS + サイト)
 //
 // ============================================================================
 
@@ -11,16 +21,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/billing/pro_status.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/notifications/notification_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/logger.dart';
-import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/section_label.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/pro_status_provider.dart';
+import '../../widgets/backup/backup_banner.dart';
 import '../backup/backup_settings_screen.dart';
+import '../groups/groups_list_screen.dart';
+import '../medication_reminder/medication_reminders_list_screen.dart';
 import '../paywall/paywall_screen.dart';
 import 'developer_settings_screen.dart';
 import 'theme_settings_screen.dart';
@@ -51,10 +64,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final WidgetRef ref = this.ref;
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
     final AppLocalizations l10n = AppLocalizations.of(context);
+    final bool isPro = ref.watch(isProProvider);
 
     return Scaffold(
       backgroundColor: colors.bg,
@@ -71,29 +84,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 48),
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 48),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              EyebrowText(l10n.settings_eyebrow),
-              const SizedBox(height: 8),
-              Text(
-                l10n.settings_hero,
-                maxLines: 1,
-                style: TextStyle(
-                  fontFamily: 'Fraunces',
-                  fontStyle: FontStyle.italic,
-                  fontSize: 44,
-                  letterSpacing: -44 * 0.04,
-                  height: 1.0,
-                  color: colors.fg,
-                ),
+              // バナー類
+              Padding(
+                padding: const EdgeInsets.fromLTRB(28, 16, 28, 0),
+                child: const BackupBanner(),
               ),
-              const SizedBox(height: 32),
+              if (!isPro)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 16, 28, 8),
+                  child: _ProCtaBanner(colors: colors, typo: typo),
+                ),
+              const SizedBox(height: 16),
 
-              // ===== § App =====
-              SectionLabel(l10n.settings_section_app),
-              const SizedBox(height: 8),
+              // ===== アカウント =====
+              _SectionHeader(label: l10n.other_section_account),
+              _Row(
+                title: l10n.other_account_guest_title,
+                subtitle: l10n.other_account_guest_subtitle,
+              ),
+              _Row(
+                title: l10n.more_item_backup,
+                subtitle: l10n.more_trailing_open,
+                onTap: () => BackupSettingsScreen.push(context),
+              ),
+
+              // ===== 機能 =====
+              _SectionHeader(label: l10n.more_section_family),
+              _Row(
+                title: l10n.more_item_groups,
+                onTap: () => GroupsListScreen.push(context),
+              ),
+              _Row(
+                title: l10n.more_item_medication_reminders,
+                onTap: () => MedicationRemindersListScreen.push(context),
+              ),
+
+              // ===== アプリ =====
+              _SectionHeader(label: l10n.settings_section_app),
               _Row(
                 title: l10n.settings_item_theme,
                 onTap: () => ThemeSettingsScreen.push(context),
@@ -101,8 +132,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _Row(
                 title: l10n.settings_item_language,
                 subtitle: l10n.settings_item_language_subtitle,
-                onTap: () => _openOsSettings(context),
                 trailing: l10n.settings_item_open_ios_settings,
+                onTap: () => _openOsSettings(context),
               ),
               _Row(
                 title: l10n.settings_item_notifications,
@@ -126,47 +157,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 subtitle: const _SubscriptionStatus(),
                 onTap: () => PaywallScreen.push(context),
               ),
-              _Row(
-                title: l10n.settings_item_backup,
-                onTap: () => BackupSettingsScreen.push(context),
-              ),
-              const SizedBox(height: 32),
 
-              // ===== § Support =====
-              SectionLabel(l10n.settings_section_support),
-              const SizedBox(height: 8),
+              // ===== サポート =====
+              _SectionHeader(label: l10n.settings_section_support),
               _Row(
                 title: l10n.settings_item_contact,
                 subtitle: AppConstants.contactEmail,
                 onTap: () => _launchMail(context),
               ),
-              const SizedBox(height: 32),
 
-              // ===== § Legal =====
-              SectionLabel(l10n.settings_section_legal),
-              const SizedBox(height: 8),
+              // ===== 法的 =====
+              _SectionHeader(label: l10n.settings_section_legal),
               _Row(
                 title: l10n.settings_item_terms,
-                onTap: () =>
-                    _openUrl(context, AppConstants.termsOfUseUrl),
+                onTap: () => _openUrl(context, AppConstants.termsOfUseUrl),
               ),
               _Row(
                 title: l10n.settings_item_privacy,
-                onTap: () =>
-                    _openUrl(context, AppConstants.privacyPolicyUrl),
+                onTap: () => _openUrl(context, AppConstants.privacyPolicyUrl),
               ),
-              const SizedBox(height: 32),
 
-              // ===== § About =====
-              SectionLabel(l10n.settings_section_about),
-              const SizedBox(height: 8),
+              // ===== アプリについて =====
+              _SectionHeader(label: l10n.settings_section_about),
               _Row(
                 title: l10n.settings_item_version,
                 subtitle:
                     '${AppConstants.appVersion} (build ${AppConstants.appBuildNumber})',
                 onTap: _onVersionTap,
               ),
-              const SizedBox(height: 48),
+
+              // ===== mamonis.studio =====
+              _SectionHeader(label: l10n.other_section_studio),
+              _Row(
+                title: l10n.other_studio_x,
+                onTap: () => _openUrl(context, AppConstants.xUrl),
+              ),
+              _Row(
+                title: l10n.other_studio_instagram,
+                onTap: () => _openUrl(context, AppConstants.instagramUrl),
+              ),
+              _Row(
+                title: l10n.other_studio_tiktok,
+                onTap: () => _openUrl(context, AppConstants.tiktokUrl),
+              ),
+              _Row(
+                title: l10n.other_studio_website,
+                subtitle: 'petlo.mamonis.studio',
+                onTap: () => _openUrl(context, AppConstants.websiteUrl),
+              ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -188,7 +227,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       scheme: 'mailto',
       path: AppConstants.contactEmail,
       queryParameters: <String, String>{
-        'subject': 'petlo ${AppConstants.appVersion}+${AppConstants.appBuildNumber}',
+        'subject':
+            'petlo ${AppConstants.appVersion}+${AppConstants.appBuildNumber}',
       },
     );
     try {
@@ -200,7 +240,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _openOsSettings(BuildContext context) async {
     try {
-      // iOS: app-settings: scheme は url_launcher で開ける
       final Uri uri = Uri.parse('app-settings:');
       final bool ok =
           await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -221,6 +260,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 }
 
 // ============================================================================
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: SectionLabel(
+        label,
+        padding: const EdgeInsets.fromLTRB(0, 24, 0, 12),
+      ),
+    );
+  }
+}
+
 class _Row extends StatelessWidget {
   const _Row({
     required this.title,
@@ -251,7 +307,7 @@ class _Row extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.fromLTRB(28, 14, 28, 14),
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: colors.line)),
         ),
@@ -338,10 +394,90 @@ class _SubscriptionStatus extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
+    final ProStatus status = ref.watch(proStatusProvider);
     final bool isPro = ref.watch(isProProvider);
+    final String label = switch (status.state) {
+      ProState.active => isPro ? 'Pro' : 'Free',
+      ProState.grace => 'Pro · 猶予期間',
+      ProState.cancelled => 'Pro · 解約済み',
+      ProState.free => isPro ? 'Pro (Force)' : 'Free',
+    };
     return Text(
-      isPro ? 'Pro' : 'Free',
+      label,
       style: typo.bodySmall.copyWith(color: colors.fgMuted),
+    );
+  }
+}
+
+// ============================================================================
+class _ProCtaBanner extends StatelessWidget {
+  const _ProCtaBanner({required this.colors, required this.typo});
+
+  final AppColors colors;
+  final AppTypography typo;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    return InkWell(
+      onTap: () => PaywallScreen.push(context),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: colors.fg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'petlo Pro',
+              style: TextStyle(
+                fontFamily: 'JetBrainsMono',
+                fontSize: 11,
+                color: colors.bg.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.more_pro_cta_hero,
+              style: TextStyle(
+                fontFamily: 'Fraunces',
+                fontStyle: FontStyle.italic,
+                fontSize: 28,
+                letterSpacing: -28 * 0.04,
+                height: 1.0,
+                color: colors.bg,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              l10n.more_pro_cta_body,
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontSize: 13,
+                color: colors.bg.withValues(alpha: 0.85),
+                height: 1.6,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                border: Border.all(color: colors.bg, width: 1),
+              ),
+              child: Text(
+                '${l10n.more_pro_view_plans}  →',
+                style: TextStyle(
+                  fontFamily: 'Manrope',
+                  fontSize: 12,
+                  color: colors.bg,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

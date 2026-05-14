@@ -85,7 +85,7 @@ class _TabItem extends StatelessWidget {
       AppTab.life => l10n.tab_life,
       AppTab.health => l10n.tab_health,
       AppTab.plans => l10n.tab_plans,
-      AppTab.more => l10n.tab_more,
+      AppTab.ai => l10n.tab_ai,
     };
 
     return Semantics(
@@ -219,14 +219,26 @@ class _TabIconPainter extends CustomPainter {
           stroke,
         );
 
-      case AppTab.more:
-        // 横3点 (...)
+      case AppTab.ai:
+        // チャットバブル(角丸長方形 + 三角の尾)
+        final RRect bubble = RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.18, h * 0.2, w * 0.64, h * 0.5),
+          const Radius.circular(4),
+        );
+        canvas.drawRRect(bubble, stroke);
+        // バブルの尾
+        final Path tail = Path()
+          ..moveTo(w * 0.36, h * 0.7)
+          ..lineTo(w * 0.34, h * 0.85)
+          ..lineTo(w * 0.5, h * 0.7);
+        canvas.drawPath(tail, stroke);
+        // 中の3ドット(thinking 風)
         final Paint dot = Paint()
           ..color = color
           ..style = PaintingStyle.fill;
-        canvas.drawCircle(Offset(w * 0.25, h * 0.5), 2.0, dot);
-        canvas.drawCircle(Offset(w * 0.5, h * 0.5), 2.0, dot);
-        canvas.drawCircle(Offset(w * 0.75, h * 0.5), 2.0, dot);
+        canvas.drawCircle(Offset(w * 0.36, h * 0.45), 1.4, dot);
+        canvas.drawCircle(Offset(w * 0.5, h * 0.45), 1.4, dot);
+        canvas.drawCircle(Offset(w * 0.64, h * 0.45), 1.4, dot);
     }
   }
 

@@ -65,7 +65,7 @@ class PetGalleryScreen extends ConsumerWidget {
           ),
           error: (Object e, StackTrace st) => Center(
             child: Text(
-              'Could not load gallery',
+              AppLocalizations.of(context).gallery_load_failed,
               style: TextStyle(color: colors.accentDanger),
             ),
           ),
@@ -123,7 +123,7 @@ class _EmptyState extends StatelessWidget {
             EyebrowText(AppLocalizations.of(context).common_empty),
             const SizedBox(height: 8),
             Text(
-              'No photos yet',
+              AppLocalizations.of(context).gallery_empty_hero,
               style: TextStyle(
                 fontFamily: 'Fraunces',
                 fontStyle: FontStyle.italic,

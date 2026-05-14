@@ -419,10 +419,10 @@ class _BasicSection extends StatelessWidget {
         const SizedBox(height: AppDimensions.gapXLarge),
 
         // TODO: Chunk 16 で犬種マスタを統合 → ドロップダウン化
+        // build 6 で任意化、build 12 で required アスタリスクを削除
         EditorialTextField(
           label: l10n.pet_form_field_breed,
           controller: breedC,
-          required: true,
           hint: l10n.pet_form_field_breed_hint,
           errorText: state.errors.breed,
           onChanged: controller.updateBreed,

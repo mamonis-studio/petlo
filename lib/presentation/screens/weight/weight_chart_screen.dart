@@ -91,7 +91,7 @@ class _WeightChartScreenState extends ConsumerState<WeightChartScreen> {
               EyebrowText(AppLocalizations.of(context).common_trend),
               const SizedBox(height: 8),
               Text(
-                'Weight,\nover time.',
+                AppLocalizations.of(context).weight_chart_hero,
                 style: typo.heroName.copyWith(height: 0.95),
               ),
               const SizedBox(height: 24),
@@ -126,7 +126,7 @@ class _WeightChartScreenState extends ConsumerState<WeightChartScreen> {
                     points: points,
                     range: _range,
                     unitLabel: ' kg',
-                    yAxisFormatter: (double v) => v.toStringAsFixed(2),
+                    yAxisFormatter: _formatKg,
                   );
                 },
                 loading: () => const SizedBox(
@@ -320,4 +320,10 @@ class _HistoryRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Y軸ラベル用: 整数なら小数なし、それ以外は小数1桁、末尾0除去。
+String _formatKg(double v) {
+  if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+  return v.toStringAsFixed(1).replaceFirst(RegExp(r'\.0$'), '');
 }

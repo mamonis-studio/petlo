@@ -130,7 +130,7 @@ class PetloLineChart extends StatelessWidget {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 44,
+                reservedSize: 56,
                 interval: yRange == 0 ? 1.0 : yRange / 2,
                 getTitlesWidget: (double value, TitleMeta meta) {
                   if (value < minY + yPad / 2 || value > maxY - yPad / 2) {

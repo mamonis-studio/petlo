@@ -132,7 +132,8 @@ class PetFormState {
         Validators.maxLength(50),
       ])(name),
       type: type == null ? '犬か猫を選んでください' : null,
-      breed: breed.trim().isEmpty ? '品種を入力してください' : null,
+      // build 6 で任意化 (DB nullable)、bauild 12 でバリデーションも撤去
+      breed: null,
       sex: sex == null ? '性別を選んでください' : null,
       idealWeightMinG: idealWeightMinG != null &&
               idealWeightMaxG != null &&
