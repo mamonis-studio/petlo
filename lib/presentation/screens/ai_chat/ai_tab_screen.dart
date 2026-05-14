@@ -17,7 +17,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_label.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -55,9 +54,7 @@ class AiTabScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
             ),
 
-            // ===== ヒーロー =====
-            EyebrowText(l10n.ai_tab_eyebrow),
-            const SizedBox(height: 8),
+            // ===== ヒーロー(eyebrow は § で代用、中段ラベルは削除) =====
             Text(
               l10n.ai_tab_hero,
               style: TextStyle(

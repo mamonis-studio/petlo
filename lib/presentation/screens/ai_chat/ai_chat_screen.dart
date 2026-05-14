@@ -30,6 +30,7 @@ import '../../providers/ai_service_provider.dart';
 import '../../providers/scope_providers.dart';
 import '../paywall/paywall_screen.dart';
 import 'ai_chat_controller.dart';
+import 'widgets/chat_system_message.dart';
 import 'widgets/message_bubble.dart';
 import 'widgets/thinking_dots.dart';
 
@@ -141,7 +142,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'PET CONSULT',
+          AppLocalizations.of(context).ai_chat_app_bar,
           style: TextStyle(
             fontFamily: 'JetBrainsMono',
             fontSize: 10,
@@ -158,33 +159,23 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       body: SafeArea(
         child: Column(
           children: <Widget>[
-            // ===== エラーバナー =====
-            if (chatState.errorMessage != null)
-              _ErrorBanner(
-                message: chatState.errorMessage!,
-                onDismiss: () => ref
-                    .read(aiChatControllerProvider.notifier)
-                    .clearError(),
-                actionLabel: _shouldShowPaywall(chatState.lastErrorReason)
-                    ? 'VIEW PLANS'
-                    : null,
-                onAction: _shouldShowPaywall(chatState.lastErrorReason)
-                    ? () => PaywallScreen.push(context)
-                    : null,
-                colors: colors,
-              ),
-
             // ===== メッセージ領域 =====
             Expanded(
               child: messagesAsync.when(
                 data: (List<AiChatMessageEntity> list) {
-                  if (list.isEmpty && !chatState.isSending) {
+                  if (list.isEmpty &&
+                      !chatState.isSending &&
+                      chatState.lastErrorReason == null) {
                     return _EmptyState(colors: colors, typo: typo);
                   }
+                  // 送信中 + 末尾エラーシステムメッセージ用に件数調整
+                  final int trailing =
+                      (chatState.isSending ? 1 : 0) +
+                          (chatState.lastErrorReason != null ? 1 : 0);
                   return ListView.builder(
                     controller: _scrollC,
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                    itemCount: list.length + (chatState.isSending ? 1 : 0),
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                    itemCount: list.length + trailing,
                     itemBuilder: (BuildContext c, int i) {
                       if (i < list.length) {
                         final AiChatMessageEntity m = list[i];
@@ -197,11 +188,30 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                               : null,
                         );
                       }
-                      // 送信中インジケータ
-                      return const Padding(
-                        padding:
-                            EdgeInsets.symmetric(vertical: 16),
-                        child: ThinkingDots(),
+                      final int tailIdx = i - list.length;
+                      if (chatState.isSending && tailIdx == 0) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: ThinkingDots(),
+                        );
+                      }
+                      // エラー時のシステムメッセージ
+                      final AiChatErrorReason reason =
+                          chatState.lastErrorReason!;
+                      final bool showPaywallAction =
+                          _shouldShowPaywall(reason);
+                      return ChatSystemMessage(
+                        message: systemMessageForReason(
+                          AppLocalizations.of(context),
+                          reason,
+                        ),
+                        actionLabel: showPaywallAction
+                            ? AppLocalizations.of(context)
+                                .more_pro_view_plans
+                            : null,
+                        onAction: showPaywallAction
+                            ? () => PaywallScreen.push(context)
+                            : null,
                       );
                     },
                   );
@@ -215,7 +225,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 error: (Object e, _) => Center(
                   child: Text(
-                    'Failed to load messages',
+                    AppLocalizations.of(context).common_load_failed,
                     style: typo.bodySmall.copyWith(color: colors.fgMuted),
                   ),
                 ),
@@ -283,82 +293,6 @@ class _EmptyState extends StatelessWidget {
                 height: 1.6,
                 color: colors.fgMuted,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// ErrorBanner
-// ============================================================================
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({
-    required this.message,
-    required this.onDismiss,
-    required this.colors,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final String message;
-  final VoidCallback onDismiss;
-  final AppColors colors;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 10, 12, 10),
-      decoration: BoxDecoration(
-        color: colors.bg,
-        border: Border(
-          bottom: BorderSide(color: colors.accentDanger, width: 1.5),
-        ),
-      ),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(
-                fontFamily: 'Manrope',
-                fontSize: 13,
-                color: colors.accentDanger,
-              ),
-            ),
-          ),
-          if (actionLabel != null && onAction != null) ...<Widget>[
-            InkWell(
-              onTap: onAction,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 5),
-                margin: const EdgeInsets.only(right: 6),
-                decoration: BoxDecoration(
-                  color: colors.fg,
-                ),
-                child: Text(
-                  actionLabel!,
-                  style: TextStyle(
-                    fontFamily: 'JetBrainsMono',
-                    fontSize: 9,
-                    letterSpacing: 9 * 0.18,
-                    color: colors.bg,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-          ],
-          InkWell(
-            onTap: onDismiss,
-            child: Padding(
-              padding: const EdgeInsets.all(6),
-              child: Icon(Icons.close, size: 16, color: colors.fgMuted),
             ),
           ),
         ],
