@@ -43,13 +43,27 @@ class SectionLabel extends StatelessWidget {
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
 
+    // build 17: large=22pt+w700 / medium=13pt / small=10pt
     final double labelSize = switch (size) {
       EyebrowSize.small => 10,
-      EyebrowSize.medium => 12,
-      EyebrowSize.large => 14,
+      EyebrowSize.medium => 13,
+      EyebrowSize.large => 22,
     };
-    // § マーク自体も labelSize に合わせて少し大きく
-    final double markSize = labelSize + 4;
+    final FontWeight labelWeight = switch (size) {
+      EyebrowSize.large => FontWeight.w700,
+      _ => FontWeight.w500,
+    };
+    // tracking は large でやや締める (caps が大きいと 0.2em だと開きすぎる)
+    final double trackingFactor = switch (size) {
+      EyebrowSize.large => 0.12,
+      _ => 0.2,
+    };
+    // § マーク自体も labelSize に合わせて拡縮
+    final double markSize = switch (size) {
+      EyebrowSize.large => 28,
+      EyebrowSize.medium => 17,
+      EyebrowSize.small => 14,
+    };
 
     return Padding(
       padding: padding,
@@ -72,7 +86,8 @@ class SectionLabel extends StatelessWidget {
             text.toUpperCase(),
             style: typo.sectionTitle.copyWith(
               fontSize: labelSize,
-              letterSpacing: labelSize * 0.2,
+              fontWeight: labelWeight,
+              letterSpacing: labelSize * trackingFactor,
             ),
           ),
           const SizedBox(width: AppDimensions.gapMedium),

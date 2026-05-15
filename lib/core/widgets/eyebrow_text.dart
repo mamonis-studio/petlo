@@ -7,8 +7,9 @@
 //
 // build 16: small / medium / large の 3 サイズに展開。
 //   small  = 10pt  既存サイズ。サブ要素 / 補助ラベル。
-//   medium = 12pt  サブセクション §。
-//   large  = 14pt  各トップタブの先頭 § (Editorial-style)。
+//   medium = 13pt  サブセクション §。
+//   large  = 22pt  各トップタブの先頭 § (Editorial title 相当、w700)。
+// build 17: large を 14→22pt に引き上げ「タイトル」として機能させる。
 //
 // モックの `<div class="eyebrow">` 相当。
 //
@@ -47,12 +48,22 @@ class EyebrowText extends StatelessWidget {
     final TextStyle base = AppTypography.of(context).eyebrow;
     final double fontSize = switch (size) {
       EyebrowSize.small => 10,
-      EyebrowSize.medium => 12,
-      EyebrowSize.large => 14,
+      EyebrowSize.medium => 13,
+      EyebrowSize.large => 22,
+    };
+    final FontWeight weight = switch (size) {
+      EyebrowSize.large => FontWeight.w700,
+      _ => FontWeight.w500,
+    };
+    // large 時は tracking をやや締める (大型 caps は 0.2em だと開きすぎる)
+    final double trackingFactor = switch (size) {
+      EyebrowSize.large => 0.12,
+      _ => 0.2,
     };
     final TextStyle style = base.copyWith(
       fontSize: fontSize,
-      letterSpacing: fontSize * 0.2,
+      fontWeight: weight,
+      letterSpacing: fontSize * trackingFactor,
       color: color,
     );
 
