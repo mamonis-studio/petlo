@@ -86,12 +86,29 @@ class AuthService {
         // ネット不通でも起動は続行 (オフライン耐性)
       }
     } else if (_isTokenExpiringSoon()) {
-      // 期限切れ間近 → refresh
+      // 期限切れ間近 → refresh。失敗したら同じ deviceId で再登録。
+      // TestFlight 再インストール後など Keychain に残った orphan token を
+      // 起動時に確実に正常化するための fallback。
+      bool refreshed = false;
       try {
-        await refreshTokens();
+        refreshed = await refreshTokens();
       } catch (e, st) {
         PetloLogger.instance
-            .w('Initial refresh failed', error: e, stackTrace: st);
+            .w('Initial refresh threw', error: e, stackTrace: st);
+      }
+      if (!refreshed) {
+        PetloLogger.instance.i(
+          'refresh failed at startup → anonymous re-register',
+        );
+        try {
+          await _anonymous();
+        } catch (e, st) {
+          PetloLogger.instance.w(
+            'Startup re-register failed',
+            error: e,
+            stackTrace: st,
+          );
+        }
       }
     }
 
@@ -162,6 +179,29 @@ class AuthService {
       _refreshToken = null;
       _accessExpiresAt = 0;
       return false;
+    }
+  }
+
+  /// 開発者用「データリセット」: Keychain を完全クリア → 新しい deviceId で
+  /// anonymous 再登録。サーバ側からは別 user 扱いになる。
+  /// 呼び出し後、上位で drift DB drop + アプリ再起動を行う前提。
+  Future<void> forceReset() async {
+    final FlutterSecureStorage storage = _storage();
+    await storage.delete(key: SecureStorageKeys.apiAuthToken);
+    await storage.delete(key: SecureStorageKeys.apiRefreshToken);
+    await storage.delete(key: SecureStorageKeys.userId);
+    await storage.delete(key: _deviceIdKey);
+    _token = null;
+    _refreshToken = null;
+    _userId = null;
+    _accessExpiresAt = 0;
+    _deviceId = const Uuid().v4();
+    await storage.write(key: _deviceIdKey, value: _deviceId);
+    try {
+      await _anonymous();
+    } catch (e, st) {
+      PetloLogger.instance
+          .w('forceReset re-anonymous failed', error: e, stackTrace: st);
     }
   }
 

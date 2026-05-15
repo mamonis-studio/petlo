@@ -17,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_label.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -49,24 +50,13 @@ class AiTabScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            // build 16: § ヘッダーを large に変更し、白文字の大型ヒーロー
+            // (ai_tab_hero) は削除。説明テキストへ直接続けて落ち着いた構成にする。
             SectionLabel(
               l10n.tab_eyebrow_ai,
+              size: EyebrowSize.large,
               padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
             ),
-
-            // ===== ヒーロー(eyebrow は § で代用、中段ラベルは削除) =====
-            Text(
-              l10n.ai_tab_hero,
-              style: TextStyle(
-                fontFamily: 'Fraunces',
-                fontStyle: FontStyle.italic,
-                fontSize: 44,
-                letterSpacing: -44 * 0.04,
-                height: 1.0,
-                color: colors.fg,
-              ),
-            ),
-            const SizedBox(height: 24),
 
             // ===== 説明 =====
             Text(

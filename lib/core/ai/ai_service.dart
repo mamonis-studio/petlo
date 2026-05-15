@@ -80,9 +80,11 @@ class AiService {
         throw const AiUnknownException('Invalid response format');
       }
 
-      final String? respMsg = data['message'] as String?;
-      final String? respId = data['message_id'] as String?;
-      final int remaining = (data['remaining_count'] as num?)?.toInt() ?? 0;
+      // backend (petlo-api /chat) のレスポンス形式 (camelCase):
+      //   { response: string, sessionId: string, ratingId: string, flagged: bool }
+      // remaining_count は 200 応答には含まれない (429 のみ別経路で扱う)。
+      final String? respMsg = data['response'] as String?;
+      final String? respId = data['ratingId'] as String?;
 
       if (respMsg == null || respMsg.isEmpty || respId == null) {
         throw const AiUnknownException('Empty response');
@@ -91,7 +93,7 @@ class AiService {
       return AiChatResult(
         message: respMsg,
         messageId: respId,
-        remainingCount: remaining,
+        remainingCount: 0,
       );
     } on DioException catch (e) {
       throw _mapDioError(e);

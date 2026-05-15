@@ -20,6 +20,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/outlined_action_button.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_label.dart';
@@ -79,20 +80,27 @@ class HomeTabScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // タブ識別 eyebrow (§ ホーム)
+            // タブ識別 eyebrow (§ ホーム) — top タブは large
             SectionLabel(
               l10n.tab_eyebrow_home,
+              size: EyebrowSize.large,
               padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
             ),
             if (hasPet && canEdit) ...<Widget>[
-              SectionLabel(l10n.home_section_quick_log),
+              SectionLabel(
+                l10n.home_section_quick_log,
+                size: EyebrowSize.medium,
+              ),
               const SizedBox(height: 12),
               const _QuickLogGrid(),
               const SizedBox(height: 32),
             ],
 
             if (hasPet) ...<Widget>[
-              SectionLabel(l10n.home_section_memories),
+              SectionLabel(
+                l10n.home_section_memories,
+                size: EyebrowSize.medium,
+              ),
               const SizedBox(height: 12),
               Row(
                 children: <Widget>[
@@ -116,7 +124,10 @@ class HomeTabScreen extends ConsumerWidget {
             ],
 
             if (hasPet) ...<Widget>[
-              SectionLabel(l10n.home_section_recent_activity),
+              SectionLabel(
+                l10n.home_section_recent_activity,
+                size: EyebrowSize.medium,
+              ),
               const SizedBox(height: 12),
               const _RecentActivity(),
               const SizedBox(height: 32),

@@ -135,6 +135,7 @@ class LifeTabScreen extends ConsumerWidget {
           children: <Widget>[
             SectionLabel(
               l10n.tab_eyebrow_life,
+              size: EyebrowSize.large,
               padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
             ),
 

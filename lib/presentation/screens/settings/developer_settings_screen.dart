@@ -13,9 +13,14 @@
 //
 // ============================================================================
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
+import '../../../core/auth/auth_service.dart';
 import '../../../core/backup/backup_settings.dart';
 import '../../../core/billing/pro_status.dart';
 import '../../../core/preferences/user_preferences.dart';
@@ -25,6 +30,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/section_label.dart';
 import '../../providers/backup_settings_provider.dart';
+import '../../providers/database_provider.dart';
 import '../../providers/onboarding_completed_provider.dart';
 import '../../providers/pro_status_provider.dart';
 
@@ -114,6 +120,16 @@ class DeveloperSettingsScreen extends ConsumerWidget {
                 isDestructive: true,
               ),
 
+              _ActionRow(
+                title: 'データリセット (全消去)',
+                note: 'Keychain + ローカル DB を全消去し、新規ユーザーとして再登録します。'
+                    '\nアカウント認証が壊れたときの最終手段。実行後はアプリを再起動してください。',
+                onTap: () => _onFactoryReset(context, ref),
+                colors: colors,
+                typo: typo,
+                isDestructive: true,
+              ),
+
               const SizedBox(height: 24),
               _ForceProToggle(colors: colors, typo: typo),
             ],
@@ -184,6 +200,66 @@ class DeveloperSettingsScreen extends ConsumerWidget {
       SnackBar(
         content: Text(AppLocalizations.of(context).developer_snackbar_pro_reset),
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _onFactoryReset(BuildContext context, WidgetRef ref) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text('データリセット'),
+        content: const Text(
+          '全データを消去し、新規ユーザーとして再登録します。\n\n'
+          '・ペット、記録、写真、AI 会話\n'
+          '・ログイン情報 (Keychain)\n'
+          '\nこの操作は取り消せません。実行後はアプリを再起動してください。',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('リセット'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    // drift DB をクローズ + sqlite ファイル削除
+    try {
+      await ref.read(appDatabaseProvider).close();
+    } catch (_) {}
+    try {
+      final Directory dir = await getApplicationDocumentsDirectory();
+      final File dbFile = File(p.join(dir.path, 'petlo.sqlite'));
+      if (dbFile.existsSync()) {
+        await dbFile.delete();
+      }
+    } catch (_) {}
+
+    // Keychain クリア + 新しい deviceId で anonymous 再登録
+    await AuthService.instance.forceReset();
+
+    if (!context.mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text('リセット完了'),
+        content: const Text(
+          'データを全消去しました。\n手動でアプリを終了して再起動してください。',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }

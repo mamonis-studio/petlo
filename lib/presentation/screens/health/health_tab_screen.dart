@@ -72,6 +72,7 @@ class HealthTabScreen extends ConsumerWidget {
           children: <Widget>[
             SectionLabel(
               l10n.tab_eyebrow_health,
+              size: EyebrowSize.large,
               padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
             ),
             if (!hasPet)

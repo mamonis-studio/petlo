@@ -34,17 +34,10 @@ class OnboardingWelcomePage extends StatelessWidget {
               // ヒーロー: petlo. (英字維持)
               Text('petlo.', style: typo.heroName),
               const SizedBox(height: 24),
-              Text(
-                '${l10n.onboarding_welcome_hero_line1}\n${l10n.onboarding_welcome_hero_line2}',
-                style: TextStyle(
-                  fontFamily: 'Fraunces',
-                  fontStyle: FontStyle.italic,
-                  fontSize: 22,
-                  letterSpacing: -22 * 0.03,
-                  height: 1.3,
-                  color: colors.fg,
-                ),
-              ),
+              // 各行を FittedBox(scaleDown) で包み、狭幅端末でも 1 行に収める
+              // (line1/line2 はロケールごとに l10n から取得、行数を変えない)
+              _HeroLine(text: l10n.onboarding_welcome_hero_line1, colors: colors),
+              _HeroLine(text: l10n.onboarding_welcome_hero_line2, colors: colors),
               const SizedBox(height: 16),
               Text(
                 l10n.onboarding_welcome_body,
@@ -61,6 +54,36 @@ class OnboardingWelcomePage extends StatelessWidget {
             colors: colors,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HeroLine extends StatelessWidget {
+  const _HeroLine({required this.text, required this.colors});
+
+  final String text;
+  final AppColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: FittedBox(
+        alignment: Alignment.centerLeft,
+        fit: BoxFit.scaleDown,
+        child: Text(
+          text,
+          maxLines: 1,
+          style: TextStyle(
+            fontFamily: 'Fraunces',
+            fontStyle: FontStyle.italic,
+            fontSize: 22,
+            letterSpacing: -22 * 0.03,
+            height: 1.3,
+            color: colors.fg,
+          ),
+        ),
       ),
     );
   }

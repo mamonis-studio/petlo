@@ -90,6 +90,7 @@ class _PlansTabScreenState extends ConsumerState<PlansTabScreen> {
           children: <Widget>[
             SectionLabel(
               l10n.tab_eyebrow_schedule,
+              size: EyebrowSize.large,
               padding: const EdgeInsets.fromLTRB(0, 16, 0, 16),
             ),
             // 月/リスト切替トグル(右寄せ単独配置)
@@ -697,19 +698,28 @@ class _ScheduleListViewState extends ConsumerState<_ScheduleListView> {
           )
         else ...<Widget>[
           if (todays.isNotEmpty) ...<Widget>[
-            SectionLabel(l10n.schedule_list_section_today),
+            SectionLabel(
+              l10n.schedule_list_section_today,
+              size: EyebrowSize.medium,
+            ),
             const SizedBox(height: 8),
             for (final ScheduleEntity s in todays) _ScheduleListRow(s: s),
             const SizedBox(height: 24),
           ],
           if (upcoming.isNotEmpty) ...<Widget>[
-            SectionLabel(l10n.schedule_list_section_upcoming),
+            SectionLabel(
+              l10n.schedule_list_section_upcoming,
+              size: EyebrowSize.medium,
+            ),
             const SizedBox(height: 8),
             for (final ScheduleEntity s in upcoming) _ScheduleListRow(s: s),
             const SizedBox(height: 24),
           ],
           if (past.isNotEmpty) ...<Widget>[
-            SectionLabel(l10n.schedule_list_section_past),
+            SectionLabel(
+              l10n.schedule_list_section_past,
+              size: EyebrowSize.medium,
+            ),
             const SizedBox(height: 8),
             for (final ScheduleEntity s in past) _ScheduleListRow(s: s),
           ],
