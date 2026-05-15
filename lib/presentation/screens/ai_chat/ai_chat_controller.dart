@@ -17,10 +17,13 @@
 //
 // ============================================================================
 
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/ai/ai_image_preprocessor.dart';
 import '../../../core/ai/ai_pet_context.dart';
 import '../../../core/ai/ai_service.dart';
 import '../../../core/ai/ai_service_exceptions.dart';
@@ -132,7 +135,8 @@ class AiChatController extends Notifier<AiChatState> {
   }
 
   /// メッセージ送信メイン
-  Future<bool> sendMessage(String input) async {
+  /// build 15: optional [image] を受け取り、リサイズ + Base64 + ローカル保存して送信。
+  Future<bool> sendMessage(String input, {File? image}) async {
     if (state.isSending) return false;
 
     // ===== 1. オフラインチェック =====
@@ -238,8 +242,24 @@ class AiChatController extends Notifier<AiChatState> {
       await repo.touchSession(sessionId);
     }
 
-    // ===== 6. 楽観的にユーザーメッセージを DB に書き込み =====
+    // ===== 5.5 添付画像の前処理 (build 15) =====
     final String userMessageRemoteId = _uuid.v4();
+    String? imageBase64;
+    String? imageMediaType;
+    String? imagePath;
+    if (image != null) {
+      final processed = await AiImagePreprocessor.processForChat(
+        image,
+        userMessageRemoteId,
+      );
+      if (processed != null) {
+        imageBase64 = processed.base64;
+        imageMediaType = processed.mediaType;
+        imagePath = processed.localPath;
+      }
+    }
+
+    // ===== 6. 楽観的にユーザーメッセージを DB に書き込み =====
     try {
       await repo.addMessage(
         sessionId: sessionId,
@@ -248,6 +268,7 @@ class AiChatController extends Notifier<AiChatState> {
         content: sanitized,
         remoteId: userMessageRemoteId,
         syncStatus: SyncStatus.pending,
+        imagePath: imagePath,
       );
     } catch (e, st) {
       PetloLogger.instance
@@ -262,6 +283,8 @@ class AiChatController extends Notifier<AiChatState> {
         message: sanitized,
         petContext: petContext,
         messageId: userMessageRemoteId,
+        imageBase64: imageBase64,
+        imageMediaType: imageMediaType,
       );
 
       // ===== 8. assistant メッセージを DB に保存 =====

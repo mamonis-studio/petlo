@@ -172,6 +172,10 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await m.createTable(schedules);
           }
+          // build 15: ai_chat_messages.image_path カラム追加
+          if (from < 3) {
+            await m.addColumn(aiChatMessages, aiChatMessages.imagePath);
+          }
           await AppDatabaseMigrations.onUpgrade(m, from, to);
         },
         beforeOpen: (OpeningDetails details) async {

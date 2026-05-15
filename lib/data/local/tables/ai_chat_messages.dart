@@ -50,5 +50,9 @@ class AiChatMessages extends Table {
       .map(const AppEnumConverter(SyncStatus.values))
       .withDefault(const Constant('synced'))();
 
+  /// 添付画像の端末内相対パス (build 15)
+  /// 例: chat_images/<remote_id>.jpg
+  TextColumn get imagePath => text().nullable()();
+
   IntColumn get createdAt => integer()();
 }

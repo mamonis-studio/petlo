@@ -458,6 +458,8 @@
   "ai_chat_system_no_pet": "请先选择一只宠物再开始咨询。",
   "ai_chat_system_pro_required": "AI 咨询是 Pro 套餐功能。",
   "ai_chat_system_quota": "本月用量已达上限。Pro 套餐无限制。",
+  "ai_chat_image_camera": "拍照",
+  "ai_chat_image_gallery": "从相册选择",
 
   "medication_reminders_app_bar": "用药提醒",
   "medication_reminders_eyebrow": "提醒",

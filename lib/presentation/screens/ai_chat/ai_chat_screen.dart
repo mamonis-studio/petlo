@@ -15,10 +15,14 @@
 //
 // ============================================================================
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/ai/prompt_validator.dart';
+import '../../../core/utils/logger.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/eyebrow_text.dart';
@@ -94,15 +98,43 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
+  File? _attachedImage;
+
   Future<void> _onSend() async {
     final String text = _inputC.text;
+    // 画像のみ送信は不可。空テキスト + 画像なしも不可。
     if (text.trim().isEmpty) return;
-    final bool ok =
-        await ref.read(aiChatControllerProvider.notifier).sendMessage(text);
+    final File? toSend = _attachedImage;
+    final bool ok = await ref
+        .read(aiChatControllerProvider.notifier)
+        .sendMessage(text, image: toSend);
     if (ok) {
       _inputC.clear();
-      // メッセージ反映後にスクロール (1フレーム待つ)
+      setState(() => _attachedImage = null);
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    }
+  }
+
+  Future<void> _onPickImage() async {
+    final ImageSource? source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _ImagePickerSheet(),
+    );
+    if (source == null || !mounted) return;
+    try {
+      final XFile? picked = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 4096,
+        maxHeight: 4096,
+        imageQuality: 92,
+      );
+      if (picked != null) {
+        setState(() => _attachedImage = File(picked.path));
+      }
+    } catch (e, st) {
+      PetloLogger.instance
+          .w('Image picker (ai chat) failed', error: e, stackTrace: st);
     }
   }
 
@@ -239,6 +271,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               isSending: chatState.isSending,
               canUseAi: canUseAi,
               colors: colors,
+              attachedImage: _attachedImage,
+              onPickImage: _onPickImage,
+              onRemoveImage: () => setState(() => _attachedImage = null),
             ),
           ],
         ),
@@ -311,6 +346,9 @@ class _InputArea extends StatefulWidget {
     required this.isSending,
     required this.canUseAi,
     required this.colors,
+    required this.attachedImage,
+    required this.onPickImage,
+    required this.onRemoveImage,
   });
 
   final TextEditingController controller;
@@ -318,6 +356,9 @@ class _InputArea extends StatefulWidget {
   final bool isSending;
   final bool canUseAi;
   final AppColors colors;
+  final File? attachedImage;
+  final VoidCallback onPickImage;
+  final VoidCallback onRemoveImage;
 
   @override
   State<_InputArea> createState() => _InputAreaState();
@@ -372,9 +413,28 @@ class _InputAreaState extends State<_InputArea> {
               ),
             ),
 
+          // 添付画像プレビュー(添付時のみ表示)
+          if (widget.attachedImage != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _AttachedImageThumb(
+                file: widget.attachedImage!,
+                onRemove: widget.onRemoveImage,
+                colors: colors,
+              ),
+            ),
+
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
+              // 画像添付ボタン
+              _AttachButton(
+                enabled:
+                    widget.canUseAi && !widget.isSending,
+                onTap: widget.onPickImage,
+                colors: colors,
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: TextField(
                   controller: widget.controller,
@@ -533,4 +593,159 @@ class _SendArrowPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SendArrowPainter old) => old.color != color;
+}
+
+// ============================================================================
+// build 15: AI チャット画像添付関連
+// ============================================================================
+
+class _AttachButton extends StatelessWidget {
+  const _AttachButton({
+    required this.enabled,
+    required this.onTap,
+    required this.colors,
+  });
+
+  final bool enabled;
+  final VoidCallback onTap;
+  final AppColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Attach photo',
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        child: Container(
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: enabled ? colors.fg : colors.line,
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            Icons.camera_alt_outlined,
+            size: 20,
+            color: enabled ? colors.fg : colors.fgFaint,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AttachedImageThumb extends StatelessWidget {
+  const _AttachedImageThumb({
+    required this.file,
+    required this.onRemove,
+    required this.colors,
+  });
+
+  final File file;
+  final VoidCallback onRemove;
+  final AppColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Stack(
+          children: <Widget>[
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                border: Border.all(color: colors.line),
+              ),
+              child: Image.file(file, fit: BoxFit.cover),
+            ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: InkWell(
+                onTap: onRemove,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  alignment: Alignment.center,
+                  color: colors.fg,
+                  child: Icon(Icons.close, size: 14, color: colors.bg),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ImagePickerSheet extends StatelessWidget {
+  const _ImagePickerSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final AppColors colors = AppColors.of(context);
+    final AppTypography typo = AppTypography.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    return Container(
+      color: colors.bg,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const SizedBox(height: 16),
+            _Sheet(
+              label: l10n.ai_chat_image_camera,
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            Divider(height: 1, color: colors.line),
+            _Sheet(
+              label: l10n.ai_chat_image_gallery,
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            const SizedBox(height: 12),
+            Container(height: 8, color: colors.bgSoft),
+            _Sheet(
+              label: l10n.common_cancel,
+              labelStyle:
+                  typo.bodyLarge.copyWith(color: colors.fgMuted),
+              onTap: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Sheet extends StatelessWidget {
+  const _Sheet({
+    required this.label,
+    required this.onTap,
+    this.labelStyle,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final TextStyle? labelStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppTypography typo = AppTypography.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 28),
+        alignment: Alignment.center,
+        child: Text(label, style: labelStyle ?? typo.bodyLarge),
+      ),
+    );
+  }
 }

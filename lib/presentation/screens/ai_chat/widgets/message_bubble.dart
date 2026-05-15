@@ -11,11 +11,16 @@
 //
 // ============================================================================
 
+import 'dart:io' as io;
+
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../data/local/app_database.dart';
 import '../../../../data/local/database_enums.dart';
+import '../../gallery/photo_fullscreen_viewer.dart';
 
 class MessageBubble extends StatelessWidget {
   const MessageBubble({
@@ -44,11 +49,29 @@ class MessageBubble extends StatelessWidget {
     final String time =
         '${t.hour.toString().padLeft(2, "0")}:${t.minute.toString().padLeft(2, "0")}';
 
+    final String? imgPath = message.imagePath;
+
     return Padding(
       padding: const EdgeInsets.only(top: 16, bottom: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
+          if (imgPath != null && imgPath.isNotEmpty) ...<Widget>[
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.6,
+                maxHeight: 240,
+              ),
+              child: InkWell(
+                onTap: () => PhotoFullscreenViewer.push(
+                  context,
+                  relativePaths: <String>[imgPath],
+                ),
+                child: _ImageFromDocs(relativePath: imgPath),
+              ),
+            ),
+            const SizedBox(height: 6),
+          ],
           ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.78,
@@ -246,6 +269,51 @@ class _Pill extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ============================================================================
+// build 15: チャット添付画像をドキュメント基準の相対パスから読み出す
+// ============================================================================
+class _ImageFromDocs extends StatefulWidget {
+  const _ImageFromDocs({required this.relativePath});
+
+  final String relativePath;
+
+  @override
+  State<_ImageFromDocs> createState() => _ImageFromDocsState();
+}
+
+class _ImageFromDocsState extends State<_ImageFromDocs> {
+  late Future<io.File?> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _resolve(widget.relativePath);
+  }
+
+  Future<io.File?> _resolve(String rel) async {
+    try {
+      final io.Directory docs = await getApplicationDocumentsDirectory();
+      return io.File(p.join(docs.path, rel));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<io.File?>(
+      future: _future,
+      builder: (_, AsyncSnapshot<io.File?> snap) {
+        final io.File? f = snap.data;
+        if (f == null) {
+          return const SizedBox(width: 80, height: 80);
+        }
+        return Image.file(f, fit: BoxFit.cover);
+      },
     );
   }
 }

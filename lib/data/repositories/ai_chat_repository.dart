@@ -130,6 +130,7 @@ class AiChatRepository extends BaseRepository {
     required String content,
     String? remoteId,
     SyncStatus syncStatus = SyncStatus.synced,
+    String? imagePath,
   }) async {
     final int now = DateTime.now().millisecondsSinceEpoch;
     return db.into(db.aiChatMessages).insert(
@@ -141,6 +142,7 @@ class AiChatRepository extends BaseRepository {
             content: content,
             sentAt: now,
             syncStatus: Value(syncStatus),
+            imagePath: Value(imagePath),
             createdAt: now,
           ),
         );

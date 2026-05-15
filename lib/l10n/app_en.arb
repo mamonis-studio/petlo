@@ -458,6 +458,8 @@
   "ai_chat_system_no_pet": "Select a pet before starting a consultation.",
   "ai_chat_system_pro_required": "AI consult is a Pro plan feature.",
   "ai_chat_system_quota": "Monthly limit reached. Pro plan removes the limit.",
+  "ai_chat_image_camera": "Take a photo",
+  "ai_chat_image_gallery": "Choose from library",
 
   "medication_reminders_app_bar": "Medication reminders",
   "medication_reminders_eyebrow": "Reminders",

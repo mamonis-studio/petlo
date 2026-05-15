@@ -461,6 +461,8 @@
   "ai_chat_system_no_pet": "ペットを選んでから相談を始めてください。",
   "ai_chat_system_pro_required": "AI 相談は Pro プランの機能です。",
   "ai_chat_system_quota": "今月の利用上限に達しました。Pro プランで上限なくお使いいただけます。",
+  "ai_chat_image_camera": "カメラで撮影",
+  "ai_chat_image_gallery": "ライブラリから選択",
 
   "medication_reminders_app_bar": "投薬リマインダー",
   "medication_reminders_eyebrow": "投薬",

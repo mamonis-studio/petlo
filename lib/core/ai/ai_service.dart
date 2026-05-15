@@ -47,6 +47,9 @@ class AiService {
     required String message,
     required AiPetContextDto petContext,
     String? messageId,
+    // build 15: 添付画像 (Base64 文字列、JPEG 想定)
+    String? imageBase64,
+    String? imageMediaType,
   }) async {
     // 入力バリデーション(2重防御)
     final PromptValidationResult result = PromptValidator.validate(message);
@@ -67,6 +70,8 @@ class AiService {
           'pet_context': petContext.toJson(),
           'message': wrapped,
           if (messageId != null) 'message_id': messageId,
+          if (imageBase64 != null) 'image_base64': imageBase64,
+          if (imageMediaType != null) 'image_media_type': imageMediaType,
         },
       );
 

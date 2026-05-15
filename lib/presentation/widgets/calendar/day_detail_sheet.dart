@@ -9,6 +9,7 @@
 //
 // ============================================================================
 
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,6 +18,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../providers/database_provider.dart';
 import '../../providers/diaries_providers.dart';
 import '../../providers/meals_providers.dart';
 import '../../providers/pees_providers.dart';
@@ -77,8 +79,17 @@ class DayDetailSheet extends ConsumerWidget {
       orElse: () => <ScheduleEntity>[],
     );
 
-    final List<_DayItem> items = _collectItemsForDay(ref, day);
-    items.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final String? currentPetId = ref.watch(currentPetIdProvider);
+    final bool isAllPets = currentPetId == kAllPetsId;
+
+    // All Pets モード時は非同期取得、特定ペット時は既存の sync 取得
+    final AsyncValue<List<_DayItem>> itemsAsync = isAllPets
+        ? ref.watch(_allPetsDayItemsProvider(day))
+        : AsyncValue<List<_DayItem>>.data(() {
+            final List<_DayItem> l = _collectItemsForDay(ref, day);
+            l.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+            return l;
+          }());
 
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
@@ -204,29 +215,48 @@ class DayDetailSheet extends ConsumerWidget {
                 ),
               ),
 
-              // リスト
+              // リスト (build 15: All Pets は非同期)
               Expanded(
-                child: items.isEmpty
-                    ? Center(
+                child: itemsAsync.when(
+                  loading: () => const Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 1.5),
+                    ),
+                  ),
+                  error: (_, __) => Center(
+                    child: Text(
+                      l10n.common_load_failed,
+                      style:
+                          typo.bodyMedium.copyWith(color: colors.fgMuted),
+                    ),
+                  ),
+                  data: (List<_DayItem> items) {
+                    if (items.isEmpty) {
+                      return Center(
                         child: Text(
                           l10n.record_list_empty,
-                          style:
-                              typo.bodyMedium.copyWith(color: colors.fgMuted),
+                          style: typo.bodyMedium
+                              .copyWith(color: colors.fgMuted),
                         ),
-                      )
-                    : ListView.separated(
-                        controller: scroll,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 8),
-                        itemCount: items.length,
-                        separatorBuilder: (_, __) => Divider(
-                          height: 1,
-                          color: colors.line,
-                        ),
-                        itemBuilder: (BuildContext c, int i) {
-                          return _DayItemRow(item: items[i]);
-                        },
+                      );
+                    }
+                    return ListView.separated(
+                      controller: scroll,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 8),
+                      itemCount: items.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        color: colors.line,
                       ),
+                      itemBuilder: (BuildContext c, int i) {
+                        return _DayItemRow(item: items[i]);
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -273,7 +303,9 @@ List<_DayItem> _collectItemsForDay(WidgetRef ref, DateTime day) {
       .millisecondsSinceEpoch;
 
   if (petIdStr == kAllPetsId) {
-    return _collectAllPetsItemsForDay(ref, from, to);
+    // All Pets は非同期取得 (_allPetsDayItemsProvider) を使うため、
+    // この同期パスでは空を返す。
+    return <_DayItem>[];
   }
 
   final int? petId = int.tryParse(petIdStr);
@@ -336,19 +368,125 @@ List<_DayItem> _collectItemsForDay(WidgetRef ref, DateTime day) {
   return items;
 }
 
-/// All Pets モード: groupId スコープで当日の全レコードを集約。
-/// providers が pet-scoped のため、月別 provider と同様に db を直接照会する。
-List<_DayItem> _collectAllPetsItemsForDay(
-    WidgetRef ref, int fromMs, int toMs) {
-  // ストリームの最新値をスナップショットで使う(StreamProviderの value で代用は難しいため
-  // ここは月別カレンダー provider が既に取得しているデータを reuse できないが、
-  // 同期的な API として countOnly のため簡易的に空配列を返す代替案も考えたが、
-  // ユーザー体験のため db を読みに行く実装にする)。
-  // ただし build 内で同期的に List を返す必要があるため、ここでは
-  // calendar_provider 経由でその月の summary がもう取られていることを利用し、
-  // 個別の row 一覧表示は後続 build で対応とし、現状は空を返してドット表示のみ実装。
-  return <_DayItem>[];
-}
+// ============================================================================
+// build 15: All Pets モード時の DayItem を groupId スコープで非同期取得する
+//
+// 月別カレンダーは既存の StreamProvider で記録ドットを描画しているが、
+// 日付タップ時の詳細モーダルは「その日に絞り込んだリスト」が必要で、
+// pet-scoped な home provider 群は使えない。1日分なら fetch コスト
+// は小さいので、毎回 DB に問い合わせる FutureProvider にする。
+// ============================================================================
+final FutureProviderFamily<List<_DayItem>, DateTime>
+    _allPetsDayItemsProvider =
+    FutureProviderFamily<List<_DayItem>, DateTime>(
+  (Ref ref, DateTime day) async {
+    final String groupId = ref.watch(currentGroupIdProvider);
+    final AppDatabase db = ref.watch(appDatabaseProvider);
+
+    final int from = DateTime(day.year, day.month, day.day)
+        .toUtc()
+        .millisecondsSinceEpoch;
+    final int to = DateTime(day.year, day.month, day.day + 1)
+        .toUtc()
+        .millisecondsSinceEpoch;
+
+    final List<_DayItem> items = <_DayItem>[];
+
+    final List<MealEntity> meals = await (db.select(db.meals)
+          ..where((Meals t) =>
+              t.groupId.equals(groupId) &
+              t.deletedAt.isNull() &
+              t.eatenAt.isBetweenValues(from, to)))
+        .get();
+    for (final MealEntity e in meals) {
+      items.add(_DayItem.meal(e));
+    }
+
+    final List<PoopEntity> poops = await (db.select(db.poops)
+          ..where((Poops t) =>
+              t.groupId.equals(groupId) &
+              t.deletedAt.isNull() &
+              t.pooedAt.isBetweenValues(from, to)))
+        .get();
+    for (final PoopEntity e in poops) {
+      items.add(_DayItem.poop(e));
+    }
+
+    final List<PeeEntity> pees = await (db.select(db.pees)
+          ..where((Pees t) =>
+              t.groupId.equals(groupId) &
+              t.deletedAt.isNull() &
+              t.peedAt.isBetweenValues(from, to)))
+        .get();
+    for (final PeeEntity e in pees) {
+      items.add(_DayItem.pee(e));
+    }
+
+    final List<VomitEntity> vomits = await (db.select(db.vomits)
+          ..where((Vomits t) =>
+              t.groupId.equals(groupId) &
+              t.deletedAt.isNull() &
+              t.vomitedAt.isBetweenValues(from, to)))
+        .get();
+    for (final VomitEntity e in vomits) {
+      items.add(_DayItem.vomit(e));
+    }
+
+    final List<WeightEntity> weights = await (db.select(db.weights)
+          ..where((Weights t) =>
+              t.groupId.equals(groupId) &
+              t.deletedAt.isNull() &
+              t.measuredAt.isBetweenValues(from, to)))
+        .get();
+    for (final WeightEntity e in weights) {
+      items.add(_DayItem.weight(e));
+    }
+
+    final List<TemperatureEntity> temps = await (db.select(db.temperatures)
+          ..where((Temperatures t) =>
+              t.groupId.equals(groupId) &
+              t.deletedAt.isNull() &
+              t.measuredAt.isBetweenValues(from, to)))
+        .get();
+    for (final TemperatureEntity e in temps) {
+      items.add(_DayItem.temperature(e));
+    }
+
+    final List<VisitEntity> visits = await (db.select(db.visits)
+          ..where((Visits t) =>
+              t.groupId.equals(groupId) &
+              t.deletedAt.isNull() &
+              t.visitedAt.isBetweenValues(from, to)))
+        .get();
+    for (final VisitEntity e in visits) {
+      items.add(_DayItem.visit(e));
+    }
+
+    final List<VaccinationEntity> vaccinations = await (db
+            .select(db.vaccinations)
+          ..where((Vaccinations t) =>
+              t.groupId.equals(groupId) &
+              t.deletedAt.isNull() &
+              t.administeredAt.isBetweenValues(from, to)))
+        .get();
+    for (final VaccinationEntity e in vaccinations) {
+      items.add(_DayItem.vaccination(e));
+    }
+
+    final List<DiaryEntity> diaries = await (db.select(db.diaries)
+          ..where((Diaries t) =>
+              t.groupId.equals(groupId) &
+              t.deletedAt.isNull() &
+              t.eventAt.isBetweenValues(from, to)))
+        .get();
+    for (final DiaryEntity e in diaries) {
+      items.add(_DayItem.diary(e));
+    }
+
+    items.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    return items;
+  },
+);
 
 // ============================================================================
 // _DayItem sealed
@@ -370,6 +508,7 @@ sealed class _DayItem {
 
   String kind(AppLocalizations l10n);
   String summary(AppLocalizations l10n);
+  int get petId;
   void onTap(BuildContext context);
 }
 
@@ -385,6 +524,8 @@ class _MealItem extends _DayItem {
   }
 
   @override
+  int get petId => entity.petId;
+  @override
   void onTap(BuildContext c) =>
       MealRecordScreen.push(c, editingMealId: entity.id);
 }
@@ -398,6 +539,8 @@ class _PoopItem extends _DayItem {
   String summary(AppLocalizations l10n) =>
       '${_dayPoopFormLabel(l10n, entity.form)} · ${_dayPoopColorLabel(l10n, entity.color)}';
   @override
+  int get petId => entity.petId;
+  @override
   void onTap(BuildContext c) =>
       PoopRecordScreen.push(c, editingPoopId: entity.id);
 }
@@ -410,6 +553,8 @@ class _PeeItem extends _DayItem {
   @override
   String summary(AppLocalizations l10n) =>
       '${_dayPeeColorLabel(l10n, entity.color)} · ${entity.count}×';
+  @override
+  int get petId => entity.petId;
   @override
   void onTap(BuildContext c) =>
       PeeRecordScreen.push(c, editingPeeId: entity.id);
@@ -429,6 +574,8 @@ class _VomitItem extends _DayItem {
   }
 
   @override
+  int get petId => entity.petId;
+  @override
   void onTap(BuildContext c) =>
       VomitRecordScreen.push(c, editingVomitId: entity.id);
 }
@@ -441,6 +588,8 @@ class _WeightItem extends _DayItem {
   @override
   String summary(AppLocalizations l10n) =>
       '${(entity.weightG / 1000).toStringAsFixed(2)} kg';
+  @override
+  int get petId => entity.petId;
   @override
   void onTap(BuildContext c) =>
       WeightRecordScreen.push(c, editingWeightId: entity.id);
@@ -455,6 +604,8 @@ class _TempItem extends _DayItem {
   String summary(AppLocalizations l10n) =>
       '${(entity.tempCelsiusX10 / 10).toStringAsFixed(1)}°C';
   @override
+  int get petId => entity.petId;
+  @override
   void onTap(BuildContext c) =>
       TemperatureRecordScreen.push(c, editingTempId: entity.id);
 }
@@ -467,6 +618,8 @@ class _VisitItem extends _DayItem {
   @override
   String summary(AppLocalizations l10n) => entity.reason;
   @override
+  int get petId => entity.petId;
+  @override
   void onTap(BuildContext c) =>
       VisitRecordScreen.push(c, editingVisitId: entity.id);
 }
@@ -478,6 +631,8 @@ class _VaccinationItem extends _DayItem {
   String kind(AppLocalizations l10n) => l10n.record_kind_vaccination;
   @override
   String summary(AppLocalizations l10n) => entity.kind;
+  @override
+  int get petId => entity.petId;
   @override
   void onTap(BuildContext c) =>
       VaccinationRecordScreen.push(c, editingVaccinationId: entity.id);
@@ -498,6 +653,8 @@ class _DiaryItem extends _DayItem {
         : firstLine;
   }
 
+  @override
+  int get petId => entity.petId;
   @override
   void onTap(BuildContext c) =>
       DiaryRecordScreen.push(c, editingDiaryId: entity.id);
@@ -576,12 +733,12 @@ String _dayVomitColorLabel(AppLocalizations l10n, VomitColor c) {
 // ============================================================================
 // 行表示
 // ============================================================================
-class _DayItemRow extends StatelessWidget {
+class _DayItemRow extends ConsumerWidget {
   const _DayItemRow({required this.item});
   final _DayItem item;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
     final AppLocalizations l10n = AppLocalizations.of(context);
@@ -589,6 +746,26 @@ class _DayItemRow extends StatelessWidget {
     final DateTime t = DateTime.fromMillisecondsSinceEpoch(item.timestamp);
     final String time =
         '${t.hour.toString().padLeft(2, "0")}:${t.minute.toString().padLeft(2, "0")}';
+
+    // All Pets モード時はペット名 prefix
+    final String? petIdStr = ref.watch(currentPetIdProvider);
+    final bool isAllPets = petIdStr == kAllPetsId;
+    String? petPrefix;
+    if (isAllPets) {
+      final List<PetEntity>? pets =
+          ref.watch(currentGroupPetsProvider).valueOrNull;
+      if (pets != null) {
+        for (final PetEntity p in pets) {
+          if (p.id == item.petId) {
+            petPrefix = p.name;
+            break;
+          }
+        }
+      }
+    }
+    final String summary = petPrefix != null
+        ? '$petPrefix: ${item.summary(l10n)}'
+        : item.summary(l10n);
 
     return InkWell(
       onTap: () {
@@ -620,7 +797,7 @@ class _DayItemRow extends StatelessWidget {
             ),
             Expanded(
               child: Text(
-                item.summary(l10n),
+                summary,
                 style: typo.bodyMedium,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
