@@ -29,6 +29,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/widgets/section_label.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../providers/display_name_provider.dart';
 import '../../providers/pro_status_provider.dart';
 import '../../widgets/backup/backup_banner.dart';
 import '../backup/backup_settings_screen.dart';
@@ -36,6 +37,7 @@ import '../groups/groups_list_screen.dart';
 import '../medication_reminder/medication_reminders_list_screen.dart';
 import '../paywall/paywall_screen.dart';
 import 'developer_settings_screen.dart';
+import 'display_name_screen.dart';
 import 'theme_settings_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -105,6 +107,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _Row(
                 title: l10n.other_account_guest_title,
                 subtitle: l10n.other_account_guest_subtitle,
+              ),
+              // build 18: 家族共有メンバー表示名
+              _Row(
+                title: '表示名',
+                subtitle: ref.watch(displayNameProvider) ?? '未設定',
+                onTap: () => DisplayNameScreen.push(context),
               ),
               _Row(
                 title: l10n.more_item_backup,

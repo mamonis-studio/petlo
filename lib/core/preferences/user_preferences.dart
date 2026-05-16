@@ -72,6 +72,7 @@ class UserPreferences {
   static const String _kBackupRemindLaterAt = 'pref.backup.remind_later_at';
   static const String _kOnboardingCompleted = 'pref.onboarding.completed';
   static const String _kForcePro = 'pref.dev.force_pro';
+  static const String _kDisplayName = 'pref.user.display_name';
 
   /// アプリ起動時に1度だけ呼ぶ
   Future<void> initialize() async {
@@ -222,6 +223,29 @@ class UserPreferences {
       await _prefs!.setBool(_kForcePro, value);
     } catch (e) {
       PetloLogger.instance.d('setForcePro failed: $e');
+    }
+  }
+
+  // ==========================================================================
+  // Display Name (build 18: 家族共有で初めて要求される表示名)
+  // ==========================================================================
+
+  String? get displayName {
+    final String? v = _prefs?.getString(_kDisplayName);
+    if (v == null || v.isEmpty) return null;
+    return v;
+  }
+
+  Future<void> setDisplayName(String? value) async {
+    if (_prefs == null) return;
+    try {
+      if (value == null || value.trim().isEmpty) {
+        await _prefs!.remove(_kDisplayName);
+      } else {
+        await _prefs!.setString(_kDisplayName, value.trim());
+      }
+    } catch (e) {
+      PetloLogger.instance.d('setDisplayName failed: $e');
     }
   }
 }

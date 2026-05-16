@@ -56,7 +56,11 @@ class _JoinByCodeScreenState extends ConsumerState<JoinByCodeScreen> {
   void initState() {
     super.initState();
     _codeC = TextEditingController();
-    _nameC = TextEditingController();
+    // build 18: 表示名は controller.build() でプリフィル済み、
+    // TextEditingController にも転記する。
+    _nameC = TextEditingController(
+      text: ref.read(joinByCodeControllerProvider).displayName,
+    );
   }
 
   @override

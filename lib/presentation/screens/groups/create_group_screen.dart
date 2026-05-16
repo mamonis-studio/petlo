@@ -46,16 +46,23 @@ class CreateGroupScreen extends ConsumerStatefulWidget {
 
 class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
   late final TextEditingController _nameC;
+  late final TextEditingController _displayNameC;
 
   @override
   void initState() {
     super.initState();
     _nameC = TextEditingController();
+    // build 18: 表示名は controller.build() で UserPreferences から
+    // プリフィル済み。TextEditingController にも転記する。
+    _displayNameC = TextEditingController(
+      text: ref.read(createGroupControllerProvider).displayName,
+    );
   }
 
   @override
   void dispose() {
     _nameC.dispose();
+    _displayNameC.dispose();
     super.dispose();
   }
 
@@ -134,6 +141,25 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                 maxLength: 50,
                 errorText: s.nameError,
                 onChanged: controller.updateName,
+              ),
+              const SizedBox(height: AppDimensions.paddingSection),
+
+              // build 18: 表示名 (グループ内であなたを呼ぶ名前)
+              EditorialTextField(
+                label: 'Your display name',
+                controller: _displayNameC,
+                hint: '例: お父さん, ママ',
+                required: true,
+                maxLength: 30,
+                textCapitalization: TextCapitalization.words,
+                errorText: s.displayNameError,
+                onChanged: controller.updateDisplayName,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'グループのメンバーに表示される名前です。\n後から設定で変更できます。',
+                style: typo.bodySmall
+                    .copyWith(color: colors.fgFaint, height: 1.5),
               ),
               const SizedBox(height: AppDimensions.paddingSection),
 

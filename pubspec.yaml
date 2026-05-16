@@ -4,7 +4,7 @@ publish_to: "none"
 
 # Versioning: <major>.<minor>.<patch>+<build_number>
 # build_numberはApp Store Connect / Google Play Consoleで自動増加させる
-version: 1.0.0+17
+version: 1.0.0+18
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

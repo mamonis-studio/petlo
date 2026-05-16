@@ -19,6 +19,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/auth/auth_service.dart';
+import 'core/auth/user_profile_service.dart';
 import 'core/billing/purchase_service.dart';
 import 'core/constants/app_constants.dart';
 import 'core/notifications/notification_service.dart';
@@ -86,6 +87,10 @@ Future<void> main() async {
       stackTrace: st,
     );
   }
+
+  // === display_name の起動時同期 (build 18) ===
+  // /me が未実装の本番環境でも 404 は無視、UI を遅延させない。
+  Future<void>.microtask(UserProfileService.instance.syncFromServer);
 
   // === Riverpod起動 ===
   runApp(

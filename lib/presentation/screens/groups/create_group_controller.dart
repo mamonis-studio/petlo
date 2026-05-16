@@ -19,8 +19,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/groups/group_api_exceptions.dart';
 import '../../../core/groups/group_api_service.dart';
+import '../../../core/preferences/user_preferences.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/database_enums.dart';
+import '../../providers/display_name_provider.dart';
 import '../../providers/group_api_service_provider.dart';
 import '../../providers/groups_providers.dart';
 import '../../providers/pro_status_provider.dart';
@@ -29,24 +31,31 @@ import '../../providers/pro_status_provider.dart';
 class CreateGroupState {
   const CreateGroupState({
     this.name = '',
+    this.displayName = '',
     this.isSubmitting = false,
     this.errorMessage,
     this.nameError,
+    this.displayNameError,
   });
 
   final String name;
+  final String displayName;
   final bool isSubmitting;
   final String? errorMessage;
   final String? nameError;
+  final String? displayNameError;
 
   CreateGroupState copyWith({
     String? name,
+    String? displayName,
     bool? isSubmitting,
     Object? errorMessage = _sentinel,
     Object? nameError = _sentinel,
+    Object? displayNameError = _sentinel,
   }) {
     return CreateGroupState(
       name: name ?? this.name,
+      displayName: displayName ?? this.displayName,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       errorMessage: errorMessage == _sentinel
           ? this.errorMessage
@@ -54,6 +63,9 @@ class CreateGroupState {
       nameError: nameError == _sentinel
           ? this.nameError
           : nameError as String?,
+      displayNameError: displayNameError == _sentinel
+          ? this.displayNameError
+          : displayNameError as String?,
     );
   }
 
@@ -79,11 +91,22 @@ final NotifierProvider<CreateGroupController, CreateGroupState>
 class CreateGroupController extends Notifier<CreateGroupState> {
   @override
   CreateGroupState build() {
-    return const CreateGroupState();
+    // build 18: 既に保存済みの表示名でプリフィル (家族共有 2 回目以降の利用)
+    return CreateGroupState(
+      displayName: UserPreferences.instance.displayName ?? '',
+    );
   }
 
   void updateName(String v) {
     state = state.copyWith(name: v, nameError: null, errorMessage: null);
+  }
+
+  void updateDisplayName(String v) {
+    state = state.copyWith(
+      displayName: v,
+      displayNameError: null,
+      errorMessage: null,
+    );
   }
 
   CreateGroupState _validate(CreateGroupState s) {
@@ -94,7 +117,14 @@ class CreateGroupController extends Notifier<CreateGroupState> {
     } else if (trimmed.length > 50) {
       err = '50文字以内で入力してください';
     }
-    return s.copyWith(nameError: err);
+    final String dn = s.displayName.trim();
+    String? dnErr;
+    if (dn.isEmpty) {
+      dnErr = '表示名を入力してください';
+    } else if (dn.length > 30) {
+      dnErr = '30文字以内で入力してください';
+    }
+    return s.copyWith(nameError: err, displayNameError: dnErr);
   }
 
   Future<({CreateGroupOutcome outcome, String? createdGroupId})>
@@ -105,7 +135,7 @@ class CreateGroupController extends Notifier<CreateGroupState> {
 
     // ローカルバリデート
     final CreateGroupState validated = _validate(state);
-    if (validated.nameError != null) {
+    if (validated.nameError != null || validated.displayNameError != null) {
       state = validated;
       return (
         outcome: CreateGroupOutcome.validationFailed,
@@ -150,7 +180,16 @@ class CreateGroupController extends Notifier<CreateGroupState> {
 
     try {
       final GroupApiService api = ref.read(groupApiServiceProvider);
-      final result = await api.createGroup(state.name.trim());
+      final result = await api.createGroup(
+        state.name.trim(),
+        displayName: state.displayName.trim(),
+      );
+
+      // 表示名をローカルキャッシュ + reactive provider に反映
+      // (PATCH /me は別経路 — グループ作成の trip にまとめる)
+      await ref
+          .read(displayNameProvider.notifier)
+          .setLocal(state.displayName.trim());
 
       // サーバー側 owner_user_id は本来サーバーが返すが、
       // 仕様簡略化のため自分の userId は別途認証から取得する想定。

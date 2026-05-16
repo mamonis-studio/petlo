@@ -26,8 +26,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/groups/group_api_dtos.dart';
 import '../../../core/groups/group_api_exceptions.dart';
 import '../../../core/groups/group_api_service.dart';
+import '../../../core/preferences/user_preferences.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/database_enums.dart';
+import '../../providers/display_name_provider.dart';
 import '../../providers/group_api_service_provider.dart';
 import '../../providers/group_members_providers.dart';
 import '../../providers/groups_providers.dart';
@@ -118,7 +120,10 @@ final NotifierProvider<JoinByCodeController, JoinByCodeState>
 class JoinByCodeController extends Notifier<JoinByCodeState> {
   @override
   JoinByCodeState build() {
-    return const JoinByCodeState();
+    // build 18: 既に保存済みの表示名でプリフィル
+    return JoinByCodeState(
+      displayName: UserPreferences.instance.displayName ?? '',
+    );
   }
 
   void updateCode(String v) {
@@ -203,6 +208,11 @@ class JoinByCodeController extends Notifier<JoinByCodeState> {
         code: state.code,
         displayName: state.displayName.trim(),
       );
+
+      // 表示名をローカルキャッシュ + reactive provider に反映
+      await ref
+          .read(displayNameProvider.notifier)
+          .setLocal(state.displayName.trim());
 
       // ローカル DB に group を upsert
       final int now = DateTime.now().millisecondsSinceEpoch;

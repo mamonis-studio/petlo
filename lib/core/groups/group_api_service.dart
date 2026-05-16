@@ -40,16 +40,27 @@ class GroupApiService {
 
   // ==========================================================================
   // グループ作成 (POST /groups)
+  // build 18: ownerDisplayName 必須 (backend が 400 'display_name_required'
+  //           を返すため、必ず送信する)
   // ==========================================================================
-  Future<CreateGroupResultDto> createGroup(String name) async {
+  Future<CreateGroupResultDto> createGroup(
+    String name, {
+    required String displayName,
+  }) async {
     if (name.trim().isEmpty || name.trim().length > 50) {
       throw const GroupBadRequestException('グループ名は1〜50文字で入力してください');
+    }
+    if (displayName.trim().isEmpty || displayName.trim().length > 30) {
+      throw const GroupBadRequestException('表示名は1〜30文字で入力してください');
     }
 
     try {
       final Response<dynamic> resp = await _dio.post<dynamic>(
         '/groups',
-        data: <String, dynamic>{'name': name.trim()},
+        data: <String, dynamic>{
+          'name': name.trim(),
+          'ownerDisplayName': displayName.trim(),
+        },
       );
       final dynamic body = resp.data;
       if (body is! Map<String, dynamic>) {

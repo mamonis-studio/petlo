@@ -26,6 +26,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../presentation/providers/storage_providers.dart';
+import '../preferences/user_preferences.dart';
 import '../utils/logger.dart';
 import 'api_dio.dart';
 import 'auth_dio_interceptor.dart';
@@ -191,6 +192,8 @@ class AuthService {
     await storage.delete(key: SecureStorageKeys.apiRefreshToken);
     await storage.delete(key: SecureStorageKeys.userId);
     await storage.delete(key: _deviceIdKey);
+    // build 18: display_name もリセット (新規ユーザー扱いなので)
+    await UserPreferences.instance.setDisplayName(null);
     _token = null;
     _refreshToken = null;
     _userId = null;
@@ -220,6 +223,8 @@ class AuthService {
     await storage.delete(key: SecureStorageKeys.apiRefreshToken);
     await storage.delete(key: SecureStorageKeys.userId);
     await storage.delete(key: _deviceIdKey);
+    // build 18: display_name もクリア
+    await UserPreferences.instance.setDisplayName(null);
     _token = null;
     _refreshToken = null;
     _userId = null;
