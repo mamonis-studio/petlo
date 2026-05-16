@@ -15,7 +15,9 @@
 // ============================================================================
 
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
+import '../../core/sync/sync_service.dart';
 import '../../data/local/app_database.dart';
 import '../../data/local/database_enums.dart';
 
@@ -23,6 +25,8 @@ abstract class BaseRepository {
   BaseRepository(this.db);
 
   final AppDatabase db;
+
+  static const Uuid _uuid = Uuid();
 
   /// 現在のUTCミリ秒
   int now() => DateTime.now().toUtc().millisecondsSinceEpoch;
@@ -85,6 +89,7 @@ abstract class BaseRepository {
     required String targetTable,
     required int recordId,
     required String payloadJson,
+    int? clientTimestamp,
   }) async {
     if (!isSharedScope(groupId)) {
       return;
@@ -92,12 +97,17 @@ abstract class BaseRepository {
     final int t = now();
     await db.into(db.syncQueue).insert(
           SyncQueueCompanion.insert(
+            opId: _uuid.v4(),
             operation: operation,
             targetTable: targetTable,
             recordId: recordId,
+            groupId: groupId,
+            clientTimestamp: clientTimestamp ?? t,
             payload: payloadJson,
             queuedAt: t,
           ),
         );
+    // build 19: 編集の都度 2.5s デバウンスで同期トリガー
+    SyncService.instance.scheduleDebouncedSync();
   }
 }

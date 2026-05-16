@@ -78,11 +78,15 @@ class GroupApiService {
   }
 
   // ==========================================================================
-  // 招待コード発行 (POST /invite)
+  // 招待コード発行 (POST /groups/:gid/invites)
+  // build 19: 旧 /invite から正しいパス /groups/:gid/invites へ移行。
+  //           リクエストは camelCase、body は { permission, ttlHours? }。
+  //           ttlHours 省略時は backend default 72 が適用される。
   // ==========================================================================
   Future<CreateInviteResultDto> createInvite({
     required String groupRemoteId,
     required MemberPermission grantedPermission,
+    int? ttlHours,
   }) async {
     if (grantedPermission == MemberPermission.owner) {
       throw const GroupBadRequestException(
@@ -91,11 +95,10 @@ class GroupApiService {
 
     try {
       final Response<dynamic> resp = await _dio.post<dynamic>(
-        '/invite',
+        '/groups/$groupRemoteId/invites',
         data: <String, dynamic>{
-          'group_id': groupRemoteId,
-          // サーバー側 3段階対応待ち、暫定で permission を送る
-          'granted_permission': grantedPermission.name,
+          'permission': grantedPermission.name,
+          if (ttlHours != null) 'ttlHours': ttlHours,
         },
       );
       final dynamic body = resp.data;

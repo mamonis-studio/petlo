@@ -24,6 +24,7 @@ import '../../../core/auth/auth_service.dart';
 import '../../../core/backup/backup_settings.dart';
 import '../../../core/billing/pro_status.dart';
 import '../../../core/preferences/user_preferences.dart';
+import '../../../core/sync/sync_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -121,6 +122,14 @@ class DeveloperSettingsScreen extends ConsumerWidget {
               ),
 
               _ActionRow(
+                title: 'Sync now',
+                note: '家族共有スコープを即時 push + pull します。',
+                onTap: () => _onSyncNow(context),
+                colors: colors,
+                typo: typo,
+              ),
+
+              _ActionRow(
                 title: 'データリセット (全消去)',
                 note: 'Keychain + ローカル DB を全消去し、新規ユーザーとして再登録します。'
                     '\nアカウント認証が壊れたときの最終手段。実行後はアプリを再起動してください。',
@@ -199,6 +208,28 @@ class DeveloperSettingsScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(AppLocalizations.of(context).developer_snackbar_pro_reset),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _onSyncNow(BuildContext context) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Syncing...'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 1),
+      ),
+    );
+    await SyncService.instance.syncAll();
+    if (!context.mounted) return;
+    final DateTime? at = SyncService.instance.lastSyncAt;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(at == null
+            ? 'Sync finished (no active groups?)'
+            : 'Sync finished at ${at.toLocal()}'),
         behavior: SnackBarBehavior.floating,
       ),
     );

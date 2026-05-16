@@ -176,6 +176,13 @@ class AppDatabase extends _$AppDatabase {
           if (from < 3) {
             await m.addColumn(aiChatMessages, aiChatMessages.imagePath);
           }
+          // build 19: sync_queue を新スキーマで再作成。
+          // 旧バージョンに積まれていた行はグループ共有 UI 未実装のため
+          // 実害ゼロ (家族共有スコープのオペが事実上発生していない)。
+          if (from < 4) {
+            await m.deleteTable('sync_queue');
+            await m.createTable(syncQueue);
+          }
           await AppDatabaseMigrations.onUpgrade(m, from, to);
         },
         beforeOpen: (OpeningDetails details) async {

@@ -14,6 +14,8 @@
 //
 // ============================================================================
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,10 +26,12 @@ import 'core/billing/purchase_service.dart';
 import 'core/constants/app_constants.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/preferences/user_preferences.dart';
+import 'core/sync/sync_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/locale_aware_theme.dart';
 import 'core/utils/logger.dart';
 import 'l10n/generated/app_localizations.dart';
+import 'presentation/providers/database_provider.dart';
 import 'presentation/providers/notification_scheduler_provider.dart';
 import 'presentation/providers/onboarding_completed_provider.dart';
 import 'presentation/providers/purchase_provider.dart';
@@ -110,15 +114,43 @@ class PetloApp extends ConsumerStatefulWidget {
   ConsumerState<PetloApp> createState() => _PetloAppState();
 }
 
-class _PetloAppState extends ConsumerState<PetloApp> {
+class _PetloAppState extends ConsumerState<PetloApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // 起動時に通知を再スケジュール (端末再起動・アプリkill対応)
     // fire-and-forget — UI起動を遅延させない
     Future<void>.microtask(_rescheduleNotifications);
     // IAP 購入リスナーを起動 (購入成功時に ProStatusProvider を更新)
     ref.read(purchaseListenerProvider).start();
+    // build 19: 同期エンジンに DB を bind + 起動同期を発火
+    Future<void>.microtask(_bootstrapSync);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // フォアグラウンド復帰時に同期 (失敗してもアプリは動く)
+      unawaited(SyncService.instance.syncAll());
+    }
+  }
+
+  Future<void> _bootstrapSync() async {
+    try {
+      SyncService.instance.bindDatabase(ref.read(appDatabaseProvider));
+      await SyncService.instance.syncAll();
+    } catch (e, st) {
+      PetloLogger.instance
+          .w('Initial sync failed (continuing)', error: e, stackTrace: st);
+    }
   }
 
   Future<void> _rescheduleNotifications() async {

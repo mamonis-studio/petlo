@@ -30,7 +30,10 @@ class CreateInviteResultDto {
       Map<String, dynamic> json,
       MemberPermission requestedPermission,
       ) {
-    final num expMsec = (json['expires_at'] as num?) ?? 0;
+    // backend は camelCase で返す ({ code, expiresAt, grantedPermission })。
+    // 旧 snake_case (expires_at) からの fallback も保険で残す。
+    final num expMsec =
+        (json['expiresAt'] as num?) ?? (json['expires_at'] as num?) ?? 0;
     return CreateInviteResultDto(
       code: (json['code'] as String?) ?? '',
       expiresAt: DateTime.fromMillisecondsSinceEpoch(expMsec.toInt()),
