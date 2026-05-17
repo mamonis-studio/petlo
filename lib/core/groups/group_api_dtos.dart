@@ -50,23 +50,30 @@ class JoinGroupResultDto {
   const JoinGroupResultDto({
     required this.groupId,
     required this.groupName,
+    required this.myPermission,
     required this.members,
   });
 
   final String groupId;
   final String groupName;
+  final MemberPermission myPermission;
   final List<GroupMemberDto> members;
 
   static JoinGroupResultDto fromJson(Map<String, dynamic> json) {
     // backend (build 21) は camelCase で返す。snake_case は旧 fallback。
     final List<dynamic> rawMembers =
         (json['members'] as List<dynamic>?) ?? <dynamic>[];
+    // build 28: 招待時の権限 (viewer / editor) を backend から取得。
+    // 旧 build 27 までは join controller 側で editor ハードコードしていた。
+    final String? roleRaw =
+        (json['myPermission'] as String?) ?? (json['my_permission'] as String?);
     return JoinGroupResultDto(
       groupId:
           (json['groupId'] as String?) ?? (json['group_id'] as String?) ?? '',
       groupName: (json['groupName'] as String?) ??
           (json['group_name'] as String?) ??
           '',
+      myPermission: GroupMemberDto.permissionFromRole(roleRaw ?? 'viewer'),
       members: rawMembers
           .whereType<Map<String, dynamic>>()
           .map(GroupMemberDto.fromJson)
@@ -110,16 +117,18 @@ class GroupMemberDto {
           '',
       avatarUrl:
           (json['avatarUrl'] as String?) ?? (json['avatar_url'] as String?),
-      permission: _permissionFromRole(role),
+      permission: permissionFromRole(role),
       joinedAt: DateTime.fromMillisecondsSinceEpoch(joined.toInt()),
     );
   }
 
   /// rev5.3 の3段階 (owner/editor/viewer) に対応。
-  /// サーバー側は将来更新で 3段階に拡張される想定。
-  /// 現状は owner / member の2段階なので、
-  /// 'member' は editor 扱い。
-  static MemberPermission _permissionFromRole(String role) {
+  /// build 28: public 化 (JoinGroupResultDto からも再利用)。
+  ///
+  /// - 'owner' / 'editor' / 'viewer' → 一致
+  /// - 旧 'member' → editor 互換 (rev5.3 移行前データ)
+  /// - 不明値 / 空 → 安全側 viewer
+  static MemberPermission permissionFromRole(String role) {
     switch (role) {
       case 'owner':
         return MemberPermission.owner;
@@ -128,8 +137,9 @@ class GroupMemberDto {
       case 'viewer':
         return MemberPermission.viewer;
       case 'member':
-      default:
         return MemberPermission.editor;
+      default:
+        return MemberPermission.viewer;
     }
   }
 }

@@ -22,7 +22,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/utils/logger.dart';
+import '../../data/local/app_database.dart';
 import '../../data/local/database_enums.dart';
+import '../../data/repositories/groups_repository.dart';
+import 'database_provider.dart';
 import 'storage_providers.dart';
 
 // ============================================================================
@@ -180,49 +183,50 @@ class CurrentPetIdNotifier extends Notifier<String?> {
 // ============================================================================
 
 /// 現在のグループ内での自分の権限。
-/// Personal時は常に owner。
-/// グループ参加時は groups.myPermission の値が反映される。
+/// Personal時は常に owner、共有グループ時は drift の `groups.myPermission`
+/// から **リアクティブに** 派生する (build 27)。
 ///
-/// 切り替えロジック:
-///   - currentGroupId が変わった時にRepositoryから取得して更新
-///   - サーバー側で権限変更があった時にも更新
+/// 旧設計 (build 7 以前):
+///   - Notifier の build() がハードコードで viewer を返し、
+///     GroupSelectionController.update() で書き換える設計だった。
+///   - しかし groupSelectionControllerProvider が lazy で、
+///     起動時に instantiate されないケースがあり viewer のままになる
+///     バグがあった (build 27 で発覚)。
 ///
-/// 注: このProviderは一旦「Personal時 = owner」のシンプルな実装で開始。
-///     共有グループ実装時 (Chunk 7) に上書きする。
-final NotifierProvider<CurrentRoleNotifier, MemberPermission>
-    currentRoleProvider = NotifierProvider<CurrentRoleNotifier, MemberPermission>(
-  CurrentRoleNotifier.new,
-);
-
-class CurrentRoleNotifier extends Notifier<MemberPermission> {
-  @override
-  MemberPermission build() {
-    // Personal時はowner
+/// 新設計:
+///   - `_currentGroupEntityProvider` (drift StreamProvider) を watch して
+///     `myPermission` を派生。upsertGroupFromServer による更新が
+///     即座にこの provider へ伝播する。
+final Provider<MemberPermission> currentRoleProvider =
+    Provider<MemberPermission>(
+  (Ref ref) {
     final String groupId = ref.watch(currentGroupIdProvider);
     if (groupId == kPersonalGroupId) {
       return MemberPermission.owner;
     }
-    // 共有グループ時は Chunk 7 で実装
-    return MemberPermission.viewer; // 安全側のデフォルト
-  }
+    final AsyncValue<GroupEntity?> group =
+        ref.watch(_currentGroupEntityProvider);
+    return group.when(
+      data: (GroupEntity? g) => g?.myPermission ?? MemberPermission.viewer,
+      loading: () => MemberPermission.viewer,
+      error: (Object _, StackTrace __) => MemberPermission.viewer,
+    );
+  },
+);
 
-  /// 共有グループ時に権限を明示更新するための公開API
-  void update(MemberPermission permission) {
-    state = permission;
-    // 永続化はオプション (キャッシュ)
-    _save();
-  }
-
-  Future<void> _save() async {
-    try {
-      final SharedPreferencesAsync prefs =
-          ref.read(sharedPreferencesProvider);
-      await prefs.setString(PrefsKeys.currentRole, state.name);
-    } catch (e, st) {
-      PetloLogger.instance.w('Failed to persist currentRole', error: e, stackTrace: st);
+/// build 27: scope_providers から groups_providers への循環参照を避けるため
+/// ここで currentGroupId 連動の Group エンティティ stream を持つ。
+final StreamProvider<GroupEntity?> _currentGroupEntityProvider =
+    StreamProvider<GroupEntity?>(
+  (Ref ref) {
+    final String groupId = ref.watch(currentGroupIdProvider);
+    if (groupId == kPersonalGroupId) {
+      return Stream<GroupEntity?>.value(null);
     }
-  }
-}
+    final AppDatabase db = ref.watch(appDatabaseProvider);
+    return GroupsRepository(db).watchGroupByRemoteId(groupId);
+  },
+);
 
 // ============================================================================
 // 派生Provider: 権限に基づくUI判定

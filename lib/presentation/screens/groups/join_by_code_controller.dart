@@ -20,6 +20,8 @@
 //
 // ============================================================================
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,6 +29,7 @@ import '../../../core/groups/group_api_dtos.dart';
 import '../../../core/groups/group_api_exceptions.dart';
 import '../../../core/groups/group_api_service.dart';
 import '../../../core/preferences/user_preferences.dart';
+import '../../../core/sync/sync_service.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/database_enums.dart';
 import '../../providers/display_name_provider.dart';
@@ -216,12 +219,10 @@ class JoinByCodeController extends Notifier<JoinByCodeState> {
 
       // ローカル DB に group を upsert
       final int now = DateTime.now().millisecondsSinceEpoch;
-      // 自分の権限 = メンバー一覧の中で自分の userId のもの
-      // ただし userId は現在のクライアント実装では取得できないので、
-      // viewer をデフォルトにしてメンバー一覧から後で更新する想定
-      // (将来の認証実装で正しい userId が判明したら upsertGroupFromServer
-      //  でmyPermissionが正される)
-      final MemberPermission myPermission = MemberPermission.editor;
+      // build 28: backend が返す myPermission をそのまま採用。
+      // editor / viewer は招待発行時の grantedPermission に従う。
+      // 不正値・欠落時は DTO 側で viewer に fallback 済み。
+      final MemberPermission myPermission = resp.myPermission;
 
       // owner の userId を members から探す
       final String ownerUserId = resp.members
@@ -260,6 +261,14 @@ class JoinByCodeController extends Notifier<JoinByCodeState> {
           joinedAt: m.joinedAt.millisecondsSinceEpoch,
         );
       }
+
+      // build 25: 参加直後の初回 pull を「since=0」で必ず全件取得させる。
+      //   - cursor キー (sync.next_since.<gid>) を削除
+      //   - その上で対象グループだけ即時 sync (push→pull)
+      // これで「オーナーが参加前に共有した過去ペット/記録」を取りこぼさない。
+      await SyncService.instance.resetCursorForGroup(resp.groupId);
+      // fire-and-forget。失敗してもユーザーは参加成功 (グループ詳細へ遷移)。
+      unawaited(SyncService.instance.syncGroup(resp.groupId));
 
       state = state.copyWith(isSubmitting: false);
       return (

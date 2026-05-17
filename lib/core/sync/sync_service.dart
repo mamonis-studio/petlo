@@ -37,6 +37,11 @@ class SyncService {
   SyncService._();
   static final SyncService instance = SyncService._();
 
+  /// build 26: フォアグラウンド定期ポーリング間隔。
+  /// 家族共有にリアルタイム性は不要なので 2 分でバランス。
+  /// 将来変更しやすいよう定数化。
+  static const Duration pollingInterval = Duration(minutes: 2);
+
   AppDatabase? _db;
   void bindDatabase(AppDatabase db) {
     _db = db;
@@ -45,6 +50,7 @@ class SyncService {
   bool _isSyncing = false;
   DateTime? _lastSyncAt;
   Timer? _debounce;
+  Timer? _polling;
 
   bool get isSyncing => _isSyncing;
   DateTime? get lastSyncAt => _lastSyncAt;
@@ -55,6 +61,79 @@ class SyncService {
     _debounce = Timer(const Duration(milliseconds: 2500), () {
       unawaited(syncAll());
     });
+  }
+
+  /// build 26: フォアグラウンド定期ポーリング開始。
+  /// 既存タイマーはキャンセルしてから新規発火 (多重起動防止)。
+  /// _isSyncing ガードがある (`syncAll`/`syncGroup`) ので他トリガーと衝突しても
+  /// 二重 push/pull は起きない。
+  void startPolling() {
+    _polling?.cancel();
+    _polling = Timer.periodic(pollingInterval, (_) {
+      unawaited(syncAll());
+    });
+    PetloLogger.instance.d(
+      'SyncService: polling started (${pollingInterval.inMinutes}min)',
+    );
+  }
+
+  /// build 26: バックグラウンド遷移時に呼ぶ。
+  /// タイマーを止めてバッテリー・通信を節約する。
+  void stopPolling() {
+    if (_polling != null) {
+      _polling!.cancel();
+      _polling = null;
+      PetloLogger.instance.d('SyncService: polling stopped');
+    }
+  }
+
+  /// build 25: グループに新規参加した直後に呼ぶ。
+  /// `sync.next_since.<groupId>` を削除して次回 pull を since=0 (全件取得) にする。
+  /// 既存値がある場合 (旧テスト時の残存・race race による先行更新等) を
+  /// 確実にリセットして「参加前にオーナーが共有した過去データ」を取りこぼさない。
+  Future<void> resetCursorForGroup(String groupId) async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.remove('sync.next_since.$groupId');
+      PetloLogger.instance
+          .i('SyncService: cursor reset for group=$groupId (full re-pull next)');
+    } catch (e, st) {
+      PetloLogger.instance.w(
+        'SyncService: cursor reset failed for $groupId',
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
+  /// build 25: 指定グループだけ即時 push→pull する。
+  /// 参加直後 / 「同期する」UI から呼ぶ想定。
+  /// 多重実行ガードは syncAll と共有。
+  Future<void> syncGroup(String groupId) async {
+    final AppDatabase? db = _db;
+    if (db == null) {
+      PetloLogger.instance.d('SyncService.syncGroup: db not bound, skipping');
+      return;
+    }
+    if (_isSyncing) {
+      PetloLogger.instance
+          .d('SyncService.syncGroup: already syncing, skipping');
+      return;
+    }
+    _isSyncing = true;
+    try {
+      await _pushGroup(db, groupId);
+      await _pullGroup(db, groupId);
+      _lastSyncAt = DateTime.now();
+    } catch (e, st) {
+      PetloLogger.instance.w(
+        'SyncService.syncGroup($groupId) failed',
+        error: e,
+        stackTrace: st,
+      );
+    } finally {
+      _isSyncing = false;
+    }
   }
 
   /// 起動 / フォアグラウンド復帰 / 手動ボタン から呼ぶ。

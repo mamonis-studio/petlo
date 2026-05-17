@@ -30,22 +30,9 @@ final NotifierProvider<GroupSelectionController, void>
 class GroupSelectionController extends Notifier<void> {
   @override
   void build() {
-    // currentGroupId 変化を検知して権限を同期
-    ref.listen<String>(
-      currentGroupIdProvider,
-      (String? previous, String next) {
-        if (previous != next) {
-          PetloLogger.instance.i('Group changed: $previous -> $next, syncing role');
-          _syncRoleForGroup(next);
-        }
-      },
-    );
-
-    // 起動時にも一度同期
-    Future<void>.microtask(() {
-      final String current = ref.read(currentGroupIdProvider);
-      _syncRoleForGroup(current);
-    });
+    // build 27: currentRoleProvider が drift から自動派生になったため
+    // ここでの手動 sync は不要 (削除)。
+    // switchTo / switchToPersonal は引き続き提供。
   }
 
   // ============================================================================
@@ -72,33 +59,4 @@ class GroupSelectionController extends Notifier<void> {
   /// Personal に戻す
   Future<void> switchToPersonal() => switchTo(kPersonalGroupId);
 
-  // ============================================================================
-  // Internal: 権限同期
-  // ============================================================================
-
-  Future<void> _syncRoleForGroup(String groupId) async {
-    if (groupId == kPersonalGroupId) {
-      // Personal は常に owner
-      ref.read(currentRoleProvider.notifier).update(MemberPermission.owner);
-      return;
-    }
-
-    try {
-      final repo = ref.read(groupsRepositoryProvider);
-      final GroupEntity? group = await repo.getGroupByRemoteId(groupId);
-      if (group != null) {
-        ref.read(currentRoleProvider.notifier).update(group.myPermission);
-      } else {
-        // ローカルキャッシュにグループがない → 安全側 viewer
-        PetloLogger.instance
-            .w('Group not in local cache: $groupId, defaulting to viewer');
-        ref.read(currentRoleProvider.notifier).update(MemberPermission.viewer);
-      }
-    } catch (e, st) {
-      PetloLogger.instance
-          .w('Failed to sync role', error: e, stackTrace: st);
-      // 失敗時は安全側
-      ref.read(currentRoleProvider.notifier).update(MemberPermission.viewer);
-    }
-  }
 }

@@ -132,14 +132,25 @@ class _PetloAppState extends ConsumerState<PetloApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    // build 26: アプリ終了時はポーリング Timer を確実に止める
+    SyncService.instance.stopPolling();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // フォアグラウンド復帰時に同期 (失敗してもアプリは動く)
-      unawaited(SyncService.instance.syncAll());
+    // build 26: フォアグラウンド状態にあるときだけポーリングを走らせる。
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // 復帰時: 即時 1 回同期 + 2 分ポーリング再開
+        unawaited(SyncService.instance.syncAll());
+        SyncService.instance.startPolling();
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        // バックグラウンド遷移時: タイマー停止 (バッテリー / 通信節約)
+        SyncService.instance.stopPolling();
     }
   }
 
@@ -147,6 +158,8 @@ class _PetloAppState extends ConsumerState<PetloApp>
     try {
       SyncService.instance.bindDatabase(ref.read(appDatabaseProvider));
       await SyncService.instance.syncAll();
+      // build 26: 起動完了 + 初回同期後、定期ポーリング開始
+      SyncService.instance.startPolling();
     } catch (e, st) {
       PetloLogger.instance
           .w('Initial sync failed (continuing)', error: e, stackTrace: st);

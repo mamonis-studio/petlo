@@ -13,10 +13,12 @@
 //
 // ============================================================================
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import '../../core/sync/sync_service.dart';
 import '../local/app_database.dart';
 import '../local/database_enums.dart';
 import 'base_repository.dart';
@@ -433,6 +435,11 @@ class PetsRepository extends BaseRepository {
         );
       }
     }
+
+    // build 26: グループ構成が変わる操作 (= ペットの所属移動) は
+    // debounce 2.5s を待たず即時 sync を発火する。
+    // 「共有してすぐ招待コードを送る」高速ケースで race を防ぐ。
+    unawaited(SyncService.instance.syncAll());
 
     return affected.length + 1;
   }
