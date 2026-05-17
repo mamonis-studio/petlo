@@ -80,6 +80,21 @@ final StreamProvider<PetEntity?> currentPetProvider =
 );
 
 // ============================================================================
+// 派生 2.5: 任意スコープのペット一覧 (build 20 ペット共有 picker 用)
+// ============================================================================
+
+/// 指定 groupId のスコープ内 active ペット一覧。
+/// `currentGroupPetsProvider` は currentGroupId に追従するため、
+/// 「現在いるグループから personal を覗き見たい」みたいなケースに使う。
+final StreamProviderFamily<List<PetEntity>, String> petsInScopeProvider =
+    StreamProvider.family<List<PetEntity>, String>(
+  (Ref ref, String groupId) {
+    final PetsRepository repo = ref.watch(petsRepositoryProvider);
+    return repo.watchActivePetsInScope(groupId);
+  },
+);
+
+// ============================================================================
 // 派生3: 「ペットが1匹も登録されていない」判定
 // ============================================================================
 

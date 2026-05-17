@@ -58,11 +58,15 @@ class JoinGroupResultDto {
   final List<GroupMemberDto> members;
 
   static JoinGroupResultDto fromJson(Map<String, dynamic> json) {
+    // backend (build 21) は camelCase で返す。snake_case は旧 fallback。
     final List<dynamic> rawMembers =
         (json['members'] as List<dynamic>?) ?? <dynamic>[];
     return JoinGroupResultDto(
-      groupId: (json['group_id'] as String?) ?? '',
-      groupName: (json['group_name'] as String?) ?? '',
+      groupId:
+          (json['groupId'] as String?) ?? (json['group_id'] as String?) ?? '',
+      groupName: (json['groupName'] as String?) ??
+          (json['group_name'] as String?) ??
+          '',
       members: rawMembers
           .whereType<Map<String, dynamic>>()
           .map(GroupMemberDto.fromJson)
@@ -91,12 +95,21 @@ class GroupMemberDto {
   final DateTime joinedAt;
 
   static GroupMemberDto fromJson(Map<String, dynamic> json) {
-    final String role = (json['role'] as String?) ?? 'member';
-    final num joined = (json['joined_at'] as num?) ?? 0;
+    // backend (build 21) は camelCase + permission キーで返す。
+    // 旧 snake_case + role キーは fallback。
+    final String role = (json['permission'] as String?) ??
+        (json['role'] as String?) ??
+        'member';
+    final num joined =
+        (json['joinedAt'] as num?) ?? (json['joined_at'] as num?) ?? 0;
     return GroupMemberDto(
-      userId: (json['user_id'] as String?) ?? '',
-      displayName: (json['display_name'] as String?) ?? '',
-      avatarUrl: json['avatar_url'] as String?,
+      userId:
+          (json['userId'] as String?) ?? (json['user_id'] as String?) ?? '',
+      displayName: (json['displayName'] as String?) ??
+          (json['display_name'] as String?) ??
+          '',
+      avatarUrl:
+          (json['avatarUrl'] as String?) ?? (json['avatar_url'] as String?),
       permission: _permissionFromRole(role),
       joinedAt: DateTime.fromMillisecondsSinceEpoch(joined.toInt()),
     );
@@ -135,8 +148,10 @@ class CreateGroupResultDto {
   final String name;
 
   static CreateGroupResultDto fromJson(Map<String, dynamic> json) {
+    // backend (build 21) は camelCase で返す。snake_case は旧 fallback。
     return CreateGroupResultDto(
-      groupId: (json['group_id'] as String?) ?? '',
+      groupId:
+          (json['groupId'] as String?) ?? (json['group_id'] as String?) ?? '',
       name: (json['name'] as String?) ?? '',
     );
   }

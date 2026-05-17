@@ -105,8 +105,12 @@ class AboutScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              EyebrowText(l10n.settings_about_eyebrow),
-              const SizedBox(height: 8),
+              SectionLabel(
+                l10n.settings_about_eyebrow,
+                size: EyebrowSize.large,
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
+              ),
+              // build 23: § ABOUT 統一後も、ブランドロゴ的に petlo. 64pt は残す
               Text(
                 'petlo.',
                 style: TextStyle(

@@ -100,13 +100,11 @@ class _TemperatureChartScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              EyebrowText(AppLocalizations.of(context).common_trend),
-              const SizedBox(height: 8),
-              Text(
-                AppLocalizations.of(context).temperature_chart_hero,
-                style: typo.heroName.copyWith(height: 0.95),
+              SectionLabel(
+                AppLocalizations.of(context).common_trend,
+                size: EyebrowSize.large,
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
               ),
-              const SizedBox(height: 24),
 
               // ===== Latest value =====
               dataAsync.maybeWhen(

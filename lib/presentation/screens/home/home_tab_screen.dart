@@ -36,6 +36,7 @@ import '../../providers/vomits_providers.dart';
 import '../../widgets/petlo_scaffold.dart';
 import '../diary/diary_record_screen.dart';
 import '../gallery/pet_gallery_screen.dart';
+import '../groups/pet_share_picker.dart';
 import '../meal/meal_record_screen.dart';
 import '../../providers/pets_providers.dart';
 import '../../providers/tab_provider.dart';
@@ -140,6 +141,12 @@ class HomeTabScreen extends ConsumerWidget {
                 colors: colors,
                 typo: typo,
                 onAddPet: () => PetFormScreen.push(context),
+                onSharePet: () => PetSharePicker.show(
+                  context,
+                  targetGroupId: ref.read(currentGroupIdProvider),
+                ),
+                showSharePet: ref.watch(currentGroupIdProvider) !=
+                    kPersonalGroupId,
               )
             else if (!hasPet)
               _SelectPetHint(colors: colors, typo: typo),
@@ -173,11 +180,17 @@ class _EmptyHomeState extends StatelessWidget {
     required this.colors,
     required this.typo,
     required this.onAddPet,
+    this.onSharePet,
+    this.showSharePet = false,
   });
 
   final AppColors colors;
   final AppTypography typo;
   final VoidCallback onAddPet;
+
+  /// build 20: グループスコープのときだけ「既存ペットを共有」を出す。
+  final VoidCallback? onSharePet;
+  final bool showSharePet;
 
   @override
   Widget build(BuildContext context) {
@@ -208,6 +221,19 @@ class _EmptyHomeState extends StatelessWidget {
             label: l10n.home_register_pet,
             onPressed: onAddPet,
           ),
+          if (showSharePet && onSharePet != null) ...<Widget>[
+            const SizedBox(height: 12),
+            OutlinedActionButton(
+              label: 'Share existing pet',
+              onPressed: onSharePet!,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Personal で登録済みのペットをこのグループに共有できます。',
+              style:
+                  typo.bodySmall.copyWith(color: colors.fgFaint, height: 1.5),
+            ),
+          ],
         ],
       ),
     );

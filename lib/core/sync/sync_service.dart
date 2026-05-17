@@ -256,15 +256,21 @@ class SyncService {
       }
     }
 
+    // backend は "create" を期待 — Flutter 側の enum は `insert`
+    final String typeStr =
+        row.operation == SyncOperation.insert ? 'create' : row.operation.name;
+    final bool isDelete = row.operation == SyncOperation.delete;
+
     return <String, dynamic>{
       'opId': row.opId,
-      'type': row.operation.name,
+      'type': typeStr,
       'entityType': entityType,
       if (!isPet) 'tableName': row.targetTable,
       'groupId': row.groupId,
       'clientEntityId': row.recordId,
       if (petClientId != null) 'petClientId': petClientId,
-      'payload': data,
+      // backend 契約: payload は create/update のみ必須、delete では送らない
+      if (!isDelete) 'payload': data,
       'clientTimestamp': row.clientTimestamp,
     };
   }

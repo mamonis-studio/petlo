@@ -106,13 +106,11 @@ class GroupDetailScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  EyebrowText(l10n.groups_list_eyebrow),
-                  const SizedBox(height: 8),
-                  Text(
+                  SectionLabel(
                     group.name,
-                    style: typo.heroName.copyWith(height: 0.95),
+                    size: EyebrowSize.large,
+                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
                   ),
-                  const SizedBox(height: 8),
                   _PermissionBadge(
                     permission: group.myPermission,
                     colors: colors,

@@ -183,6 +183,13 @@ class AppDatabase extends _$AppDatabase {
             await m.deleteTable('sync_queue');
             await m.createTable(syncQueue);
           }
+          // build 22: pets.sex を NOT NULL → nullable に変更。
+          // drift の alterTable は内部で「新スキーマで temp table 作成 →
+          // 既存データコピー → 旧 table drop → rename」を実行するため
+          // 既存ペットの値は保持される。
+          if (from < 5) {
+            await m.alterTable(TableMigration(pets));
+          }
           await AppDatabaseMigrations.onUpgrade(m, from, to);
         },
         beforeOpen: (OpeningDetails details) async {

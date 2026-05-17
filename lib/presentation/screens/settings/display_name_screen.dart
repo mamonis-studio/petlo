@@ -16,6 +16,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/eyebrow_text.dart';
+import '../../../core/widgets/section_label.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../providers/display_name_provider.dart';
 import '../../widgets/forms/editorial_text_field.dart';
@@ -121,13 +122,11 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const EyebrowText('Profile'),
-              const SizedBox(height: 8),
-              Text(
-                '表示名。',
-                style: typo.heroName.copyWith(height: 0.95),
+              const SectionLabel(
+                'Display name',
+                size: EyebrowSize.large,
+                padding: EdgeInsets.fromLTRB(0, 0, 0, 16),
               ),
-              const SizedBox(height: 16),
               Text(
                 '家族共有グループのメンバーに表示される名前です。\n'
                 '本名でなく愛称・続柄 (お父さん、ママ、など) でも OK。',

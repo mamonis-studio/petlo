@@ -163,23 +163,12 @@ class _MedicationReminderRecordScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              EyebrowText(AppLocalizations.of(context).medication_reminders_eyebrow),
-              const SizedBox(height: 8),
-              Text(
-                s.isEditing
-                    ? AppLocalizations.of(context).common_update
-                    : AppLocalizations.of(context).medication_reminder_form_hero,
-                maxLines: 1,
-                style: TextStyle(
-                  fontFamily: 'Fraunces',
-                  fontStyle: FontStyle.italic,
-                  fontSize: 44,
-                  letterSpacing: -44 * 0.04,
-                  height: 1.0,
-                  color: colors.fg,
-                ),
+              SectionLabel(
+                AppLocalizations.of(context).medication_reminders_eyebrow,
+                size: EyebrowSize.large,
+                padding: const EdgeInsets.fromLTRB(
+                    0, 0, 0, AppDimensions.paddingSection),
               ),
-              const SizedBox(height: AppDimensions.paddingSection),
 
               // ===== 通知パーミッション警告 =====
               if (_checkedPermission && !_hasNotificationPermission)

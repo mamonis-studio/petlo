@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/eyebrow_text.dart';
+import '../../../../core/widgets/section_label.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 
 class OnboardingDonePage extends StatelessWidget {
@@ -29,11 +30,11 @@ class OnboardingDonePage extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              EyebrowText(l10n.onboarding_done_eyebrow),
-              const SizedBox(height: 8),
-              // ヒーロー (英字維持)
-              Text('All\nset.', style: typo.heroName),
-              const SizedBox(height: 24),
+              SectionLabel(
+                l10n.onboarding_done_eyebrow,
+                size: EyebrowSize.large,
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
+              ),
               Text(
                 l10n.onboarding_done_body,
                 style: TextStyle(

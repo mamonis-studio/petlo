@@ -305,28 +305,12 @@ class _MealRecordScreenState extends ConsumerState<MealRecordScreen> {
   Widget _buildPageTitle(bool isEditing) {
     return Builder(
       builder: (BuildContext context) {
-        final AppColors colors = AppColors.of(context);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            EyebrowText(isEditing ? AppLocalizations.of(context).common_editing : AppLocalizations.of(context).common_today),
-            const SizedBox(height: 8),
-            Text(
-              isEditing
-                  ? AppLocalizations.of(context).common_update
-                  : AppLocalizations.of(context).record_hero_meal,
-              maxLines: 1,
-              overflow: TextOverflow.visible,
-              style: TextStyle(
-                fontFamily: 'Fraunces',
-                fontStyle: FontStyle.italic,
-                fontSize: 44,
-                letterSpacing: -44 * 0.04,
-                height: 1.0,
-                color: colors.fg,
-              ),
-            ),
-          ],
+        return SectionLabel(
+          isEditing
+              ? AppLocalizations.of(context).common_editing
+              : AppLocalizations.of(context).common_today,
+          size: EyebrowSize.large,
+          padding: EdgeInsets.zero,
         );
       },
     );

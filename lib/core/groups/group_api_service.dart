@@ -92,6 +92,10 @@ class GroupApiService {
       throw const GroupBadRequestException(
           'Owner権限の招待コードは発行できません');
     }
+    if (groupRemoteId.trim().isEmpty) {
+      // build 21: 旧 DTO パースバグで groupId='' のままここまで来るのを防ぐ
+      throw const GroupBadRequestException('グループIDが取得できていません');
+    }
 
     try {
       final Response<dynamic> resp = await _dio.post<dynamic>(
@@ -117,12 +121,18 @@ class GroupApiService {
   }
 
   // ==========================================================================
-  // 招待コードで参加 (POST /join)
+  // 招待コードで参加 (POST /invites/<code>/join)
+  // build 24: 旧 /join (code を body に詰める) から正しい RESTful path に修正。
+  //           code は URL path、body は { displayName } のみ (camelCase)。
   // ==========================================================================
   Future<JoinGroupResultDto> joinByCode({
     required String code,
     required String displayName,
   }) async {
+    if (code.trim().isEmpty) {
+      // build 24: 空コードガード (path が /invites//join に崩れて 404 になるのを防ぐ)
+      throw const GroupBadRequestException('招待コードが空です');
+    }
     if (!RegExp(r'^\d{6}$').hasMatch(code)) {
       throw const GroupBadRequestException(
           '6桁の数字を入力してください');
@@ -134,10 +144,9 @@ class GroupApiService {
 
     try {
       final Response<dynamic> resp = await _dio.post<dynamic>(
-        '/join',
+        '/invites/$code/join',
         data: <String, dynamic>{
-          'code': code,
-          'display_name': displayName.trim(),
+          'displayName': displayName.trim(),
         },
       );
       final dynamic body = resp.data;

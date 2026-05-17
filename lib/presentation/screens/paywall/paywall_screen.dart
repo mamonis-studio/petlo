@@ -147,13 +147,11 @@ class _AlreadyProState extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          EyebrowText(AppLocalizations.of(context).paywall_pro_active_eyebrow),
-          const SizedBox(height: 8),
-          Text(
-            'You\'re\nin.',
-            style: typo.heroName.copyWith(height: 0.95),
+          SectionLabel(
+            AppLocalizations.of(context).paywall_pro_active_eyebrow,
+            size: EyebrowSize.large,
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
           ),
-          const SizedBox(height: 24),
           Text(
             'プラン: ${_tierLabel(status.tier)}\n状態: ${_stateLabel(status.state)}',
             style: typo.bodyLarge.copyWith(color: colors.fgMuted),
@@ -240,14 +238,12 @@ class _PaywallBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          // ===== ヒーロー =====
-          EyebrowText(AppLocalizations.of(context).paywall_unlock_eyebrow),
-          const SizedBox(height: 8),
-          Text(
-            'petlo\nPro.',
-            style: typo.heroName.copyWith(height: 0.92),
+          // ===== ヒーロー (build 23: § 統一) =====
+          SectionLabel(
+            AppLocalizations.of(context).paywall_unlock_eyebrow,
+            size: EyebrowSize.large,
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
           ),
-          const SizedBox(height: 16),
           Text(
             '無制限の記録と、AI相談と、家族共有。\nうちの子のすべてを、ちゃんと残す。',
             style: typo.bodyLarge.copyWith(

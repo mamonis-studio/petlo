@@ -79,13 +79,11 @@ class DeveloperSettingsScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              EyebrowText(l10n.settings_developer_eyebrow),
-              const SizedBox(height: 8),
-              Text(
-                'Developer.',
-                style: typo.heroName.copyWith(height: 0.95),
+              SectionLabel(
+                l10n.settings_developer_eyebrow,
+                size: EyebrowSize.large,
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
               ),
-              const SizedBox(height: 16),
               Text(
                 '困った時のリセット用メニュー。\n通常は使う必要ありません。',
                 style: typo.bodyMedium

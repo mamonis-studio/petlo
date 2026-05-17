@@ -27,6 +27,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/widgets/eyebrow_text.dart';
+import '../../../core/widgets/section_label.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../widgets/forms/editorial_text_field.dart';
 import 'group_detail_screen.dart';
@@ -121,13 +122,11 @@ class _JoinByCodeScreenState extends ConsumerState<JoinByCodeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              EyebrowText(l10n.join_by_code_eyebrow),
-              const SizedBox(height: 8),
-              Text(
-                'コードを\n入力。',
-                style: typo.heroName.copyWith(height: 0.95),
+              SectionLabel(
+                l10n.join_by_code_eyebrow,
+                size: EyebrowSize.large,
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
               ),
-              const SizedBox(height: 16),
               Text(
                 'グループのオーナーから受け取った\n6桁の招待コードを入力してください。',
                 style: typo.bodyMedium

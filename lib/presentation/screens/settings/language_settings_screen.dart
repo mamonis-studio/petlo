@@ -103,13 +103,11 @@ class LanguageSettingsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              EyebrowText(l10n.settings_language_eyebrow),
-              const SizedBox(height: 8),
-              Text(
-                '3つの\n言語。',
-                style: typo.heroName.copyWith(height: 0.95),
+              SectionLabel(
+                l10n.settings_language_eyebrow,
+                size: EyebrowSize.large,
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
               ),
-              const SizedBox(height: 24),
               Text(
                 '日本語 · English · 简体中文 に対応しています。\n\n端末の言語設定に従って自動的に切り替わります。\nアプリ単位で言語を変えたい場合は、\nOSの設定アプリから petlo を選んで変更してください。',
                 style: typo.bodyMedium

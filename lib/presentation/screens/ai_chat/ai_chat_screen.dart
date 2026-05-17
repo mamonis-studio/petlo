@@ -26,6 +26,7 @@ import '../../../core/utils/logger.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/eyebrow_text.dart';
+import '../../../core/widgets/section_label.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
@@ -299,13 +300,11 @@ class _EmptyState extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          EyebrowText(AppLocalizations.of(context).section_ask_anything),
-          const SizedBox(height: 8),
-          Text(
-            'Pet consult,\non call.',
-            style: typo.heroName.copyWith(height: 0.95),
+          SectionLabel(
+            AppLocalizations.of(context).section_ask_anything,
+            size: EyebrowSize.large,
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
           ),
-          const SizedBox(height: 16),
           Text(
             'うちの子の様子で気になることを\nAIに相談してみてください。\n\n直近7日の記録 + 30日サマリーを文脈として、\n獣医師に行く前のセルフチェックの参考に。',
             style: typo.bodyMedium.copyWith(

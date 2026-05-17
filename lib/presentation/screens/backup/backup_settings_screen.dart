@@ -83,13 +83,11 @@ class BackupSettingsScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              EyebrowText(l10n.backup_eyebrow),
-              const SizedBox(height: 8),
-              Text(
-                '自動\nバックアップ。',
-                style: typo.heroName.copyWith(height: 0.95),
+              SectionLabel(
+                l10n.backup_eyebrow,
+                size: EyebrowSize.large,
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
               ),
-              const SizedBox(height: 16),
               Text(
                 _heroDescription(settings, _platformProvider),
                 style: typo.bodyMedium.copyWith(

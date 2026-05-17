@@ -40,8 +40,11 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_label.dart';
+import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../data/repositories/pets_repository.dart';
 import '../../providers/groups_providers.dart';
+import '../../providers/pets_providers.dart';
 import '../../providers/scope_providers.dart';
 import '../../widgets/dialogs/duplicate_name_dialog.dart';
 import '../../widgets/forms/date_field.dart';
@@ -220,6 +223,12 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
                   emergencyPhoneC: _emergencyPhoneC,
                   emergencyAddressC: _emergencyAddressC,
                 ),
+                // build 20: 編集時のみスコープ移動 UI を出す。
+                if (s.isEditing && widget.editingPetId != null) ...<Widget>[
+                  const SizedBox(height: AppDimensions.paddingSection),
+                  const SectionLabel('Sharing scope'),
+                  _ScopeMoverSection(petId: widget.editingPetId!),
+                ],
               ] else
                 _DetailsExpandHint(
                   onTap: () =>
@@ -276,30 +285,13 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
   Widget _buildPageTitle(bool isEditing) {
     return Builder(
       builder: (BuildContext context) {
-        final AppColors colors = AppColors.of(context);
         final AppLocalizations l10n = AppLocalizations.of(context);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            EyebrowText(
-              isEditing
-                  ? l10n.pet_form_eyebrow_edit
-                  : l10n.pet_form_eyebrow_new,
-            ),
-            const SizedBox(height: 8),
-            // ヒーローは Fraunces italic で英字維持(ブランド要素)
-            Text(
-              isEditing ? 'Update' : 'A new\ncompanion.',
-              style: TextStyle(
-                fontFamily: 'Fraunces',
-                fontStyle: FontStyle.italic,
-                fontSize: 44,
-                letterSpacing: -44 * 0.04,
-                height: 0.95,
-                color: colors.fg,
-              ),
-            ),
-          ],
+        return SectionLabel(
+          isEditing
+              ? l10n.pet_form_eyebrow_edit
+              : l10n.pet_form_eyebrow_new,
+          size: EyebrowSize.large,
+          padding: EdgeInsets.zero,
         );
       },
     );
@@ -458,7 +450,7 @@ class _HealthSection extends StatelessWidget {
           label: l10n.pet_form_field_sex,
           options: PetSex.values,
           value: state.sex,
-          required: true,
+          // build 22: 性別は任意項目 (必須マーク * を出さない)
           errorText: state.errors.sex,
           optionLabel: (PetSex s) => switch (s) {
             PetSex.male => l10n.pet_sex_male,
@@ -737,4 +729,250 @@ int? _kgStringToG(String s) {
   final double? kg = double.tryParse(trimmed);
   if (kg == null) return null;
   return (kg * 1000).round();
+}
+
+// ============================================================================
+// _ScopeMoverSection (build 20) — ペットを personal / 任意グループ間で移動
+// ============================================================================
+class _ScopeMoverSection extends ConsumerStatefulWidget {
+  const _ScopeMoverSection({required this.petId});
+
+  final int petId;
+
+  @override
+  ConsumerState<_ScopeMoverSection> createState() => _ScopeMoverSectionState();
+}
+
+class _ScopeMoverSectionState extends ConsumerState<_ScopeMoverSection> {
+  bool _isMoving = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppColors colors = AppColors.of(context);
+    final AppTypography typo = AppTypography.of(context);
+
+    final AsyncValue<PetEntity?> petAsync = ref.watch(
+      _scopedPetProvider(widget.petId),
+    );
+    final AsyncValue<List<GroupEntity>> groups = ref.watch(userGroupsProvider);
+
+    return petAsync.when(
+      loading: () => const SizedBox(height: 48),
+      error: (Object e, _) => Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text('ペットの取得に失敗しました\n$e',
+            style: typo.bodySmall.copyWith(color: colors.accentDanger)),
+      ),
+      data: (PetEntity? pet) {
+        if (pet == null) return const SizedBox.shrink();
+        final String currentGid = pet.groupId;
+        final List<GroupEntity> groupList = groups.maybeWhen(
+          data: (List<GroupEntity> v) => v,
+          orElse: () => const <GroupEntity>[],
+        );
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const SizedBox(height: 8),
+            Text(
+              currentGid == kPersonalGroupId
+                  ? '現在のスコープ: Personal (あなただけ)'
+                  : '現在のスコープ: ${_groupName(groupList, currentGid)}',
+              style: typo.bodySmall
+                  .copyWith(color: colors.fgMuted, height: 1.5),
+            ),
+            const SizedBox(height: 12),
+            // Personal 行
+            _ScopeRow(
+              label: 'Personal',
+              note: 'あなただけが閲覧・編集可能',
+              isCurrent: currentGid == kPersonalGroupId,
+              enabled: !_isMoving && currentGid != kPersonalGroupId,
+              onTap: () => _moveTo(context, pet, kPersonalGroupId, 'Personal'),
+              colors: colors,
+              typo: typo,
+            ),
+            for (final GroupEntity g in groupList)
+              _ScopeRow(
+                label: g.name,
+                note: 'メンバー全員が閲覧、編集権限のある人は編集可能',
+                isCurrent: currentGid == g.remoteId,
+                enabled: !_isMoving && currentGid != g.remoteId,
+                onTap: () => _moveTo(context, pet, g.remoteId, g.name),
+                colors: colors,
+                typo: typo,
+              ),
+            if (_isMoving)
+              const Padding(
+                padding: EdgeInsets.only(top: 16),
+                child: Center(
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 1.5),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 4),
+            Text(
+              '移動先を選ぶと、このペットと記録 (食事・排泄・体重ほか) '
+              'がまとめて移動します。',
+              style: typo.bodySmall.copyWith(color: colors.fgFaint, height: 1.5),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _groupName(List<GroupEntity> list, String gid) {
+    for (final GroupEntity g in list) {
+      if (g.remoteId == gid) return g.name;
+    }
+    return gid; // fallback
+  }
+
+  Future<void> _moveTo(
+    BuildContext context,
+    PetEntity pet,
+    String targetGid,
+    String label,
+  ) async {
+    final bool isToPersonal = targetGid == kPersonalGroupId;
+    final String title = isToPersonal ? 'Personal へ戻す' : '$label へ共有';
+    final String body = isToPersonal
+        ? '${pet.name} をグループから外して Personal に戻しますか?\n'
+            'このペットと記録は他のメンバーから見えなくなります。'
+        : '${pet.name} を「$label」に共有しますか?\n'
+            '記録(食事/排泄/体重ほか)もまとめて移動し、'
+            'メンバーから閲覧できるようになります。';
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(body),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(isToPersonal ? '外す' : '共有する'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isMoving = true);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    try {
+      final int n = await ref
+          .read(petsRepositoryProvider)
+          .movePetToGroup(pet.id, targetGid);
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(isToPersonal
+              ? '${pet.name} を Personal に戻しました ($n 件のレコードを移動)'
+              : '${pet.name} を「$label」に共有しました ($n 件のレコードを移動)'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('移動に失敗しました: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isMoving = false);
+    }
+  }
+}
+
+/// このペットの最新状態だけを watch する provider。
+/// (currentPetProvider は「現在選択中のペット」を返すので、編集対象が
+///  current でない場合や、移動直後の自動切替などを起こさないよう専用に分ける)
+final StreamProviderFamily<PetEntity?, int> _scopedPetProvider =
+    StreamProvider.family<PetEntity?, int>(
+  (Ref ref, int petId) {
+    final PetsRepository repo = ref.watch(petsRepositoryProvider);
+    return repo.watchPet(petId);
+  },
+);
+
+class _ScopeRow extends StatelessWidget {
+  const _ScopeRow({
+    required this.label,
+    required this.note,
+    required this.isCurrent,
+    required this.enabled,
+    required this.onTap,
+    required this.colors,
+    required this.typo,
+  });
+
+  final String label;
+  final String note;
+  final bool isCurrent;
+  final bool enabled;
+  final VoidCallback onTap;
+  final AppColors colors;
+  final AppTypography typo;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color titleColor = enabled ? colors.fg : colors.fgFaint;
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: colors.line)),
+        ),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Text(
+                        label,
+                        style: typo.bodyLarge.copyWith(color: titleColor),
+                      ),
+                      if (isCurrent) ...<Widget>[
+                        const SizedBox(width: 8),
+                        Text(
+                          'CURRENT',
+                          style: TextStyle(
+                            fontFamily: 'JetBrainsMono',
+                            fontSize: 9,
+                            letterSpacing: 9 * 0.18,
+                            color: colors.fgMuted,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    note,
+                    style:
+                        typo.bodySmall.copyWith(color: colors.fgMuted, height: 1.5),
+                  ),
+                ],
+              ),
+            ),
+            if (enabled) Icon(Icons.chevron_right, size: 18, color: colors.fgMuted),
+          ],
+        ),
+      ),
+    );
+  }
 }

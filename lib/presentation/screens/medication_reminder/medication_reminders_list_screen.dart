@@ -15,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/eyebrow_text.dart';
+import '../../../core/widgets/section_label.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/widgets/outlined_action_button.dart';
 import '../../../data/local/app_database.dart';
@@ -71,13 +72,11 @@ class MedicationRemindersListScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              EyebrowText(AppLocalizations.of(context).health_record_medication),
-              const SizedBox(height: 8),
-              Text(
-                AppLocalizations.of(context).medication_reminders_hero,
-                style: typo.heroName.copyWith(height: 0.95),
+              SectionLabel(
+                AppLocalizations.of(context).health_record_medication,
+                size: EyebrowSize.large,
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
               ),
-              const SizedBox(height: 24),
 
               // Add ボタン
               if (canEdit) ...<Widget>[

@@ -22,6 +22,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/widgets/eyebrow_text.dart';
+import '../../../core/widgets/section_label.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../widgets/forms/editorial_text_field.dart';
 import '../paywall/paywall_screen.dart';
@@ -117,13 +118,11 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              EyebrowText(l10n.create_group_eyebrow),
-              const SizedBox(height: 8),
-              Text(
-                '新しい\nグループ。',
-                style: typo.heroName.copyWith(height: 0.95),
+              SectionLabel(
+                l10n.create_group_eyebrow,
+                size: EyebrowSize.large,
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
               ),
-              const SizedBox(height: 16),
               Text(
                 '家族や信頼できる友人と、\nうちの子の記録を共有できるグループ。\n5人まで参加可能、最大3グループ作れます。',
                 style: typo.bodyMedium.copyWith(

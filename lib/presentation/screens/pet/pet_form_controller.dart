@@ -250,7 +250,7 @@ class PetFormController extends FamilyNotifier<PetFormState, int?> {
           name: state.name.trim(),
           type: state.type!, // バリデーション通ってる前提
           breed: state.breed.trim(),
-          sex: state.sex!,
+          sex: state.sex,
           neutered: state.neutered,
           birthday: state.birthday == null ? null : birthdayMsec,
           idealWeightMinG: state.idealWeightMinG,

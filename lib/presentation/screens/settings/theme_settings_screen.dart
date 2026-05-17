@@ -16,6 +16,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/widgets/eyebrow_text.dart';
+import '../../../core/widgets/section_label.dart';
 import '../../providers/theme_mode_provider.dart';
 
 class ThemeSettingsScreen extends ConsumerWidget {
@@ -63,13 +64,11 @@ class ThemeSettingsScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              EyebrowText(l10n.settings_theme_eyebrow),
-              const SizedBox(height: 8),
-              Text(
-                '明るく、\n暗く。',
-                style: typo.heroName.copyWith(height: 0.95),
+              SectionLabel(
+                l10n.settings_theme_eyebrow,
+                size: EyebrowSize.large,
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
               ),
-              const SizedBox(height: 24),
               Text(
                 'iOS / Android のシステム設定に追従するか、\n手動で固定するか選べます。',
                 style: typo.bodyMedium.copyWith(

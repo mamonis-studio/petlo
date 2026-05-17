@@ -22,6 +22,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/widgets/eyebrow_text.dart';
+import '../../../core/widgets/section_label.dart';
 import '../../../core/widgets/outlined_action_button.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
@@ -79,14 +80,11 @@ class GroupsListScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              EyebrowText(l10n.groups_list_eyebrow),
-              const SizedBox(height: 8),
-              // ヒーロー: Groups. (英字維持、単語ヒーロー)
-              Text(
-                'Groups.',
-                style: typo.heroName.copyWith(height: 0.95),
+              SectionLabel(
+                l10n.groups_list_eyebrow,
+                size: EyebrowSize.large,
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
               ),
-              const SizedBox(height: 16),
               Text(
                 '家族や友人と、うちの子の記録を共有。',
                 style: typo.bodyMedium

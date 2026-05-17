@@ -40,8 +40,9 @@ class Pets extends Table {
   /// オンボーディングでは未入力 → 後から PetForm で詳細登録できるよう nullable。
   TextColumn get breed => text().withLength(max: 100).nullable()();
 
-  /// 性別
-  TextColumn get sex => text().map(const AppEnumConverter(PetSex.values))();
+  /// 性別 (build 22: 任意項目化、未設定で登録可能)
+  TextColumn get sex =>
+      text().map(const AppEnumConverter(PetSex.values)).nullable()();
 
   /// 去勢/避妊済み
   BoolColumn get neutered => boolean().withDefault(const Constant(false))();

@@ -127,24 +127,14 @@ class _TemperatureRecordScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              EyebrowText(AppLocalizations.of(context).common_today),
-              const SizedBox(height: 8),
-              Text(
+              SectionLabel(
                 s.isEditing
-                    ? AppLocalizations.of(context).common_update
-                    : AppLocalizations.of(context).record_hero_temperature,
-                maxLines: 1,
-                overflow: TextOverflow.visible,
-                style: TextStyle(
-                  fontFamily: 'Fraunces',
-                  fontStyle: FontStyle.italic,
-                  fontSize: 40,
-                  letterSpacing: -40 * 0.04,
-                  height: 1.0,
-                  color: colors.fg,
-                ),
+                    ? AppLocalizations.of(context).common_editing
+                    : AppLocalizations.of(context).common_today,
+                size: EyebrowSize.large,
+                padding: const EdgeInsets.fromLTRB(
+                    0, 0, 0, AppDimensions.paddingSection),
               ),
-              const SizedBox(height: AppDimensions.paddingSection),
 
               TemperatureInputField(
                 tempCelsiusX10: s.tempCelsiusX10,
