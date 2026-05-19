@@ -58,7 +58,7 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
   String? _validate(String v) {
     final String trimmed = v.trim();
     if (trimmed.isEmpty) return '表示名を入力してください';
-    if (trimmed.length > 30) return '30文字以内で入力してください';
+    if (trimmed.length > 20) return '20文字以内で入力してください';
     return null;
   }
 
@@ -140,7 +140,7 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
                 controller: _nameC,
                 hint: '例: お父さん, ママ',
                 required: true,
-                maxLength: 30,
+                maxLength: 20,
                 textCapitalization: TextCapitalization.words,
                 errorText: _error,
                 autofocus: true,

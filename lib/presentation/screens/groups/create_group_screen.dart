@@ -149,7 +149,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                 controller: _displayNameC,
                 hint: '例: お父さん, ママ',
                 required: true,
-                maxLength: 30,
+                maxLength: 20,
                 textCapitalization: TextCapitalization.words,
                 errorText: s.displayNameError,
                 onChanged: controller.updateDisplayName,

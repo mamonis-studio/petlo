@@ -50,8 +50,8 @@ class GroupApiService {
     if (name.trim().isEmpty || name.trim().length > 50) {
       throw const GroupBadRequestException('グループ名は1〜50文字で入力してください');
     }
-    if (displayName.trim().isEmpty || displayName.trim().length > 30) {
-      throw const GroupBadRequestException('表示名は1〜30文字で入力してください');
+    if (displayName.trim().isEmpty || displayName.trim().length > 20) {
+      throw const GroupBadRequestException('表示名は1〜20文字で入力してください');
     }
 
     try {
@@ -137,9 +137,9 @@ class GroupApiService {
       throw const GroupBadRequestException(
           '6桁の数字を入力してください');
     }
-    if (displayName.trim().isEmpty || displayName.length > 30) {
+    if (displayName.trim().isEmpty || displayName.length > 20) {
       throw const GroupBadRequestException(
-          '表示名は1〜30文字で入力してください');
+          '表示名は1〜20文字で入力してください');
     }
 
     try {

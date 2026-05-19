@@ -162,8 +162,8 @@ class JoinByCodeController extends Notifier<JoinByCodeState> {
     final String trimmed = s.displayName.trim();
     if (trimmed.isEmpty) {
       nameErr = '表示名を入力してください';
-    } else if (trimmed.length > 30) {
-      nameErr = '30文字以内で入力してください';
+    } else if (trimmed.length > 20) {
+      nameErr = '20文字以内で入力してください';
     }
     return s.copyWith(codeError: codeErr, nameError: nameErr);
   }

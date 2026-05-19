@@ -121,8 +121,8 @@ class CreateGroupController extends Notifier<CreateGroupState> {
     String? dnErr;
     if (dn.isEmpty) {
       dnErr = '表示名を入力してください';
-    } else if (dn.length > 30) {
-      dnErr = '30文字以内で入力してください';
+    } else if (dn.length > 20) {
+      dnErr = '20文字以内で入力してください';
     }
     return s.copyWith(nameError: err, displayNameError: dnErr);
   }

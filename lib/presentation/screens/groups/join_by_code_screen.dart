@@ -153,7 +153,7 @@ class _JoinByCodeScreenState extends ConsumerState<JoinByCodeScreen> {
                 controller: _nameC,
                 hint: '例: お父さん, ママ',
                 required: true,
-                maxLength: 30,
+                maxLength: 20,
                 textCapitalization: TextCapitalization.words,
                 errorText: s.nameError,
                 onChanged: controller.updateDisplayName,
