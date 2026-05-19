@@ -49,7 +49,6 @@ class PetloScaffold extends StatelessWidget {
     this.showTabBar = true,
     this.showAllPetsInSelector = false,
     this.onAddPetTapped,
-    this.onCreateNewGroup,
     this.brandBarTrailing,
     super.key,
   });
@@ -76,9 +75,6 @@ class PetloScaffold extends StatelessWidget {
   /// "+" 追加ピル押下時のコールバック (Chunk 8で本実装と接続)
   final VoidCallback? onAddPetTapped;
 
-  /// "+ Create new group" 選択時のコールバック (Phase 4で本実装と接続)
-  final VoidCallback? onCreateNewGroup;
-
   /// brandBarの右側カスタムウィジェット (デフォルトは設定アイコン)
   final Widget? brandBarTrailing;
 
@@ -92,8 +88,7 @@ class PetloScaffold extends StatelessWidget {
       body: Column(
         children: <Widget>[
           if (showBrandBar) _BrandBar(trailing: brandBarTrailing),
-          if (showGroupSelector)
-            GroupSelectorBar(onCreateNewGroup: onCreateNewGroup),
+          if (showGroupSelector) const GroupSelectorBar(),
           if (showPetSelector)
             PetSelectorBar(
               showAllPets: showAllPetsInSelector,

@@ -38,16 +38,11 @@ import '../../../data/local/app_database.dart';
 import '../../providers/group_selection_controller.dart';
 import '../../providers/groups_providers.dart';
 import '../../providers/scope_providers.dart';
+import '../../screens/groups/create_group_screen.dart';
 import 'group_role_badge.dart';
 
 class GroupSwitcherModal extends ConsumerWidget {
-  const GroupSwitcherModal({
-    this.onCreateNewGroup,
-    super.key,
-  });
-
-  /// "+ Create new group" タップ時のコールバック (Phase 4で本実装と接続)
-  final VoidCallback? onCreateNewGroup;
+  const GroupSwitcherModal({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -100,12 +95,24 @@ class GroupSwitcherModal extends ConsumerWidget {
             ),
 
             // Create new group row
+            // build 30: モーダル内で完結させる。
+            // 旧設計は外部から onCreateNewGroup callback を渡す方針だったが、
+            // 全 5 タブ画面どこからも渡しておらず、結果として永久に
+            // onTap=null になって LIMIT REACHED 誤判定になっていた。
             _CreateNewGroupRow(
               remainingSlots: remainingSlots.maybeWhen(
                 data: (int n) => n,
                 orElse: () => 0,
               ),
-              onTap: onCreateNewGroup,
+              onTap: () async {
+                final NavigatorState navigator = Navigator.of(context);
+                final String? createdGroupId =
+                    await CreateGroupScreen.push(context);
+                if (createdGroupId != null) {
+                  await controller.switchTo(createdGroupId);
+                }
+                navigator.pop(); // モーダルを閉じる
+              },
             ),
 
             // Footer info
@@ -317,13 +324,16 @@ class _CreateNewGroupRow extends StatelessWidget {
   });
 
   final int remainingSlots;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
-    final bool enabled = remainingSlots > 0 && onTap != null;
+    // build 30: 旧コードは `&& onTap != null` で判定していたが、
+    // 呼び出し側から callback が来ないケースが多数あり常に false に落ちていた。
+    // モーダル内で navigation を完結させた今は残数だけで判定する。
+    final bool enabled = remainingSlots > 0;
 
     return InkWell(
       onTap: enabled ? onTap : null,

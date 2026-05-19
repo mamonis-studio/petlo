@@ -32,13 +32,7 @@ import 'group_role_badge.dart';
 import 'group_switcher_modal.dart';
 
 class GroupSelectorBar extends ConsumerWidget {
-  const GroupSelectorBar({
-    this.onCreateNewGroup,
-    super.key,
-  });
-
-  /// "+ Create new group" を選んだ時のコールバック
-  final VoidCallback? onCreateNewGroup;
+  const GroupSelectorBar({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -138,9 +132,7 @@ class GroupSelectorBar extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (BuildContext _) => GroupSwitcherModal(
-        onCreateNewGroup: onCreateNewGroup,
-      ),
+      builder: (BuildContext _) => const GroupSwitcherModal(),
     );
   }
 }
