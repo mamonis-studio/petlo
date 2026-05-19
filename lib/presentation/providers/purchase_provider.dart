@@ -57,22 +57,17 @@ class PurchaseListener {
   }
 
   Future<void> _onPurchase(PurchaseSuccess success) async {
-    PetloLogger.instance
-        .i('Purchase success: ${success.productId} (${success.tier.name})');
+    PetloLogger.instance.i(
+      'Purchase success: ${success.productId} (${success.tier.name}) '
+      'expiresAt=${success.expiresAt} env=${success.environment}',
+    );
 
-    // 期限の暫定計算 (サーバー検証実装までのプレースホルダ):
-    //   月額: +30日、年額: +365日
-    // 実運用ではAppStore receipt の expires_date を使う
-    final DateTime expires = switch (success.tier) {
-      ProTier.monthly => DateTime.now().add(const Duration(days: 30)),
-      ProTier.yearly => DateTime.now().add(const Duration(days: 365)),
-      ProTier.free => DateTime.now(),
-    };
-
+    // build 32: 期限は サーバ検証 (POST /receipt/verify) が返した
+    // Apple receipt の expires_date を信用する。クライアント計算は廃止。
     final ProStatus next = ProStatus(
       tier: success.tier,
       state: ProState.active,
-      expiresAt: expires,
+      expiresAt: success.expiresAt,
     );
     await _ref.read(proStatusProvider.notifier).updateStatus(next);
   }
