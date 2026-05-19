@@ -8,11 +8,11 @@
 //
 // ローカルキャッシュ (UserPreferences.displayName) と同期する。
 //
-// 注意:
-//   - backend は別途実装中。未デプロイ環境では 404 が返るが、その場合は
-//     既存のローカルキャッシュを真実として継続。エラーを上位に伝播しない。
+// 設計:
 //   - グループ作成・参加・設定画面いずれもまずローカルキャッシュを見て
-//     プリフィル、submit 時に PATCH /me + setDisplayName を行う設計。
+//     プリフィル、submit 時に PATCH /me + setDisplayName を行う。
+//   - 通信失敗時はローカルキャッシュを真実として継続、エラーを上位に
+//     伝播しない (UI を遅延させない / オフライン継続)。
 //
 // ============================================================================
 
@@ -43,7 +43,7 @@ class UserProfileService {
       // サーバが null を返したらローカルキャッシュは触らない
       // (端末側で先に決めて未同期の可能性があるため)。
     } on DioException catch (e) {
-      // 404 (endpoint 未デプロイ) は想定内、その他もログのみ
+      // ネットワーク失敗等は想定内、ローカルキャッシュ継続
       PetloLogger.instance.d(
         'UserProfileService.syncFromServer skipped: '
         'status=${e.response?.statusCode}',
@@ -55,8 +55,8 @@ class UserProfileService {
   }
 
   /// PATCH /me で display_name を更新し、ローカルキャッシュも更新する。
-  /// サーバ側 endpoint 未実装 (404) でもローカルは更新する。
-  /// 戻り値: 通信成功時 true / 失敗 (ネットワーク等) でも local 更新は成功なら true
+  /// 戻り値: サーバ更新成功なら true、通信失敗等で false。
+  /// ローカルキャッシュは常に先書きするので、戻り値が false でも UI には反映される。
   Future<bool> updateDisplayName(String name) async {
     final String trimmed = name.trim();
     // ローカルキャッシュを先に書く (オフラインでも UI が反映される)
@@ -69,12 +69,6 @@ class UserProfileService {
       return true;
     } on DioException catch (e) {
       final int? status = e.response?.statusCode;
-      // 404 は endpoint 未実装、ローカル保存だけで成功扱い
-      if (status == 404) {
-        PetloLogger.instance
-            .d('PATCH /me 404 (endpoint not deployed yet) — local only');
-        return true;
-      }
       PetloLogger.instance.w(
         'PATCH /me failed: status=$status, msg=${e.message}',
       );

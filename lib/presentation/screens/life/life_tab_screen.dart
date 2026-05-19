@@ -33,6 +33,7 @@ import '../../widgets/pet_selector/auto_select_first_pet.dart';
 import '../../widgets/petlo_scaffold.dart';
 import '../meal/meal_record_screen.dart';
 import '../pee/pee_record_screen.dart';
+import '../pet/pet_form_screen.dart';
 import '../poop/poop_record_screen.dart';
 import '../vomit/vomit_record_screen.dart';
 
@@ -123,6 +124,7 @@ class LifeTabScreen extends ConsumerWidget {
     final double bottomInset = MediaQuery.of(context).padding.bottom;
     return PetloScaffold(
       showTabBar: false,
+      onAddPetTapped: () => PetFormScreen.push(context),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           28,

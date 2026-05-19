@@ -36,6 +36,7 @@ import '../../widgets/calendar/day_detail_sheet.dart';
 import '../../widgets/calendar/petlo_calendar_view.dart';
 import '../../widgets/petlo_scaffold.dart';
 import '../medication_reminder/medication_reminders_list_screen.dart';
+import '../pet/pet_form_screen.dart';
 import '../schedule/schedule_record_screen.dart';
 import '../vaccination/vaccination_record_screen.dart';
 
@@ -78,6 +79,7 @@ class _PlansTabScreenState extends ConsumerState<PlansTabScreen> {
     return PetloScaffold(
       showTabBar: false,
       showAllPetsInSelector: true,
+      onAddPetTapped: () => PetFormScreen.push(context),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           28,

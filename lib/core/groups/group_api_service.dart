@@ -13,13 +13,9 @@
 //
 // 設計:
 //   - dio で HTTP 通信、AiService と同じパターン
-//   - サーバー側未実装エンドポイントは GroupNotImplementedException
 //   - DioException → GroupApiException マッピング
-//
-// 注意:
-//   - サーバー側の現状は invite/join のみ実装
-//   - 他のエンドポイントはハンドラ未実装、404 が返る → GroupNotImplemented
-//   - 本番では Workers 側を Chunk 21 後半 / 別 PR で拡張する
+//   - 404 は「対象不在」(GroupBadRequestException)。build 31 以降、backend は
+//     メンバー管理・退出 endpoint も実装済み。
 //
 // ============================================================================
 
@@ -267,7 +263,9 @@ class GroupApiService {
           }
           return GroupForbiddenException(errMsg ?? '権限がありません');
         case 404:
-          return GroupNotImplementedException(operation);
+          // build 31: backend のメンバー管理・退出 endpoint は実装済み。
+          // 404 はリソース不在 (削除されたグループ / 存在しないメンバー) を意味する。
+          return GroupBadRequestException(errMsg ?? '対象が見つかりません');
         case 409:
           return GroupBadRequestException(errMsg ?? '競合が発生しました');
         case 500:

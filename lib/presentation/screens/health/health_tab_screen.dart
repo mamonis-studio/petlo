@@ -36,6 +36,7 @@ import '../../providers/weights_providers.dart';
 import '../../providers/tab_provider.dart';
 import '../../widgets/pet_selector/auto_select_first_pet.dart';
 import '../../widgets/petlo_scaffold.dart';
+import '../pet/pet_form_screen.dart';
 import '../temperature/temperature_chart_screen.dart';
 import '../temperature/temperature_record_screen.dart';
 import '../vaccination/vaccination_record_screen.dart';
@@ -60,6 +61,7 @@ class HealthTabScreen extends ConsumerWidget {
     final double bottomInset = MediaQuery.of(context).padding.bottom;
     return PetloScaffold(
       showTabBar: false,
+      onAddPetTapped: () => PetFormScreen.push(context),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           28,

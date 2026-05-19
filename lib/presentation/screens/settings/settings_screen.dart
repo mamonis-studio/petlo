@@ -31,8 +31,6 @@ import '../../../core/widgets/section_label.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/display_name_provider.dart';
 import '../../providers/pro_status_provider.dart';
-import '../../widgets/backup/backup_banner.dart';
-import '../backup/backup_settings_screen.dart';
 import '../groups/groups_list_screen.dart';
 import '../medication_reminder/medication_reminders_list_screen.dart';
 import '../paywall/paywall_screen.dart';
@@ -91,10 +89,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               // バナー類
-              Padding(
-                padding: const EdgeInsets.fromLTRB(28, 16, 28, 0),
-                child: const BackupBanner(),
-              ),
+              // build 31: BackupBanner はバックアップ未設定時に「設定推奨」を
+              // 出すバナーだが、v1.0 ではクラウド連携が擬似実装なので非表示。
+              // (BackupSettingsScreen / BackupBanner のコード自体は残存。v1.1 で復帰)
               if (!isPro)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(28, 16, 28, 8),
@@ -114,11 +111,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 subtitle: ref.watch(displayNameProvider) ?? '未設定',
                 onTap: () => DisplayNameScreen.push(context),
               ),
-              _Row(
-                title: l10n.more_item_backup,
-                subtitle: l10n.more_trailing_open,
-                onTap: () => BackupSettingsScreen.push(context),
-              ),
+              // build 31: バックアップ行を v1.0 では非表示 (擬似実装のため)。
+              // v1.1 でクラウド連携実装後に復帰させる。
 
               // ===== 機能 =====
               _SectionHeader(label: l10n.more_section_family),

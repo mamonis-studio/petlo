@@ -24,6 +24,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/pro_status_provider.dart';
 import '../../widgets/petlo_scaffold.dart';
 import '../paywall/paywall_screen.dart';
+import '../pet/pet_form_screen.dart';
 import 'ai_chat_screen.dart';
 
 class AiTabScreen extends ConsumerWidget {
@@ -40,6 +41,7 @@ class AiTabScreen extends ConsumerWidget {
 
     return PetloScaffold(
       showTabBar: false,
+      onAddPetTapped: () => PetFormScreen.push(context),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           28,
