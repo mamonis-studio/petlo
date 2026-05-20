@@ -96,9 +96,12 @@ class PaywallController extends Notifier<PaywallState> {
     } catch (e, st) {
       PetloLogger.instance
           .w('Paywall purchase unexpected', error: e, stackTrace: st);
+      // build 33: errorMessage は UI で表示してないので null。
+      // ユーザー向け通知は purchaseErrorStreamProvider 経由 (PurchaseException
+      // 由来) で行う。ここでの予期しない catch はログのみ。
       state = state.copyWith(
         isProcessing: false,
-        errorMessage: '予期しないエラーが発生しました',
+        errorMessage: null,
       );
     }
   }
@@ -126,9 +129,12 @@ class PaywallController extends Notifier<PaywallState> {
     } catch (e, st) {
       PetloLogger.instance
           .w('Paywall restore unexpected', error: e, stackTrace: st);
+      // build 33: errorMessage は UI で表示してないので null。
+      // ユーザー向け通知は purchaseErrorStreamProvider 経由 (PurchaseException
+      // 由来) で行う。ここでの予期しない catch はログのみ。
       state = state.copyWith(
         isProcessing: false,
-        errorMessage: '予期しないエラーが発生しました',
+        errorMessage: null,
       );
       return false;
     }

@@ -142,24 +142,27 @@ class _AlreadyProState extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ProStatus status = ref.watch(proStatusProvider);
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           SectionLabel(
-            AppLocalizations.of(context).paywall_pro_active_eyebrow,
+            l10n.paywall_pro_active_eyebrow,
             size: EyebrowSize.large,
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
           ),
           Text(
-            'プラン: ${_tierLabel(status.tier)}\n状態: ${_stateLabel(status.state)}',
+            '${l10n.paywall_already_pro_plan_label}: ${_tierLabel(l10n, status.tier)}\n'
+            '${l10n.paywall_already_pro_state_label}: ${_stateLabel(l10n, status.state)}',
             style: typo.bodyLarge.copyWith(color: colors.fgMuted),
           ),
           if (status.expiresAt != null) ...<Widget>[
             const SizedBox(height: 8),
             Text(
-              '次回更新: ${_formatDate(status.expiresAt!)}',
+              '${l10n.paywall_already_pro_renew_label}: '
+              '${MaterialLocalizations.of(context).formatFullDate(status.expiresAt!)}',
               style: typo.bodySmall.copyWith(color: colors.fgMuted),
             ),
           ],
@@ -168,32 +171,28 @@ class _AlreadyProState extends ConsumerWidget {
     );
   }
 
-  String _tierLabel(ProTier t) {
+  String _tierLabel(AppLocalizations l10n, ProTier t) {
     switch (t) {
       case ProTier.monthly:
-        return '月額';
+        return l10n.paywall_tier_monthly;
       case ProTier.yearly:
-        return '年額';
+        return l10n.paywall_tier_yearly;
       case ProTier.free:
-        return '—';
+        return l10n.paywall_tier_dash;
     }
   }
 
-  String _stateLabel(ProState s) {
+  String _stateLabel(AppLocalizations l10n, ProState s) {
     switch (s) {
       case ProState.active:
-        return 'アクティブ';
+        return l10n.paywall_state_active;
       case ProState.grace:
-        return '猶予期間中';
+        return l10n.paywall_state_grace;
       case ProState.cancelled:
-        return '解約済み(期限まで利用可)';
+        return l10n.paywall_state_cancelled;
       case ProState.free:
-        return '無料';
+        return l10n.paywall_state_free;
     }
-  }
-
-  String _formatDate(DateTime d) {
-    return '${d.year}年${d.month}月${d.day}日';
   }
 }
 
@@ -233,6 +232,7 @@ class _PaywallBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(28, 8, 28, 32),
       child: Column(
@@ -240,12 +240,12 @@ class _PaywallBody extends StatelessWidget {
         children: <Widget>[
           // ===== ヒーロー (build 23: § 統一) =====
           SectionLabel(
-            AppLocalizations.of(context).paywall_unlock_eyebrow,
+            l10n.paywall_unlock_eyebrow,
             size: EyebrowSize.large,
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
           ),
           Text(
-            '無制限の記録と、AI相談と、家族共有。\nうちの子のすべてを、ちゃんと残す。',
+            l10n.paywall_subhero,
             style: typo.bodyLarge.copyWith(
               color: colors.fgMuted,
               height: 1.7,
@@ -254,33 +254,33 @@ class _PaywallBody extends StatelessWidget {
           const SizedBox(height: 32),
 
           // ===== 機能リスト =====
-          SectionLabel(AppLocalizations.of(context).section_whats_included),
+          SectionLabel(l10n.section_whats_included),
           const SizedBox(height: 12),
-          const _FeatureRow(
-              title: 'Unlimited records',
-              note: 'ご飯・うんち・おしっこ・嘔吐 — 月の上限なし'),
-          const _FeatureRow(
-              title: 'AI consultations',
-              note: '月100回までの相談 + うんち画像診断 月10回'),
-          const _FeatureRow(
-              title: 'Family sharing',
-              note: '最大3グループ × 5人で共有'),
-          const _FeatureRow(
-              title: 'Full history',
-              note: '体重・体温の全期間グラフ、3ヶ月制限なし'),
-          const _FeatureRow(
-              title: 'Multiple pets',
-              note: '何匹でも登録できる'),
+          _FeatureRow(
+              title: l10n.paywall_feature_unlimited,
+              note: l10n.paywall_feature_unlimited_body),
+          _FeatureRow(
+              title: l10n.paywall_feature_ai,
+              note: l10n.paywall_feature_ai_body),
+          _FeatureRow(
+              title: l10n.paywall_feature_share,
+              note: l10n.paywall_feature_share_body),
+          _FeatureRow(
+              title: l10n.paywall_feature_charts,
+              note: l10n.paywall_feature_charts_body),
+          _FeatureRow(
+              title: l10n.paywall_feature_pets,
+              note: l10n.paywall_feature_pets_body),
           const SizedBox(height: 32),
 
           // ===== プラン選択 =====
-          SectionLabel(AppLocalizations.of(context).section_choose_plan),
+          SectionLabel(l10n.section_choose_plan),
           const SizedBox(height: 12),
 
           _PlanCard(
             tier: ProTier.yearly,
             isSelected: pState.selectedTier == ProTier.yearly,
-            badge: 'BEST VALUE',
+            badge: l10n.paywall_best_value_badge,
             onTap: () => controller.selectTier(ProTier.yearly),
             colors: colors,
             typo: typo,
@@ -298,15 +298,15 @@ class _PaywallBody extends StatelessWidget {
           // ===== CTA ボタン =====
           _PrimaryCta(
             label: pState.isProcessing
-                ? '処理中...'
-                : 'Start 7-day trial',
+                ? l10n.paywall_processing
+                : l10n.paywall_trial_subscribe,
             enabled: !pState.isProcessing,
             onTap: controller.purchase,
             colors: colors,
           ),
           const SizedBox(height: 12),
           Text(
-            'トライアル中はいつでもキャンセル可能。\n期間終了後に自動更新されます。',
+            l10n.paywall_legal_note,
             textAlign: TextAlign.center,
             style: typo.bodySmall.copyWith(
               color: colors.fgMuted,
@@ -322,7 +322,7 @@ class _PaywallBody extends StatelessWidget {
                   ? null
                   : () => controller.restore(),
               child: Text(
-                'Restore purchases',
+                l10n.paywall_restore_short,
                 style: TextStyle(
                   fontFamily: 'JetBrainsMono',
                   fontSize: 11,
@@ -338,7 +338,7 @@ class _PaywallBody extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               _LegalLink(
-                label: 'Terms',
+                label: l10n.paywall_terms_short,
                 onTap: () =>
                     _openUrl(context, AppConstants.termsOfUseUrl),
                 colors: colors,
@@ -350,7 +350,7 @@ class _PaywallBody extends StatelessWidget {
                 color: colors.line,
               ),
               _LegalLink(
-                label: 'Privacy',
+                label: l10n.paywall_privacy_short,
                 onTap: () =>
                     _openUrl(context, AppConstants.privacyPolicyUrl),
                 colors: colors,
@@ -465,47 +465,53 @@ class _PlanCard extends ConsumerWidget {
         ProTier.free => '',
       };
 
-  String get _periodLabel {
+  String _periodLabel(AppLocalizations l10n) {
     switch (tier) {
       case ProTier.monthly:
-        return 'Monthly';
+        return l10n.paywall_tier_monthly;
       case ProTier.yearly:
-        return 'Yearly';
+        return l10n.paywall_tier_yearly;
       case ProTier.free:
         return '';
     }
   }
 
-  String get _periodSuffix {
+  String _periodSuffix(AppLocalizations l10n) {
     switch (tier) {
       case ProTier.monthly:
-        return '/ month';
+        return l10n.paywall_per_month_suffix;
       case ProTier.yearly:
-        return '/ year';
+        return l10n.paywall_per_year_suffix;
       case ProTier.free:
         return '';
     }
   }
 
   /// 年額の月割り計算用 (UI表示専用)
-  String? _yearlyMonthlyEquivalent(ProductDetails details) {
+  String? _yearlyMonthlyEquivalent(
+      AppLocalizations l10n, ProductDetails details) {
     if (tier != ProTier.yearly) return null;
     final num? amount = details.rawPrice;
     if (amount == null || amount.isNaN) return null;
     final double perMonth = amount / 12;
-    return '約 ${details.currencySymbol}${perMonth.round()} / 月相当';
+    return l10n.paywall_yearly_monthly_equiv(
+      '${details.currencySymbol}${perMonth.round()}',
+    );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final ProductDetails? details =
         ref.watch(purchaseServiceProvider).productFor(_productId);
 
     // ローカライズされた価格、ない場合はフォールバック
+    // (フォールバックは StoreKit から商品情報が取れない異常系の保険、
+    //  通常ユーザーには表示されないのでハードコードのまま)
     final String priceLabel = details?.price ??
         (tier == ProTier.monthly ? '¥480' : '¥3,800');
     final String? equiv =
-        details == null ? null : _yearlyMonthlyEquivalent(details);
+        details == null ? null : _yearlyMonthlyEquivalent(l10n, details);
 
     return InkWell(
       onTap: onTap,
@@ -550,7 +556,7 @@ class _PlanCard extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    _periodLabel,
+                    _periodLabel(l10n),
                     style: TextStyle(
                       fontFamily: 'Fraunces',
                       fontStyle: FontStyle.italic,
@@ -600,7 +606,7 @@ class _PlanCard extends ConsumerWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    _periodSuffix,
+                    _periodSuffix(l10n),
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 13,
