@@ -1,87 +1,94 @@
 // ============================================================================
 // petlo - GroupApiException Tests
 // ============================================================================
+//
+// build 35 (H1) で enum 化。各サブクラスは GroupApiErrorCode を持ち、UI 表示は
+// helper (groupApiErrorMessage) で l10n 経由に解決する設計。本テストは
+//   - code が正しく付与されているか
+//   - sealed switch が網羅できているか
+//   - log 用 message が引数経由で保持されるか
+// を確認する。l10n 解決はヘルパー側のスナップショットテスト対象。
+//
+// ============================================================================
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:petlo/core/groups/group_api_exceptions.dart';
 
 void main() {
-  // ==========================================================================
-  // 各例外型がメッセージを持つ
-  // ==========================================================================
-  group('GroupApiException messages', () {
+  group('GroupApiException codes', () {
     test('GroupNetworkException', () {
-      const e = GroupNetworkException('接続失敗');
+      const e = GroupNetworkException(message: '接続失敗');
+      expect(e.code, GroupApiErrorCode.network);
       expect(e.message, '接続失敗');
-      expect(e.toString(), contains('接続失敗'));
+      expect(e.toString(), contains('network'));
     });
 
-    test('GroupUnauthorizedException has fixed message', () {
+    test('GroupUnauthorizedException', () {
       const e = GroupUnauthorizedException();
-      expect(e.message, contains('再ログイン'));
+      expect(e.code, GroupApiErrorCode.authRequired);
     });
 
-    test('GroupProRequiredException has fixed message', () {
+    test('GroupProRequiredException', () {
       const e = GroupProRequiredException();
-      expect(e.message, contains('Pro'));
+      expect(e.code, GroupApiErrorCode.proRequired);
     });
 
     test('GroupForbiddenException', () {
-      const e = GroupForbiddenException('権限なし');
+      const e = GroupForbiddenException(message: '権限なし');
+      expect(e.code, GroupApiErrorCode.permissionDenied);
       expect(e.message, '権限なし');
     });
 
     test('InviteCodeInvalidException', () {
       const e = InviteCodeInvalidException();
-      expect(e.message, contains('無効'));
+      expect(e.code, GroupApiErrorCode.inviteCodeInvalid);
     });
 
     test('InviteCodeAlreadyUsedException', () {
       const e = InviteCodeAlreadyUsedException();
-      expect(e.message, contains('使用'));
+      expect(e.code, GroupApiErrorCode.inviteCodeAlreadyUsed);
     });
 
-    test('GroupFullException mentions 5人上限', () {
+    test('GroupFullException', () {
       const e = GroupFullException();
-      expect(e.message, contains('5'));
+      expect(e.code, GroupApiErrorCode.groupFull);
     });
 
     test('AlreadyMemberException', () {
       const e = AlreadyMemberException();
-      expect(e.message, contains('既に'));
+      expect(e.code, GroupApiErrorCode.alreadyMember);
     });
 
-    test('GroupLimitReachedException mentions 3つ上限', () {
+    test('GroupLimitReachedException', () {
       const e = GroupLimitReachedException();
-      expect(e.message, contains('3'));
+      expect(e.code, GroupApiErrorCode.groupLimitReached);
     });
 
-    test('GroupBadRequestException', () {
-      const e = GroupBadRequestException('不正リクエスト');
-      expect(e.message, '不正リクエスト');
+    test('GroupBadRequestException carries the given code', () {
+      const e =
+          GroupBadRequestException(GroupApiErrorCode.invalidGroupName);
+      expect(e.code, GroupApiErrorCode.invalidGroupName);
     });
 
     test('GroupServerException', () {
-      const e = GroupServerException('500エラー');
+      const e = GroupServerException(message: '500エラー');
+      expect(e.code, GroupApiErrorCode.serverError);
       expect(e.message, '500エラー');
     });
 
-    test('GroupNotImplementedException with operation name', () {
+    test('GroupNotImplementedException carries operation in message', () {
       const e = GroupNotImplementedException('権限変更');
-      expect(e.message, contains('権限変更'));
-      expect(e.message, contains('実装'));
+      expect(e.code, GroupApiErrorCode.notImplemented);
+      expect(e.message, '権限変更');
     });
 
     test('GroupUnknownException', () {
-      const e = GroupUnknownException('?');
+      const e = GroupUnknownException(message: '?');
+      expect(e.code, GroupApiErrorCode.unknown);
       expect(e.message, '?');
     });
   });
 
-  // ==========================================================================
-  // sealed class での switch 網羅性
-  // (コンパイル時チェック: すべての case をカバーすれば default 不要)
-  // ==========================================================================
   group('GroupApiException sealed switch', () {
     String labelFor(GroupApiException e) {
       return switch (e) {
@@ -102,20 +109,23 @@ void main() {
     }
 
     test('all 13 types map correctly', () {
-      expect(labelFor(const GroupNetworkException('a')), 'network');
+      expect(labelFor(const GroupNetworkException()), 'network');
       expect(labelFor(const GroupUnauthorizedException()), 'unauthorized');
       expect(labelFor(const GroupProRequiredException()), 'pro');
-      expect(labelFor(const GroupForbiddenException('a')), 'forbidden');
+      expect(labelFor(const GroupForbiddenException()), 'forbidden');
       expect(labelFor(const InviteCodeInvalidException()), 'invalid');
       expect(labelFor(const InviteCodeAlreadyUsedException()), 'used');
       expect(labelFor(const GroupFullException()), 'full');
       expect(labelFor(const AlreadyMemberException()), 'already_member');
       expect(labelFor(const GroupLimitReachedException()), 'limit_reached');
-      expect(labelFor(const GroupBadRequestException('a')), 'bad_request');
-      expect(labelFor(const GroupServerException('a')), 'server');
+      expect(
+        labelFor(const GroupBadRequestException(GroupApiErrorCode.badRequest)),
+        'bad_request',
+      );
+      expect(labelFor(const GroupServerException()), 'server');
       expect(labelFor(const GroupNotImplementedException('op')),
           'not_implemented');
-      expect(labelFor(const GroupUnknownException('a')), 'unknown');
+      expect(labelFor(const GroupUnknownException()), 'unknown');
     });
   });
 }

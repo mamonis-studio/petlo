@@ -168,8 +168,10 @@ class PurchaseService {
     final String productId = switch (tier) {
       ProTier.monthly => AppConstants.iapMonthlyProductId,
       ProTier.yearly => AppConstants.iapYearlyProductId,
-      ProTier.free => throw const PurchaseUnknownException(
-          'Cannot buy free tier'),
+      ProTier.free => throw const PurchaseFailedException(
+          PurchaseErrorCode.cannotBuyFreeTier,
+          message: 'Cannot buy free tier',
+        ),
     };
 
     final ProductDetails? product = _products[productId];
@@ -184,13 +186,15 @@ class PurchaseService {
       final bool started =
           await _iap.buyNonConsumable(purchaseParam: param);
       if (!started) {
-        throw const PurchaseFailedException('購入を開始できませんでした');
+        throw const PurchaseFailedException(
+          PurchaseErrorCode.purchaseStartFailed,
+        );
       }
     } catch (e, st) {
       PetloLogger.instance
           .w('buy failed: $productId', error: e, stackTrace: st);
       if (e is PurchaseException) rethrow;
-      throw PurchaseUnknownException(e.toString());
+      throw PurchaseUnknownException(message: e.toString());
     }
   }
 
@@ -205,7 +209,7 @@ class PurchaseService {
     } catch (e, st) {
       PetloLogger.instance
           .w('restore failed', error: e, stackTrace: st);
-      throw PurchaseUnknownException(e.toString());
+      throw PurchaseUnknownException(message: e.toString());
     }
   }
 
@@ -246,7 +250,9 @@ class PurchaseService {
         PetloLogger.instance
             .w('Purchase error: ${err?.code} / ${err?.message}');
         _onError.add(PurchaseFailedException(
-            err?.message ?? '購入処理に失敗しました'));
+          PurchaseErrorCode.purchaseFailed,
+          message: err?.message,
+        ));
         if (p.pendingCompletePurchase) {
           await _iap.completePurchase(p);
         }
@@ -281,7 +287,8 @@ class PurchaseService {
 
     if (receipt.isEmpty) {
       _onError.add(const ReceiptVerificationException(
-          'レシートが空です'));
+        PurchaseErrorCode.receiptEmpty,
+      ));
       if (p.pendingCompletePurchase) {
         await _iap.completePurchase(p);
       }
@@ -311,15 +318,18 @@ class PurchaseService {
           '— leaving transaction open for retry',
         );
         _onError.add(ReceiptVerificationException(
-            status == 503
-                ? '課金検証が一時的に利用できません'
-                : 'ネットワークエラー: 次回起動時に再検証されます'));
+          status == 503
+              ? PurchaseErrorCode.receiptRetryableServer
+              : PurchaseErrorCode.receiptRetryableNetwork,
+          message: 'status=$status type=${e.type}',
+        ));
         return; // completePurchase 呼ばない
       }
       if (status == 501) {
         PetloLogger.instance.w('verify 501: Android not supported yet');
         _onError.add(const ReceiptVerificationException(
-            'Android の課金検証は近日対応予定です'));
+          PurchaseErrorCode.receiptAndroidNotSupported,
+        ));
         if (p.pendingCompletePurchase) {
           await _iap.completePurchase(p);
         }
@@ -330,7 +340,9 @@ class PurchaseService {
         'verify failed: status=$status msg=${e.message}',
       );
       _onError.add(ReceiptVerificationException(
-          'レシート検証に失敗しました (HTTP $status)'));
+        PurchaseErrorCode.receiptHttpError,
+        message: 'HTTP $status',
+      ));
       if (p.pendingCompletePurchase) {
         await _iap.completePurchase(p);
       }
@@ -341,7 +353,8 @@ class PurchaseService {
     final dynamic body = resp.data;
     if (body is! Map<String, dynamic>) {
       _onError.add(const ReceiptVerificationException(
-          'レシート検証のレスポンスが不正です'));
+        PurchaseErrorCode.receiptInvalidResponse,
+      ));
       if (p.pendingCompletePurchase) {
         await _iap.completePurchase(p);
       }
@@ -357,7 +370,9 @@ class PurchaseService {
         'verify rejected: reason=$reason appleStatus=${body['appleStatus']}',
       );
       _onError.add(ReceiptVerificationException(
-          _reasonToUserMessage(reason)));
+        _reasonToCode(reason),
+        message: reason,
+      ));
       if (p.pendingCompletePurchase) {
         await _iap.completePurchase(p);
       }
@@ -372,7 +387,8 @@ class PurchaseService {
         'verified=true だが tier/expiresAt が不正: tier=${body['tier']} exp=$expMs',
       );
       _onError.add(const ReceiptVerificationException(
-          '課金情報の取得に失敗しました'));
+        PurchaseErrorCode.receiptInvalidTierOrExpiry,
+      ));
       if (p.pendingCompletePurchase) {
         await _iap.completePurchase(p);
       }
@@ -396,16 +412,16 @@ class PurchaseService {
     }
   }
 
-  String _reasonToUserMessage(String? reason) {
+  PurchaseErrorCode _reasonToCode(String? reason) {
     switch (reason) {
       case 'apple_status_nonzero':
-        return 'Apple のレシート検証が失敗しました';
+        return PurchaseErrorCode.receiptRejectedAppleStatus;
       case 'no_matching_product':
-        return '購入された商品が確認できませんでした';
+        return PurchaseErrorCode.receiptRejectedNoMatchingProduct;
       case 'subscription_expired':
-        return 'サブスクリプションの有効期限が切れています';
+        return PurchaseErrorCode.receiptRejectedSubscriptionExpired;
       default:
-        return 'レシート検証に失敗しました';
+        return PurchaseErrorCode.receiptRejectedUnknown;
     }
   }
 

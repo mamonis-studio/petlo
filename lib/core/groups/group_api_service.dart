@@ -44,10 +44,12 @@ class GroupApiService {
     required String displayName,
   }) async {
     if (name.trim().isEmpty || name.trim().length > 50) {
-      throw const GroupBadRequestException('グループ名は1〜50文字で入力してください');
+      throw const GroupBadRequestException(
+          GroupApiErrorCode.invalidGroupName);
     }
     if (displayName.trim().isEmpty || displayName.trim().length > 20) {
-      throw const GroupBadRequestException('表示名は1〜20文字で入力してください');
+      throw const GroupBadRequestException(
+          GroupApiErrorCode.invalidDisplayName);
     }
 
     try {
@@ -60,7 +62,7 @@ class GroupApiService {
       );
       final dynamic body = resp.data;
       if (body is! Map<String, dynamic>) {
-        throw const GroupUnknownException('Invalid response format');
+        throw const GroupUnknownException(message: 'Invalid response format');
       }
       return CreateGroupResultDto.fromJson(body);
     } on DioException catch (e) {
@@ -69,7 +71,7 @@ class GroupApiService {
       PetloLogger.instance
           .w('createGroup failed', error: e, stackTrace: st);
       if (e is GroupApiException) rethrow;
-      throw GroupUnknownException(e.toString());
+      throw GroupUnknownException(message: e.toString());
     }
   }
 
@@ -86,11 +88,12 @@ class GroupApiService {
   }) async {
     if (grantedPermission == MemberPermission.owner) {
       throw const GroupBadRequestException(
-          'Owner権限の招待コードは発行できません');
+          GroupApiErrorCode.ownerInviteForbidden);
     }
     if (groupRemoteId.trim().isEmpty) {
       // build 21: 旧 DTO パースバグで groupId='' のままここまで来るのを防ぐ
-      throw const GroupBadRequestException('グループIDが取得できていません');
+      throw const GroupBadRequestException(
+          GroupApiErrorCode.missingGroupId);
     }
 
     try {
@@ -103,7 +106,7 @@ class GroupApiService {
       );
       final dynamic body = resp.data;
       if (body is! Map<String, dynamic>) {
-        throw const GroupUnknownException('Invalid response format');
+        throw const GroupUnknownException(message: 'Invalid response format');
       }
       return CreateInviteResultDto.fromJson(body, grantedPermission);
     } on DioException catch (e) {
@@ -112,7 +115,7 @@ class GroupApiService {
       PetloLogger.instance
           .w('createInvite failed', error: e, stackTrace: st);
       if (e is GroupApiException) rethrow;
-      throw GroupUnknownException(e.toString());
+      throw GroupUnknownException(message: e.toString());
     }
   }
 
@@ -127,15 +130,16 @@ class GroupApiService {
   }) async {
     if (code.trim().isEmpty) {
       // build 24: 空コードガード (path が /invites//join に崩れて 404 になるのを防ぐ)
-      throw const GroupBadRequestException('招待コードが空です');
+      throw const GroupBadRequestException(
+          GroupApiErrorCode.emptyInviteCode);
     }
     if (!RegExp(r'^\d{6}$').hasMatch(code)) {
       throw const GroupBadRequestException(
-          '6桁の数字を入力してください');
+          GroupApiErrorCode.invalidInviteCodeFormat);
     }
     if (displayName.trim().isEmpty || displayName.length > 20) {
       throw const GroupBadRequestException(
-          '表示名は1〜20文字で入力してください');
+          GroupApiErrorCode.invalidDisplayName);
     }
 
     try {
@@ -147,7 +151,7 @@ class GroupApiService {
       );
       final dynamic body = resp.data;
       if (body is! Map<String, dynamic>) {
-        throw const GroupUnknownException('Invalid response format');
+        throw const GroupUnknownException(message: 'Invalid response format');
       }
       return JoinGroupResultDto.fromJson(body);
     } on DioException catch (e) {
@@ -156,7 +160,7 @@ class GroupApiService {
       PetloLogger.instance
           .w('joinByCode failed', error: e, stackTrace: st);
       if (e is GroupApiException) rethrow;
-      throw GroupUnknownException(e.toString());
+      throw GroupUnknownException(message: e.toString());
     }
   }
 
@@ -170,7 +174,7 @@ class GroupApiService {
   }) async {
     if (permission == MemberPermission.owner) {
       throw const GroupBadRequestException(
-          'Ownerへの昇格は譲渡UIから行ってください');
+          GroupApiErrorCode.cannotPromoteToOwner);
     }
 
     try {
@@ -186,7 +190,7 @@ class GroupApiService {
       PetloLogger.instance
           .w('updateMemberPermission failed', error: e, stackTrace: st);
       if (e is GroupApiException) rethrow;
-      throw GroupUnknownException(e.toString());
+      throw GroupUnknownException(message: e.toString());
     }
   }
 
@@ -207,7 +211,7 @@ class GroupApiService {
       PetloLogger.instance
           .w('removeMember failed', error: e, stackTrace: st);
       if (e is GroupApiException) rethrow;
-      throw GroupUnknownException(e.toString());
+      throw GroupUnknownException(message: e.toString());
     }
   }
 
@@ -223,7 +227,7 @@ class GroupApiService {
       PetloLogger.instance
           .w('leaveGroup failed', error: e, stackTrace: st);
       if (e is GroupApiException) rethrow;
-      throw GroupUnknownException(e.toString());
+      throw GroupUnknownException(message: e.toString());
     }
   }
 
@@ -242,7 +246,7 @@ class GroupApiService {
         e.type == DioExceptionType.connectionError ||
         e.type == DioExceptionType.sendTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
-      return GroupNetworkException(e.message ?? 'ネットワークエラー');
+      return GroupNetworkException(message: e.message);
     }
 
     if (e.type == DioExceptionType.badResponse) {
@@ -253,7 +257,10 @@ class GroupApiService {
 
       switch (status) {
         case 400:
-          return GroupBadRequestException(errMsg ?? 'リクエストが不正です');
+          return GroupBadRequestException(
+            GroupApiErrorCode.badRequest,
+            message: errMsg,
+          );
         case 401:
           return const GroupUnauthorizedException();
         case 403:
@@ -261,24 +268,30 @@ class GroupApiService {
           if (errMsg != null && errMsg.toLowerCase().contains('pro')) {
             return const GroupProRequiredException();
           }
-          return GroupForbiddenException(errMsg ?? '権限がありません');
+          return GroupForbiddenException(message: errMsg);
         case 404:
           // build 31: backend のメンバー管理・退出 endpoint は実装済み。
           // 404 はリソース不在 (削除されたグループ / 存在しないメンバー) を意味する。
-          return GroupBadRequestException(errMsg ?? '対象が見つかりません');
+          return GroupBadRequestException(
+            GroupApiErrorCode.notFound,
+            message: errMsg,
+          );
         case 409:
-          return GroupBadRequestException(errMsg ?? '競合が発生しました');
+          return GroupBadRequestException(
+            GroupApiErrorCode.conflict,
+            message: errMsg,
+          );
         case 500:
         case 502:
         case 503:
         case 504:
-          return GroupServerException(errMsg ?? 'サーバーエラー');
+          return GroupServerException(message: errMsg);
         default:
-          return GroupUnknownException(errMsg ?? 'HTTP $status');
+          return GroupUnknownException(message: errMsg ?? 'HTTP $status');
       }
     }
 
-    return GroupUnknownException(e.message ?? e.type.toString());
+    return GroupUnknownException(message: e.message ?? e.type.toString());
   }
 
   /// join 専用のエラーマッピング
@@ -288,7 +301,7 @@ class GroupApiService {
         e.type == DioExceptionType.connectionError ||
         e.type == DioExceptionType.sendTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
-      return GroupNetworkException(e.message ?? 'ネットワークエラー');
+      return GroupNetworkException(message: e.message);
     }
 
     if (e.type == DioExceptionType.badResponse) {
@@ -313,16 +326,19 @@ class GroupApiService {
             lower.contains('3 ')) {
           return const GroupLimitReachedException();
         }
-        return GroupBadRequestException(errMsg ?? '招待コードが無効です');
+        return GroupBadRequestException(
+          GroupApiErrorCode.inviteCodeInvalid,
+          message: errMsg,
+        );
       }
       if (status == 401) return const GroupUnauthorizedException();
       if (status == 409) return const AlreadyMemberException();
       if (status != null && status >= 500) {
-        return GroupServerException(errMsg ?? 'サーバーエラー');
+        return GroupServerException(message: errMsg);
       }
-      return GroupUnknownException(errMsg ?? 'HTTP $status');
+      return GroupUnknownException(message: errMsg ?? 'HTTP $status');
     }
 
-    return GroupUnknownException(e.message ?? e.type.toString());
+    return GroupUnknownException(message: e.message ?? e.type.toString());
   }
 }

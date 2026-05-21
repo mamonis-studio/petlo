@@ -26,12 +26,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/groups/group_api_dtos.dart';
+import '../../../core/groups/group_api_error_messages.dart';
 import '../../../core/groups/group_api_exceptions.dart';
 import '../../../core/groups/group_api_service.dart';
 import '../../../core/preferences/user_preferences.dart';
 import '../../../core/sync/sync_service.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/display_name_provider.dart';
 import '../../providers/group_api_service_provider.dart';
 import '../../providers/group_members_providers.dart';
@@ -153,30 +155,30 @@ class JoinByCodeController extends Notifier<JoinByCodeState> {
     );
   }
 
-  JoinByCodeState _validate(JoinByCodeState s) {
+  JoinByCodeState _validate(JoinByCodeState s, AppLocalizations l10n) {
     String? codeErr;
     if (!RegExp(r'^\d{6}$').hasMatch(s.code)) {
-      codeErr = '6桁の数字を入力してください';
+      codeErr = l10n.group_api_error_invalidInviteCodeFormat;
     }
     String? nameErr;
     final String trimmed = s.displayName.trim();
     if (trimmed.isEmpty) {
-      nameErr = '表示名を入力してください';
+      nameErr = l10n.create_group_validation_display_name_required;
     } else if (trimmed.length > 20) {
-      nameErr = '20文字以内で入力してください';
+      nameErr = l10n.create_group_validation_display_name_max;
     }
     return s.copyWith(codeError: codeErr, nameError: nameErr);
   }
 
   /// グループ参加を実行
   Future<({JoinByCodeOutcome outcome, JoinResult? result})>
-      submit() async {
+      submit(AppLocalizations l10n) async {
     if (state.isSubmitting) {
       return (outcome: JoinByCodeOutcome.unknown, result: null);
     }
 
     // バリデート
-    final JoinByCodeState validated = _validate(state);
+    final JoinByCodeState validated = _validate(state, l10n);
     if (validated.codeError != null || validated.nameError != null) {
       state = validated;
       return (
@@ -192,7 +194,7 @@ class JoinByCodeController extends Notifier<JoinByCodeState> {
           .remainingGroupSlots();
       if (remaining <= 0) {
         state = state.copyWith(
-          errorMessage: '参加できるグループは最大3つまでです',
+          errorMessage: l10n.create_group_validation_limit_reached,
         );
         return (
           outcome: JoinByCodeOutcome.limitReached,
@@ -283,49 +285,49 @@ class JoinByCodeController extends Notifier<JoinByCodeState> {
     } on InviteCodeInvalidException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return (outcome: JoinByCodeOutcome.invalid, result: null);
     } on InviteCodeAlreadyUsedException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return (outcome: JoinByCodeOutcome.alreadyUsed, result: null);
     } on GroupFullException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return (outcome: JoinByCodeOutcome.full, result: null);
     } on AlreadyMemberException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return (outcome: JoinByCodeOutcome.alreadyMember, result: null);
     } on GroupLimitReachedException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return (outcome: JoinByCodeOutcome.limitReached, result: null);
     } on GroupNetworkException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return (outcome: JoinByCodeOutcome.network, result: null);
     } on GroupServerException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return (outcome: JoinByCodeOutcome.serverError, result: null);
     } on GroupApiException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return (outcome: JoinByCodeOutcome.unknown, result: null);
     } catch (e, st) {
@@ -333,7 +335,7 @@ class JoinByCodeController extends Notifier<JoinByCodeState> {
           .w('joinByCode unexpected', error: e, stackTrace: st);
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: '予期しないエラーが発生しました',
+        errorMessage: l10n.common_unexpected_error,
       );
       return (outcome: JoinByCodeOutcome.unknown, result: null);
     }

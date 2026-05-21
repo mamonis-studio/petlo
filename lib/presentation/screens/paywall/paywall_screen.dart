@@ -25,6 +25,8 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/billing/pro_status.dart';
+import '../../../core/billing/purchase_error_messages.dart';
+import '../../../core/billing/purchase_exceptions.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -78,13 +80,15 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     });
 
     // ===== 購入エラー時に SnackBar =====
-    ref.listen(purchaseErrorStreamProvider, (_, AsyncValue next) {
-      next.whenData((dynamic err) {
+    ref.listen(purchaseErrorStreamProvider, (_, AsyncValue<PurchaseException> next) {
+      next.whenData((PurchaseException err) {
         controller.markCompleted();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(err.message as String),
+              content: Text(
+                purchaseErrorMessage(err, AppLocalizations.of(context)),
+              ),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -301,7 +305,7 @@ class _PaywallBody extends StatelessWidget {
                 ? l10n.paywall_processing
                 : l10n.paywall_trial_subscribe,
             enabled: !pState.isProcessing,
-            onTap: controller.purchase,
+            onTap: () => controller.purchase(AppLocalizations.of(context)),
             colors: colors,
           ),
           const SizedBox(height: 12),
@@ -320,7 +324,7 @@ class _PaywallBody extends StatelessWidget {
             child: TextButton(
               onPressed: pState.isProcessing
                   ? null
-                  : () => controller.restore(),
+                  : () => controller.restore(AppLocalizations.of(context)),
               child: Text(
                 l10n.paywall_restore_short,
                 style: TextStyle(

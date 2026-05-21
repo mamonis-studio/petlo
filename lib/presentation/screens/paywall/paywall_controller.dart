@@ -20,9 +20,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/billing/pro_status.dart';
+import '../../../core/billing/purchase_error_messages.dart';
 import '../../../core/billing/purchase_exceptions.dart';
 import '../../../core/billing/purchase_service.dart';
 import '../../../core/utils/logger.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/purchase_provider.dart';
 
 @immutable
@@ -78,7 +80,7 @@ class PaywallController extends Notifier<PaywallState> {
   /// 購入を開始する。成功/失敗は PurchaseService の Stream 経由で
   /// PurchaseListener が ProStatus を更新する。
   /// このメソッドは「購入トリガーが投げられたか」だけを返す。
-  Future<void> purchase() async {
+  Future<void> purchase(AppLocalizations l10n) async {
     if (state.isProcessing) return;
 
     state = state.copyWith(isProcessing: true, errorMessage: null);
@@ -91,7 +93,7 @@ class PaywallController extends Notifier<PaywallState> {
     } on PurchaseException catch (e) {
       state = state.copyWith(
         isProcessing: false,
-        errorMessage: e.message,
+        errorMessage: purchaseErrorMessage(e, l10n),
       );
     } catch (e, st) {
       PetloLogger.instance
@@ -112,7 +114,7 @@ class PaywallController extends Notifier<PaywallState> {
   }
 
   /// 購入の復元
-  Future<bool> restore() async {
+  Future<bool> restore(AppLocalizations l10n) async {
     if (state.isProcessing) return false;
     state = state.copyWith(isProcessing: true, errorMessage: null);
     try {
@@ -123,7 +125,7 @@ class PaywallController extends Notifier<PaywallState> {
     } on PurchaseException catch (e) {
       state = state.copyWith(
         isProcessing: false,
-        errorMessage: e.message,
+        errorMessage: purchaseErrorMessage(e, l10n),
       );
       return false;
     } catch (e, st) {

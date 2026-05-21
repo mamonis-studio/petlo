@@ -12,10 +12,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/groups/group_api_dtos.dart';
+import '../../../core/groups/group_api_error_messages.dart';
 import '../../../core/groups/group_api_exceptions.dart';
 import '../../../core/groups/group_api_service.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/group_api_service_provider.dart';
 import '../../providers/group_members_providers.dart';
 import '../../providers/groups_providers.dart';
@@ -84,7 +86,9 @@ class GroupDetailController
   // 招待コード発行
   // ==========================================================================
   Future<CreateInviteResultDto?> issueInvite(
-      MemberPermission permission) async {
+    MemberPermission permission,
+    AppLocalizations l10n,
+  ) async {
     if (state.isIssuingInvite) return null;
     state = state.copyWith(
       isIssuingInvite: true,
@@ -115,7 +119,7 @@ class GroupDetailController
     } on GroupApiException catch (e) {
       state = state.copyWith(
         isIssuingInvite: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return null;
     } catch (e, st) {
@@ -123,7 +127,7 @@ class GroupDetailController
           .w('issueInvite unexpected', error: e, stackTrace: st);
       state = state.copyWith(
         isIssuingInvite: false,
-        errorMessage: '予期しないエラーが発生しました',
+        errorMessage: l10n.common_unexpected_error,
       );
       return null;
     }
@@ -135,6 +139,7 @@ class GroupDetailController
   Future<bool> updateMemberPermission({
     required String userId,
     required MemberPermission permission,
+    required AppLocalizations l10n,
   }) async {
     if (state.isUpdatingMember) return false;
     state = state.copyWith(
@@ -173,7 +178,7 @@ class GroupDetailController
     } on GroupApiException catch (e) {
       state = state.copyWith(
         isUpdatingMember: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return false;
     } catch (e, st) {
@@ -181,7 +186,7 @@ class GroupDetailController
           error: e, stackTrace: st);
       state = state.copyWith(
         isUpdatingMember: false,
-        errorMessage: '予期しないエラーが発生しました',
+        errorMessage: l10n.common_unexpected_error,
       );
       return false;
     }
@@ -190,7 +195,7 @@ class GroupDetailController
   // ==========================================================================
   // メンバー除名
   // ==========================================================================
-  Future<bool> removeMember(String userId) async {
+  Future<bool> removeMember(String userId, AppLocalizations l10n) async {
     if (state.isUpdatingMember) return false;
     state = state.copyWith(
       isUpdatingMember: true,
@@ -211,7 +216,7 @@ class GroupDetailController
     } on GroupApiException catch (e) {
       state = state.copyWith(
         isUpdatingMember: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return false;
     } catch (e, st) {
@@ -219,7 +224,7 @@ class GroupDetailController
           .w('removeMember unexpected', error: e, stackTrace: st);
       state = state.copyWith(
         isUpdatingMember: false,
-        errorMessage: '予期しないエラーが発生しました',
+        errorMessage: l10n.common_unexpected_error,
       );
       return false;
     }
@@ -228,7 +233,7 @@ class GroupDetailController
   // ==========================================================================
   // グループ退出
   // ==========================================================================
-  Future<bool> leaveGroup() async {
+  Future<bool> leaveGroup(AppLocalizations l10n) async {
     if (state.isLeaving) return false;
     state = state.copyWith(isLeaving: true, errorMessage: null);
 
@@ -249,7 +254,7 @@ class GroupDetailController
     } on GroupApiException catch (e) {
       state = state.copyWith(
         isLeaving: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return false;
     } catch (e, st) {
@@ -257,7 +262,7 @@ class GroupDetailController
           .w('leaveGroup unexpected', error: e, stackTrace: st);
       state = state.copyWith(
         isLeaving: false,
-        errorMessage: '予期しないエラーが発生しました',
+        errorMessage: l10n.common_unexpected_error,
       );
       return false;
     }

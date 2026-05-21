@@ -3,88 +3,133 @@
 // ============================================================================
 //
 // GroupApiService が投げるエラー。
-// UI 側で SnackBar / Paywall / 確認ダイアログ等の対応を切り替えるために
-// sealed class で網羅。
+//
+// build 35: エラーコード enum 化 (H1 対応)。
+//   - `code` (GroupApiErrorCode) が UI 表示の正、l10n キーマッピングの起点
+//   - `message` は **英語フォールバック / ログ用途のみ** で UI 表示禁止。
+//     UI は必ず groupApiErrorMessage(e, l10n) ヘルパー経由で訳す
+//   - 例外サブクラスは catch 時の粒度切替 (`on InviteCodeInvalidException`)
+//     のために維持。各サブクラスは固有 code を super に渡す
+//   - 入力バリデーション系 (`GroupBadRequestException`) は code を引数で受ける
 //
 // ============================================================================
 
+enum GroupApiErrorCode {
+  // 通信 / 共通 HTTP
+  network,
+  authRequired, // 401
+  permissionDenied, // 403
+  notFound, // 404
+  conflict, // 409
+  badRequest, // 400 generic
+  serverError, // 5xx
+  notImplemented, // legacy 404 マッピング (現状未使用、将来 endpoint 用)
+  unknown,
+
+  // ローカル入力バリデーション (グループ系)
+  proRequired,
+  invalidGroupName,
+  invalidDisplayName,
+  missingGroupId,
+  cannotPromoteToOwner,
+  ownerInviteForbidden,
+
+  // 招待コード系
+  emptyInviteCode,
+  invalidInviteCodeFormat,
+  inviteCodeInvalid,
+  inviteCodeAlreadyUsed,
+  groupFull,
+  alreadyMember,
+  groupLimitReached,
+}
+
 sealed class GroupApiException implements Exception {
-  const GroupApiException(this.message);
-  final String message;
+  const GroupApiException(this.code, {this.message});
+
+  /// 唯一の真の識別子。UI はこれを見て l10n キーへ写像する。
+  final GroupApiErrorCode code;
+
+  /// 英語フォールバック / ログ用途のみ。UI 表示禁止 (代わりに
+  /// groupApiErrorMessage(this, l10n) を使う)。
+  final String? message;
 
   @override
-  String toString() => 'GroupApiException: $message';
+  String toString() => 'GroupApiException(code=$code, msg=$message)';
 }
 
 /// オフライン or サーバー到達不能
 class GroupNetworkException extends GroupApiException {
-  const GroupNetworkException(super.message);
+  const GroupNetworkException({String? message})
+      : super(GroupApiErrorCode.network, message: message);
 }
 
-/// 認証エラー (401) — 再ログイン必要
+/// 認証エラー (401)
 class GroupUnauthorizedException extends GroupApiException {
   const GroupUnauthorizedException()
-      : super('認証エラーです。再ログインしてください');
+      : super(GroupApiErrorCode.authRequired);
 }
 
-/// Pro プラン未契約 (グループ作成 / 招待発行に必要)
+/// Pro プラン未契約
 class GroupProRequiredException extends GroupApiException {
   const GroupProRequiredException()
-      : super('Pro プランが必要です');
+      : super(GroupApiErrorCode.proRequired);
 }
 
 /// 権限不足 (403)
 class GroupForbiddenException extends GroupApiException {
-  const GroupForbiddenException(super.message);
+  const GroupForbiddenException({String? message})
+      : super(GroupApiErrorCode.permissionDenied, message: message);
 }
 
 /// 招待コードが無効 / 期限切れ
 class InviteCodeInvalidException extends GroupApiException {
   const InviteCodeInvalidException()
-      : super('招待コードが無効か、期限切れです');
+      : super(GroupApiErrorCode.inviteCodeInvalid);
 }
 
 /// 招待コードが既に使用済み
 class InviteCodeAlreadyUsedException extends GroupApiException {
   const InviteCodeAlreadyUsedException()
-      : super('この招待コードは既に使用されています');
+      : super(GroupApiErrorCode.inviteCodeAlreadyUsed);
 }
 
 /// グループが満員 (5人上限)
 class GroupFullException extends GroupApiException {
-  const GroupFullException()
-      : super('このグループは満員です(最大5人)');
+  const GroupFullException() : super(GroupApiErrorCode.groupFull);
 }
 
 /// 自分が既にメンバー
 class AlreadyMemberException extends GroupApiException {
-  const AlreadyMemberException()
-      : super('既にこのグループのメンバーです');
+  const AlreadyMemberException() : super(GroupApiErrorCode.alreadyMember);
 }
 
-/// グループ作成上限超過 (3つ)
+/// グループ参加上限超過
 class GroupLimitReachedException extends GroupApiException {
   const GroupLimitReachedException()
-      : super('参加できるグループは最大3つまでです');
+      : super(GroupApiErrorCode.groupLimitReached);
 }
 
-/// 入力バリデーションエラー (400)
+/// 400 系。code で具体的理由を識別する。
 class GroupBadRequestException extends GroupApiException {
-  const GroupBadRequestException(super.message);
+  const GroupBadRequestException(GroupApiErrorCode code, {String? message})
+      : super(code, message: message);
 }
 
 /// サーバーエラー (5xx)
 class GroupServerException extends GroupApiException {
-  const GroupServerException(super.message);
+  const GroupServerException({String? message})
+      : super(GroupApiErrorCode.serverError, message: message);
 }
 
-/// 未実装エンドポイント (将来対応)
+/// 未実装エンドポイント (legacy、build 31 以降は通常起こらない)
 class GroupNotImplementedException extends GroupApiException {
   const GroupNotImplementedException(String operation)
-      : super('$operation はまだサーバー側で実装されていません');
+      : super(GroupApiErrorCode.notImplemented, message: operation);
 }
 
 /// 想定外
 class GroupUnknownException extends GroupApiException {
-  const GroupUnknownException(super.message);
+  const GroupUnknownException({String? message})
+      : super(GroupApiErrorCode.unknown, message: message);
 }

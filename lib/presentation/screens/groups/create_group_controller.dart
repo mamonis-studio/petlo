@@ -17,6 +17,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/groups/group_api_error_messages.dart';
 import '../../../core/groups/group_api_exceptions.dart';
 import '../../../core/groups/group_api_service.dart';
 import '../../../core/preferences/user_preferences.dart';
@@ -214,7 +215,7 @@ class CreateGroupController extends Notifier<CreateGroupState> {
     } on GroupProRequiredException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return (
         outcome: CreateGroupOutcome.proRequired,
@@ -223,7 +224,7 @@ class CreateGroupController extends Notifier<CreateGroupState> {
     } on GroupNetworkException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return (
         outcome: CreateGroupOutcome.network,
@@ -232,7 +233,7 @@ class CreateGroupController extends Notifier<CreateGroupState> {
     } on GroupServerException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return (
         outcome: CreateGroupOutcome.serverError,
@@ -241,7 +242,7 @@ class CreateGroupController extends Notifier<CreateGroupState> {
     } on GroupApiException catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: e.message,
+        errorMessage: groupApiErrorMessage(e, l10n),
       );
       return (
         outcome: CreateGroupOutcome.unknown,

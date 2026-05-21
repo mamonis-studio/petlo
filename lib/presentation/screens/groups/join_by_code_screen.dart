@@ -212,7 +212,7 @@ class _JoinByCodeScreenState extends ConsumerState<JoinByCodeScreen> {
     // キーボードを閉じる
     FocusScope.of(context).unfocus();
 
-    final r = await controller.submit();
+    final r = await controller.submit(AppLocalizations.of(context));
     if (!mounted) return;
     switch (r.outcome) {
       case JoinByCodeOutcome.success:

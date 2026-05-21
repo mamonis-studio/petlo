@@ -16,7 +16,7 @@ abstract final class AppConstants {
   // ===== アプリ基本情報 =====
   static const String appName = 'petlo';
   static const String appVersion = '1.0.0';
-  static const int appBuildNumber = 34;
+  static const int appBuildNumber = 35;
   static const String bundleId = 'mamonis.studio.petlo';
   static const String developerName = 'mamonis.studio';
 

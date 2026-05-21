@@ -294,7 +294,7 @@ class GroupDetailScreen extends ConsumerWidget {
     if (permission == null) return;
 
     final CreateInviteResultDto? result =
-        await controller.issueInvite(permission);
+        await controller.issueInvite(permission, AppLocalizations.of(context));
     if (result == null) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -324,6 +324,7 @@ class GroupDetailScreen extends ConsumerWidget {
     final bool ok = await controller.updateMemberPermission(
       userId: userId,
       permission: newPermission,
+      l10n: AppLocalizations.of(context),
     );
     if (!context.mounted) return;
     if (ok) {
@@ -363,7 +364,9 @@ class GroupDetailScreen extends ConsumerWidget {
       ),
     );
     if (confirmed != true) return;
-    final bool ok = await controller.removeMember(userId);
+    if (!context.mounted) return;
+    final bool ok =
+        await controller.removeMember(userId, AppLocalizations.of(context));
     if (!context.mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -400,8 +403,9 @@ class GroupDetailScreen extends ConsumerWidget {
       ),
     );
     if (confirmed != true) return;
+    if (!context.mounted) return;
 
-    final bool ok = await controller.leaveGroup();
+    final bool ok = await controller.leaveGroup(AppLocalizations.of(context));
     if (!context.mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
