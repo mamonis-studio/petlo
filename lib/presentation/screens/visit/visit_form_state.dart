@@ -4,6 +4,7 @@
 
 import 'package:flutter/foundation.dart';
 
+import '../../../l10n/generated/app_localizations.dart';
 import '../../widgets/forms/multi_photo_picker.dart';
 
 @immutable
@@ -55,19 +56,19 @@ class VisitFormState {
 
   bool get isEditing => editingVisitId != null;
 
-  VisitFormState validate() {
+  VisitFormState validate(AppLocalizations l10n) {
     final errs = VisitFormErrors(
-      reason: reason.trim().isEmpty ? '主訴を入力してください' : null,
+      reason: reason.trim().isEmpty ? l10n.visit_validation_reason_required : null,
       visitedAt: visitedAt == null
-          ? '通院日を選んでください'
+          ? l10n.visit_validation_date_required
           : (visitedAt!.isAfter(
                   DateTime.now().add(const Duration(days: 1)))
-              ? '未来の日付は記録できません'
+              ? l10n.visit_validation_future_date
               : null),
       costJpy: costJpy != null && costJpy! < 0
-          ? '0円以上で入力してください'
+          ? l10n.visit_validation_amount_non_negative
           : (costJpy != null && costJpy! > 99999999
-              ? '金額が大きすぎます'
+              ? l10n.visit_validation_amount_max
               : null),
     );
     return copyWith(errors: errs);

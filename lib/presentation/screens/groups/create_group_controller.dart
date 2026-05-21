@@ -22,6 +22,7 @@ import '../../../core/groups/group_api_service.dart';
 import '../../../core/preferences/user_preferences.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/display_name_provider.dart';
 import '../../providers/group_api_service_provider.dart';
 import '../../providers/groups_providers.dart';
@@ -109,32 +110,32 @@ class CreateGroupController extends Notifier<CreateGroupState> {
     );
   }
 
-  CreateGroupState _validate(CreateGroupState s) {
+  CreateGroupState _validate(CreateGroupState s, AppLocalizations l10n) {
     final String trimmed = s.name.trim();
     String? err;
     if (trimmed.isEmpty) {
-      err = 'グループ名を入力してください';
+      err = l10n.create_group_validation_name_required;
     } else if (trimmed.length > 50) {
-      err = '50文字以内で入力してください';
+      err = l10n.create_group_validation_name_max;
     }
     final String dn = s.displayName.trim();
     String? dnErr;
     if (dn.isEmpty) {
-      dnErr = '表示名を入力してください';
+      dnErr = l10n.create_group_validation_display_name_required;
     } else if (dn.length > 20) {
-      dnErr = '20文字以内で入力してください';
+      dnErr = l10n.create_group_validation_display_name_max;
     }
     return s.copyWith(nameError: err, displayNameError: dnErr);
   }
 
-  Future<({CreateGroupOutcome outcome, String? createdGroupId})>
-      submit() async {
+  Future<({CreateGroupOutcome outcome, String? createdGroupId})> submit(
+      AppLocalizations l10n) async {
     if (state.isSubmitting) {
       return (outcome: CreateGroupOutcome.unknown, createdGroupId: null);
     }
 
     // ローカルバリデート
-    final CreateGroupState validated = _validate(state);
+    final CreateGroupState validated = _validate(state, l10n);
     if (validated.nameError != null || validated.displayNameError != null) {
       state = validated;
       return (
@@ -147,7 +148,7 @@ class CreateGroupController extends Notifier<CreateGroupState> {
     final bool isPro = ref.read(isProProvider);
     if (!isPro) {
       state = state.copyWith(
-        errorMessage: 'グループ作成は Pro プラン限定です',
+        errorMessage: l10n.create_group_pro_required_message,
       );
       return (
         outcome: CreateGroupOutcome.proRequired,
@@ -162,7 +163,7 @@ class CreateGroupController extends Notifier<CreateGroupState> {
           .remainingGroupSlots();
       if (remaining <= 0) {
         state = state.copyWith(
-          errorMessage: 'グループは最大3つまで作成できます',
+          errorMessage: l10n.create_group_validation_limit_reached,
         );
         return (
           outcome: CreateGroupOutcome.limitReached,
@@ -251,7 +252,7 @@ class CreateGroupController extends Notifier<CreateGroupState> {
           .w('createGroup unexpected', error: e, stackTrace: st);
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: '予期しないエラーが発生しました',
+        errorMessage: l10n.common_unexpected_error,
       );
       return (
         outcome: CreateGroupOutcome.unknown,

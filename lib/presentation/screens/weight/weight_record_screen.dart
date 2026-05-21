@@ -201,7 +201,7 @@ class _WeightRecordScreenState extends ConsumerState<WeightRecordScreen> {
   }
 
   Future<void> _onSave(WeightFormController controller) async {
-    final r = await controller.save();
+    final r = await controller.save(AppLocalizations.of(context));
     switch (r) {
       case WeightFormSaveOutcome.success:
         if (mounted) {

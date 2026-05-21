@@ -5,6 +5,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 @immutable
 class WeightFormErrors {
@@ -40,18 +41,18 @@ class WeightFormState {
 
   bool get isEditing => editingWeightId != null;
 
-  WeightFormState validate() {
+  WeightFormState validate(AppLocalizations l10n) {
     final errs = WeightFormErrors(
       weightG: weightG == null
-          ? '体重を入力してください'
+          ? l10n.weight_validation_required
           : (weightG! <= 0
-              ? '0より大きい値を入力してください'
-              : (weightG! > 200000 ? '200kg以下で入力してください' : null)),
+              ? l10n.weight_validation_positive
+              : (weightG! > 200000 ? l10n.weight_validation_max : null)),
       measuredAt: measuredAt == null
-          ? '時刻を選んでください'
+          ? l10n.record_validation_time_required
           : (measuredAt!.isAfter(
                   DateTime.now().add(const Duration(minutes: 5)))
-              ? '未来の時刻は記録できません'
+              ? l10n.record_validation_future_time
               : null),
     );
     return copyWith(errors: errs);

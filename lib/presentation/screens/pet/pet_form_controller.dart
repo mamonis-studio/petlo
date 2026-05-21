@@ -23,6 +23,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/database_provider.dart';
 import '../../providers/pet_selection_controller.dart';
 import '../../providers/pets_providers.dart';
@@ -178,8 +179,8 @@ class PetFormController extends FamilyNotifier<PetFormState, int?> {
   /// 1段階目: バリデーション + 同名チェック。
   /// 同名警告が必要な場合は `duplicateNameNeedsConfirmation` を返し、
   /// UIはダイアログ表示 → confirmAndSave() を呼ぶ。
-  Future<PetFormSaveOutcome> save() async {
-    final PetFormState validated = state.validate();
+  Future<PetFormSaveOutcome> save(AppLocalizations l10n) async {
+    final PetFormState validated = state.validate(l10n);
     if (validated.errors.hasAny) {
       state = validated;
       return PetFormSaveOutcome.validationFailed;

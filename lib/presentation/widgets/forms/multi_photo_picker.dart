@@ -28,6 +28,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/pet_avatar.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 /// 1枚分のスロット情報
 class PhotoSlot {
@@ -266,6 +267,7 @@ class _PickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Container(
       color: colors.bg,
       child: SafeArea(
@@ -275,18 +277,18 @@ class _PickerSheet extends StatelessWidget {
           children: <Widget>[
             const SizedBox(height: 24),
             _SheetRow(
-              label: 'Take a photo',
+              label: l10n.common_take_photo,
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             Divider(height: 1, color: colors.line),
             _SheetRow(
-              label: 'Choose from library',
+              label: l10n.common_choose_from_library,
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
             const SizedBox(height: 16),
             Container(height: 8, color: colors.bgSoft),
             _SheetRow(
-              label: 'Cancel',
+              label: l10n.common_cancel,
               muted: true,
               onTap: () => Navigator.pop(context),
             ),

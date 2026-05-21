@@ -28,6 +28,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/section_label.dart';
 import '../../../data/local/app_database.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/pets_providers.dart';
 import '../../providers/scope_providers.dart';
 
@@ -65,6 +66,7 @@ class _PetSharePickerSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
 
     // personal scope の active ペットを 1 回だけ stream で読み取る。
     final AsyncValue<List<PetEntity>> personalPets = ref.watch(
@@ -88,14 +90,13 @@ class _PetSharePickerSheet extends ConsumerWidget {
                 color: colors.line,
               ),
             ),
-            const SectionLabel(
-              'Share existing pet',
+            SectionLabel(
+              l10n.pet_share_picker_title,
               size: EyebrowSize.large,
-              padding: EdgeInsets.fromLTRB(0, 0, 0, 12),
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
             ),
             Text(
-              'Personal で記録していたペットをグループへ移動します。\n'
-              '記録もまとめて共有され、メンバー全員から見られるようになります。',
+              l10n.pet_share_picker_body,
               style: typo.bodySmall.copyWith(color: colors.fgMuted, height: 1.6),
             ),
             const SizedBox(height: 20),
@@ -113,7 +114,7 @@ class _PetSharePickerSheet extends ConsumerWidget {
                 error: (Object e, _) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 24),
                   child: Text(
-                    'ペット一覧の取得に失敗しました\n$e',
+                    l10n.pet_share_picker_load_error(e.toString()),
                     style: typo.bodySmall.copyWith(color: colors.accentDanger),
                   ),
                 ),
@@ -122,7 +123,7 @@ class _PetSharePickerSheet extends ConsumerWidget {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 24),
                       child: Text(
-                        'Personal に共有できるペットがいません。',
+                        l10n.pet_share_picker_empty,
                         style: typo.bodyMedium
                             .copyWith(color: colors.fgMuted, height: 1.6),
                       ),
@@ -153,23 +154,23 @@ class _PetSharePickerSheet extends ConsumerWidget {
 
   Future<void> _onPick(
       BuildContext context, WidgetRef ref, PetEntity pet) async {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final bool? confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('このグループへ共有'),
-        content: Text(
-          '${pet.name} をこのグループに共有しますか?\n\n'
-          '記録(食事/排泄/体重ほか)もまとめて移動し、'
-          'メンバー全員から閲覧できるようになります。',
-        ),
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: Text(
+            AppLocalizations.of(dialogContext).pet_share_picker_confirm_title),
+        content: Text(AppLocalizations.of(dialogContext)
+            .pet_share_picker_confirm_body(pet.name)),
         actions: <Widget>[
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('キャンセル'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(AppLocalizations.of(dialogContext).common_cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('共有する'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(AppLocalizations.of(dialogContext)
+                .pet_share_picker_confirm_action),
           ),
         ],
       ),
@@ -186,14 +187,14 @@ class _PetSharePickerSheet extends ConsumerWidget {
       navigator.pop(); // close sheet
       messenger.showSnackBar(
         SnackBar(
-          content: Text('${pet.name} を共有しました (${n} 件のレコードを移動)'),
+          content: Text(l10n.pet_share_picker_success(pet.name, n)),
           behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(
-          content: Text('共有に失敗しました: $e'),
+          content: Text(l10n.pet_share_picker_failure(e.toString())),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -216,6 +217,7 @@ class _PetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -232,7 +234,10 @@ class _PetRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    pet.breed ?? (pet.type.name == 'dog' ? '犬' : '猫'),
+                    pet.breed ??
+                        (pet.type.name == 'dog'
+                            ? l10n.pet_species_dog_short
+                            : l10n.pet_species_cat_short),
                     style: typo.bodySmall
                         .copyWith(color: colors.fgMuted, height: 1.5),
                   ),

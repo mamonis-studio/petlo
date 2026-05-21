@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/database_provider.dart';
 import '../../providers/photo_storage_provider.dart';
 import '../../providers/scope_providers.dart';
@@ -75,8 +76,8 @@ class VisitFormController extends FamilyNotifier<VisitFormState, int?> {
       state = state.copyWith(photoSlots: slots);
 
   // Save
-  Future<VisitFormSaveOutcome> save() async {
-    final validated = state.validate();
+  Future<VisitFormSaveOutcome> save(AppLocalizations l10n) async {
+    final validated = state.validate(l10n);
     if (validated.errors.hasAny) {
       state = validated;
       return VisitFormSaveOutcome.validationFailed;

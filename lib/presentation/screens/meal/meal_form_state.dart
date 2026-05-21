@@ -16,6 +16,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../widgets/forms/validators.dart';
 
 /// バリデーション結果
@@ -92,19 +93,19 @@ class MealFormState {
       foodId != null || foodNameFreeText.trim().isNotEmpty;
 
   /// バリデーション
-  MealFormState validate() {
+  MealFormState validate(AppLocalizations l10n) {
     final MealFormErrors errs = MealFormErrors(
-      foodName: !hasFoodSelected ? 'ご飯の銘柄を入力してください' : null,
+      foodName: !hasFoodSelected ? l10n.meal_validation_food_required : null,
       amountG: amountG != null && amountG! < 0
-          ? '0以上の数値を入力してください'
+          ? l10n.meal_validation_amount_non_negative
           : (amountG != null && amountG! > 10000
-              ? '10,000g 以下で入力してください'
+              ? l10n.meal_validation_amount_max
               : null),
-      appetite: appetite == null ? '食いつきを選んでください' : null,
+      appetite: appetite == null ? l10n.meal_validation_appetite_required : null,
       eatenAt: eatenAt == null
-          ? '食事時刻を選んでください'
+          ? l10n.meal_validation_time_required
           : (eatenAt!.isAfter(DateTime.now().add(const Duration(minutes: 5)))
-              ? '未来の時刻は記録できません'
+              ? l10n.record_validation_future_time
               : null),
     );
     return copyWith(errors: errs);

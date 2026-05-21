@@ -4,7 +4,6 @@
   "@appName": {
     "description": "アプリ名"
   },
-
   "common_ok": "OK",
   "common_cancel": "キャンセル",
   "common_save": "保存",
@@ -24,13 +23,11 @@
   "common_update": "更新",
   "common_saving": "保存中…",
   "common_updating": "更新中…",
-
   "pet_type_dog": "犬",
   "pet_type_cat": "猫",
   "pet_sex_male": "オス",
   "pet_sex_female": "メス",
   "pet_sex_unknown": "不明",
-
   "pet_form_app_bar_new": "新しいペット",
   "pet_form_app_bar_edit": "ペットを編集",
   "pet_form_eyebrow_new": "ペットの追加",
@@ -62,14 +59,12 @@
   "pet_form_field_emergency_vet_helper": "24時間対応の夜間救急病院",
   "pet_form_error_validation": "入力内容に問題があります",
   "pet_form_error_save_failed": "保存に失敗しました。もう一度お試しください",
-
   "tab_home": "ホーム",
   "tab_life": "きろく",
   "tab_health": "みまもる",
   "tab_plans": "よてい",
   "tab_more": "その他",
   "tab_ai": "AI相談",
-
   "common_view": "見る",
   "common_open": "開く",
   "common_join": "参加",
@@ -84,13 +79,11 @@
   "common_choose_from_library": "ライブラリから選ぶ",
   "common_local_only": "ローカルのみ",
   "common_pro_only_period": "Pro限定の期間です",
-
   "onboarding_welcome_eyebrow": "ようこそ",
   "onboarding_welcome_hero_line1": "うちの子のすべて、",
   "onboarding_welcome_hero_line2": "家族とAIで見守る。",
   "onboarding_welcome_body": "犬・猫の日常を体系的に記録し、\nAIに相談でき、家族で共有できる。\nお別れの後も、思い出として残せる。",
   "onboarding_welcome_cta": "はじめる",
-
   "onboarding_pillars_eyebrow": "5つの柱",
   "onboarding_pillars_hero": "5つの\n柱。",
   "onboarding_pillars_pillar_record_title": "体系的記録",
@@ -104,19 +97,16 @@
   "onboarding_pillars_pillar_memorial_title": "お別れの後も",
   "onboarding_pillars_pillar_memorial_body": "虹の橋を渡った後も思い出として記録継続。",
   "onboarding_pillars_cta": "次へ",
-
   "onboarding_petform_eyebrow": "うちの子のこと",
   "onboarding_petform_hero": "うちの子のこと。",
   "onboarding_petform_body": "詳しい情報は後でゆっくり追加できます。",
   "onboarding_petform_cta": "次へ",
   "onboarding_petform_skip": "スキップ",
-
   "onboarding_done_eyebrow": "ようこそ",
   "onboarding_done_hero": "準備完了。",
   "onboarding_done_body": "準備ができました。\n最初の記録を始めましょう。",
   "onboarding_done_helper": "ホーム タブから うちの子の今日の記録を、\nその他 タブから 設定や Pro プランの確認ができます。",
   "onboarding_done_cta": "petloを始める",
-
   "home_eyebrow_today": "今日",
   "home_section_quick_log": "すぐ記録",
   "home_section_memories": "思い出",
@@ -131,11 +121,9 @@
   "home_quick_vomit": "嘔吐",
   "home_memories_diary": "日記",
   "home_memories_gallery": "ギャラリー",
-
   "life_eyebrow_log": "ログ",
   "life_hero": "日々の記録。",
   "life_empty_body": "ペットを選ぶと、これまでの記録が表示されます。",
-
   "health_eyebrow_health": "健康",
   "health_hero": "健康の記録。",
   "health_section_records": "記録",
@@ -148,11 +136,9 @@
   "health_record_temperature": "体温",
   "health_chart_weight": "体重の推移",
   "health_chart_temperature": "体温の推移",
-
   "plans_eyebrow_schedule": "予定",
   "plans_hero": "予定。",
   "plans_empty_body": "ペットを選ぶと、予定とリマインダーが表示されます。",
-
   "more_eyebrow": "設定とその他",
   "more_hero": "その他。",
   "more_section_memories": "思い出",
@@ -173,17 +159,16 @@
   "more_pro_cta_hero": "すべてを\nアンロック。",
   "more_pro_cta_body": "無制限の記録、AI相談、家族共有。\n7日間の無料トライアル付き。",
   "more_pro_cta_button": "プランを見る",
-
   "group_selector_label": "グループ",
   "group_selector_personal": "マイ",
-
   "group_closure_snackbar_warning": "{groupName} のグループ警告があります",
   "@group_closure_snackbar_warning": {
     "placeholders": {
-      "groupName": {"type": "String"}
+      "groupName": {
+        "type": "String"
+      }
     }
   },
-
   "home_quick_label_meal": "ごはん",
   "home_quick_label_stool": "うんち",
   "home_quick_label_pee": "おしっこ",
@@ -191,7 +176,6 @@
   "home_action_add_diary": "日記を書く",
   "home_action_gallery": "ギャラリー",
   "home_register_pet": "ペットを登録",
-
   "more_section_ai_label": "AI機能",
   "more_section_family": "家族共有",
   "more_section_reminders": "リマインダー",
@@ -221,9 +205,7 @@
   "more_pro_view_plans": "プランを見る",
   "more_select_pet_first": "ペットを選択してください",
   "more_link_open_failed": "リンクを開けませんでした",
-
   "pet_selector_add": "追加",
-
   "common_select": "選ぶ",
   "common_anything_to_remember": "メモはありますか?",
   "common_when": "いつ",
@@ -234,7 +216,6 @@
   "common_today": "今日",
   "common_yesterday": "昨日",
   "common_no_pet_selected": "ペットを選択してください",
-  "common_loading": "読み込み中…",
   "common_failed_to_load": "読み込みに失敗しました",
   "common_input_invalid": "入力内容に問題があります",
   "common_save_failed": "保存に失敗しました",
@@ -244,7 +225,6 @@
   "common_deleted": "削除しました",
   "common_yes_short": "はい",
   "common_no_short": "いいえ",
-
   "life_eyebrow": "ログ",
   "life_section_logs": "記録",
   "life_filter_all": "すべて",
@@ -254,17 +234,14 @@
   "life_filter_vomit": "嘔吐",
   "life_filter_diary": "日記",
   "life_no_records_today": "今日はまだ記録がありません",
-
   "health_section_records_label": "記録",
   "health_section_charts_label": "推移グラフ",
   "health_no_pet_body": "ペットを選ぶと健康記録と推移が表示されます",
-
   "plans_eyebrow": "予定",
   "plans_section_today": "今日",
   "plans_section_upcoming": "これから",
   "plans_section_overdue": "期限切れ",
   "plans_no_plans_body": "今は予定がありません",
-
   "pillar_record_title": "体系的記録",
   "pillar_record_body": "獣医提示に耐える記録項目体系。",
   "pillar_ai_title": "AI相談",
@@ -275,12 +252,10 @@
   "pillar_share_body": "6桁コードで5人まで同期。",
   "pillar_memorial_title": "お別れの後も",
   "pillar_memorial_body": "虹の橋を渡った後も思い出として記録継続。",
-
   "onboarding_petform_name_label": "ペットの名前",
   "onboarding_petform_name_hint": "例: タロウ",
   "onboarding_petform_type_label": "種類",
   "onboarding_petform_birthday_label": "誕生日(任意)",
-
   "record_meal_app_bar": "ごはんの記録",
   "record_meal_eyebrow": "今日",
   "record_meal_hero_line1": "今日の",
@@ -295,7 +270,6 @@
   "record_meal_appetite_poor": "不調",
   "record_meal_appetite_none": "食べない",
   "record_meal_recent_section": "最近のごはん",
-
   "record_poop_app_bar": "うんちの記録",
   "record_poop_form_label": "便の状態",
   "record_poop_color_label": "色",
@@ -310,14 +284,12 @@
   "record_poop_color_dark": "黒っぽい",
   "record_poop_color_red": "赤(血)",
   "record_poop_color_white": "白",
-
   "record_pee_app_bar": "おしっこの記録",
   "record_pee_color_label": "色",
   "record_pee_color_clear": "透明",
   "record_pee_color_yellow": "黄色",
   "record_pee_color_dark_yellow": "濃い黄色",
   "record_pee_color_red": "赤(血)",
-
   "record_vomit_app_bar": "嘔吐の記録",
   "record_vomit_count_label": "回数",
   "record_vomit_contains_food": "食べ物が混じっている",
@@ -333,42 +305,35 @@
   "record_vomit_color_green": "緑",
   "record_vomit_color_black": "黒",
   "record_vomit_color_other_free": "その他(自由記述)",
-
   "record_weight_app_bar": "体重の記録",
   "record_weight_eyebrow": "今日",
   "record_weight_hero": "体重を記録。",
   "record_weight_unit_kg": "kg",
   "record_weight_unit_lb": "lb",
-
   "record_temperature_app_bar": "体温の記録",
   "record_temperature_eyebrow": "今日",
   "record_temperature_hero": "体温を記録。",
   "record_temperature_unit_c": "℃",
   "record_temperature_unit_f": "℉",
-
   "record_visit_app_bar": "通院の記録",
   "record_visit_clinic_label": "病院名",
   "record_visit_doctor_label": "獣医の名前",
   "record_visit_diagnosis_label": "診断内容",
   "record_visit_prescription_label": "処方",
   "record_visit_cost_label": "費用",
-
   "record_vaccination_app_bar": "ワクチンの記録",
   "record_vaccination_name_label": "ワクチン名",
   "record_vaccination_clinic_label": "接種場所",
   "record_vaccination_next_due_label": "次回予定日",
-
   "record_diary_app_bar": "日記",
   "record_diary_title_label": "タイトル",
   "record_diary_content_label": "本文",
   "record_diary_content_hint": "今日のうちの子のことを自由に",
   "record_diary_mood_label": "気分",
-
   "groups_list_eyebrow": "家族共有",
   "groups_list_empty_body": "まだグループがありません。\n作成するか招待コードで参加できます。",
   "groups_list_create_button": "グループを作成",
   "groups_list_join_button": "招待コードで参加",
-
   "group_detail_app_bar": "グループ詳細",
   "group_detail_eyebrow_role": "あなたの権限",
   "group_detail_section_members": "メンバー",
@@ -380,32 +345,27 @@
   "group_detail_change_role_owner": "オーナー",
   "group_detail_change_role_editor": "編集者",
   "group_detail_change_role_viewer": "閲覧者",
-
   "create_group_app_bar": "新しいグループ",
   "create_group_eyebrow": "作成",
   "create_group_name_label": "グループ名",
-  "create_group_name_hint": "例: 家族",
+  "create_group_name_hint": "例: 山田家のうちの子たち",
   "create_group_create_button": "作成",
-
   "join_by_code_app_bar": "招待コードで参加",
   "join_by_code_eyebrow": "参加",
   "join_by_code_label": "招待コード(6桁)",
   "join_by_code_hint": "例: 123456",
   "join_by_code_button": "参加",
-
   "settings_theme_app_bar": "外観テーマ",
   "settings_theme_eyebrow": "外観",
   "settings_theme_option_light": "ライト",
   "settings_theme_option_dark": "ダーク",
   "settings_theme_option_system": "システム設定に従う",
-
   "settings_language_app_bar": "言語",
   "settings_language_eyebrow": "言語",
   "settings_language_section_available": "利用できる言語",
   "settings_language_change_in_os": "端末の設定アプリで言語を変更してください",
   "settings_language_open_failed": "設定アプリを開けませんでした",
   "settings_language_open_settings": "設定アプリを開く",
-
   "settings_about_app_bar": "petloについて",
   "settings_about_eyebrow": "ペットのライフログ",
   "settings_about_section_legal": "法的情報",
@@ -416,10 +376,8 @@
   "settings_about_terms": "利用規約",
   "settings_about_contact": "お問い合わせ",
   "settings_about_link_open_failed": "リンクを開けませんでした",
-
   "settings_developer_app_bar": "開発者設定",
   "settings_developer_eyebrow": "開発者",
-
   "backup_app_bar": "バックアップ",
   "backup_eyebrow": "自動",
   "backup_section_status": "状況",
@@ -428,24 +386,6 @@
   "backup_provider_google_drive": "Google Drive",
   "backup_set_up": "自動バックアップを設定",
   "backup_remind_later": "あとで",
-
-  "paywall_eyebrow": "petlo Pro",
-  "paywall_section_features": "Pro 特典",
-  "paywall_section_plans": "プラン",
-  "paywall_plan_monthly": "月額プラン",
-  "paywall_plan_yearly": "年額プラン",
-  "paywall_trial_label": "{days}日間 無料",
-  "@paywall_trial_label": {
-    "placeholders": {
-      "days": {"type": "int"}
-    }
-  },
-  "paywall_subscribe_button": "登録する",
-  "paywall_restore_button": "購入を復元",
-  "paywall_terms_link": "利用規約",
-  "paywall_privacy_link": "プライバシーポリシー",
-  "paywall_close": "閉じる",
-
   "ai_chat_app_bar": "AI相談",
   "ai_chat_eyebrow": "AI",
   "ai_chat_input_hint": "うちの子のこと、相談してください",
@@ -464,7 +404,6 @@
   "ai_chat_system_quota": "今月の利用上限に達しました。Pro プランで上限なくお使いいただけます。",
   "ai_chat_image_camera": "カメラで撮影",
   "ai_chat_image_gallery": "ライブラリから選択",
-
   "medication_reminders_app_bar": "投薬リマインダー",
   "medication_reminders_eyebrow": "投薬",
   "medication_reminders_empty": "リマインダーはまだありません",
@@ -481,7 +420,6 @@
   "tab_select_pet_health": "上からペットを選ぶと、\n健康記録が表示されます。",
   "tab_select_pet_life": "上からペットを選ぶと、\n日々の記録が表示されます。",
   "tab_select_pet_plans": "上からペットを選ぶと、\nカレンダーが表示されます。",
-
   "appbar_groups": "グループ",
   "appbar_join_group": "グループに参加",
   "appbar_new_group": "新しいグループ",
@@ -504,16 +442,33 @@
   "appbar_vaccination": "ワクチン",
   "appbar_diary": "日記",
   "appbar_about": "petloについて",
-
   "groups_snackbar_create_success": "グループを作成しました",
   "groups_snackbar_max_groups": "グループは最大3つまでです",
   "groups_snackbar_invite_issue_failed": "招待コードの発行に失敗しました",
   "groups_snackbar_role_changed": "{name} の権限を変更しました",
-  "@groups_snackbar_role_changed": {"placeholders": {"name": {"type": "String"}}},
+  "@groups_snackbar_role_changed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "groups_snackbar_member_removed": "{name} を除名しました",
-  "@groups_snackbar_member_removed": {"placeholders": {"name": {"type": "String"}}},
+  "@groups_snackbar_member_removed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "groups_snackbar_member_remove_confirm": "{name} をこのグループから除名しますか?",
-  "@groups_snackbar_member_remove_confirm": {"placeholders": {"name": {"type": "String"}}},
+  "@groups_snackbar_member_remove_confirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "groups_snackbar_left": "グループから退出しました",
   "groups_snackbar_code_copied": "コードをコピーしました",
   "groups_snackbar_invite_invalid": "招待コードが無効か、期限切れです",
@@ -522,14 +477,18 @@
   "groups_snackbar_already_member": "既にこのグループのメンバーです",
   "groups_snackbar_max_3_groups": "参加できるグループは最大3つまでです",
   "groups_snackbar_joined": "{groupName} に参加しました",
-  "@groups_snackbar_joined": {"placeholders": {"groupName": {"type": "String"}}},
+  "@groups_snackbar_joined": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
   "groups_snackbar_create_pro_only": "グループ作成は Pro プラン限定です",
   "groups_snackbar_load_failed": "グループの読み込みに失敗しました",
-
   "settings_snackbar_change_in_os": "端末の設定アプリで言語を変更してください",
   "settings_snackbar_open_settings_failed": "設定アプリを開けませんでした",
   "settings_snackbar_link_open_failed": "リンクを開けませんでした",
-
   "developer_snackbar_onboarding_reset": "オンボーディングをリセットしました。\nアプリを再起動してください",
   "developer_snackbar_backup_reminder_cleared": "警告バナーの抑止を解除しました",
   "developer_snackbar_pro_reset": "Pro 状態を無料にリセットしました",
@@ -542,14 +501,12 @@
   "developer_action_clear_backup_reminder_note": "「あとで」の30日抑止を解除します",
   "developer_action_reset_pro": "Pro 状態をリセット",
   "developer_action_reset_pro_note": "Pro 契約状態を無料に戻します(レシート再検証で復元されます)",
-
   "record_field_notes": "メモ",
-  "record_field_notes_hint": "何かメモしておきたいこと?",
+  "record_field_notes_hint": "何かメモしておきたいことは?",
   "record_field_when_now": "今",
   "record_meal_amount_grams": "g",
   "record_weight_input_label": "体重",
   "record_temperature_input_label": "体温",
-
   "paywall_pro_welcome_snackbar": "Pro へようこそ!",
   "paywall_link_open_failed": "リンクを開けませんでした",
   "paywall_subhero": "無制限の記録と、AI相談と、家族共有。\nうちの子のすべてを、ちゃんと残す。",
@@ -564,7 +521,6 @@
   "paywall_feature_pets": "複数のペット",
   "paywall_feature_pets_body": "何匹でも登録できる",
   "paywall_trial_subscribe": "Start 7-day trial",
-  "paywall_subscribe_now": "登録する",
   "paywall_processing": "処理中...",
   "paywall_best_value_badge": "BEST VALUE",
   "paywall_per_month_suffix": "/ 月",
@@ -572,7 +528,9 @@
   "paywall_yearly_monthly_equiv": "約 {amount} / 月相当",
   "@paywall_yearly_monthly_equiv": {
     "placeholders": {
-      "amount": { "type": "String" }
+      "amount": {
+        "type": "String"
+      }
     }
   },
   "paywall_legal_note": "トライアル中はいつでもキャンセル可能。\n期間終了後に自動更新されます。",
@@ -589,14 +547,12 @@
   "paywall_tier_monthly": "月額",
   "paywall_tier_yearly": "年額",
   "paywall_tier_dash": "—",
-
   "ai_chat_input_placeholder": "質問を入力…",
   "ai_chat_send_button": "送信",
   "ai_chat_response_failed": "応答の取得に失敗しました",
   "ai_chat_subheader": "うちの子のことを、AIに相談。",
   "ai_chat_disclaimer": "AIの回答は参考までに。最終判断は獣医にご相談ください。",
   "ai_chat_petlo_response_label": "petlo · response",
-
   "med_reminder_field_medicine": "薬の名前",
   "med_reminder_field_medicine_hint": "例: ロイヤルカナン",
   "med_reminder_field_dosage": "用量",
@@ -607,7 +563,6 @@
   "med_reminder_section_medicine": "薬の情報",
   "med_reminder_action_save": "保存",
   "med_reminder_delete_confirm": "この投薬リマインダーを削除しますか?",
-
   "enum_poop_form_watery": "水様",
   "enum_poop_form_loose": "軟便",
   "enum_poop_form_soft": "やや軟",
@@ -651,7 +606,6 @@
   "enum_group_status_pending_deletion": "警告中",
   "enum_group_status_frozen": "凍結中",
   "enum_group_status_deletion_scheduled": "削除予定",
-
   "weekday_short_sun": "日",
   "weekday_short_mon": "月",
   "weekday_short_tue": "火",
@@ -659,17 +613,33 @@
   "weekday_short_thu": "木",
   "weekday_short_fri": "金",
   "weekday_short_sat": "土",
-
   "relative_today": "今日",
   "relative_yesterday": "昨日",
   "relative_x_days_ago": "{days}日前",
-  "@relative_x_days_ago": {"placeholders": {"days": {"type": "int"}}},
+  "@relative_x_days_ago": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "relative_just_now": "たった今",
   "relative_x_minutes_ago": "{minutes}分前",
-  "@relative_x_minutes_ago": {"placeholders": {"minutes": {"type": "int"}}},
+  "@relative_x_minutes_ago": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "relative_x_hours_ago": "{hours}時間前",
-  "@relative_x_hours_ago": {"placeholders": {"hours": {"type": "int"}}},
-
+  "@relative_x_hours_ago": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
   "backup_status_last_backup": "前回",
   "backup_status_never": "未実施",
   "backup_status_in_progress": "実行中",
@@ -678,7 +648,6 @@
   "onboarding_pet_form_select_type": "種類を選択してください",
   "onboarding_pet_form_register_failed": "ペットの登録に失敗しました",
   "chart_range_pro_only": "Pro限定の期間です",
-
   "record_hero_meal": "ごはん。",
   "record_hero_poop": "うんち。",
   "record_hero_pee": "おしっこ。",
@@ -688,7 +657,6 @@
   "record_hero_visit": "通院。",
   "record_hero_vaccination": "ワクチン。",
   "record_hero_diary": "日記。",
-
   "record_field_food": "食事",
   "record_field_food_hint": "ロイヤルカナン、ささみ など",
   "record_field_amount": "量",
@@ -717,7 +685,6 @@
   "record_field_remove_photo": "削除",
   "record_field_select_photo": "写真を選ぶ",
   "record_field_optional_label": "(任意)",
-  "record_field_notes_hint": "何かメモしておきたいことは?",
   "record_field_tap_to_select": "タップして選択",
   "record_field_photo_label": "写真",
   "record_field_notes_label": "メモ",
@@ -734,7 +701,6 @@
   "record_field_diary_body_hint": "今日の出来事、感じたこと、思い出を…",
   "record_field_tags_label": "タグ(任意)",
   "record_field_tags_hint": "例: 散歩, 公園, おもちゃ",
-
   "record_kind_meal": "食事",
   "record_kind_stool": "うんち",
   "record_kind_pee": "おしっこ",
@@ -749,7 +715,6 @@
   "record_kind_unspecified": "未入力",
   "record_yesterday_label": "昨日",
   "record_list_empty": "まだ記録がありません。",
-
   "settings_app_bar_title": "設定",
   "settings_eyebrow": "Settings",
   "settings_hero": "設定。",
@@ -771,7 +736,6 @@
   "settings_language_helper": "言語は端末の「設定 > petlo」から変更できます。",
   "notifications_enabled": "通知が有効になりました",
   "notifications_disabled_open_settings": "通知が無効です。OS設定から有効化できます",
-
   "other_section_account": "アカウント",
   "other_account_guest_title": "ゲストとして利用中",
   "other_account_guest_subtitle": "アカウント連携は今後対応予定",
@@ -785,7 +749,6 @@
   "other_item_settings": "設定",
   "other_item_open_settings": "開く",
   "other_item_contact": "お問い合わせ",
-
   "plans_legend_urgent": "緊急",
   "plans_legend_health": "健康",
   "plans_legend_daily": "日常",
@@ -800,7 +763,6 @@
   "plans_more_count": "他{n}件",
   "plans_every_day": "毎日",
   "plans_birthday_suffix": "の誕生日",
-
   "schedule_category_vaccination": "ワクチン",
   "schedule_category_medication": "投薬",
   "schedule_category_visit": "通院",
@@ -811,18 +773,15 @@
   "schedule_category_anniversary": "記念日",
   "schedule_category_custom": "カスタム",
   "schedule_category_urgent": "緊急",
-
   "schedule_recurrence_none": "なし",
   "schedule_recurrence_daily": "毎日",
   "schedule_recurrence_weekly": "毎週",
   "schedule_recurrence_monthly": "毎月",
   "schedule_recurrence_yearly": "毎年",
-
   "schedule_notification_none": "なし",
   "schedule_notification_on_day": "当日",
   "schedule_notification_day_before": "前日",
   "schedule_notification_week_before": "1週間前",
-
   "schedule_appbar_new": "新規予定",
   "schedule_appbar_edit": "予定を編集",
   "schedule_hero_new": "予定を、つくる。",
@@ -849,11 +808,9 @@
   "schedule_list_empty": "予定はありません",
   "schedule_day_add_button": "+ 予定を追加",
   "schedule_day_section_existing": "この日の予定",
-
   "pet_form_show_more_details": "詳細情報を登録する",
   "pet_form_hide_more_details": "詳細を閉じる",
   "pet_form_details_later_helper": "品種・理想体重・連絡先などはあとで登録できます。",
-
   "tab_eyebrow_home": "ホーム",
   "tab_eyebrow_life": "きろく",
   "tab_eyebrow_health": "みまもる",
@@ -870,7 +827,6 @@
   "ai_tab_cta_open": "AI 相談を始める",
   "ai_tab_cta_upgrade": "Pro にして使う",
   "ai_tab_pro_note": "AI 相談は Pro プランの機能です。",
-
   "health_weight_trend": "体重の推移",
   "health_temp_trend": "体温の推移",
   "health_no_visits": "通院記録はまだありません",
@@ -880,42 +836,35 @@
   "health_weeks_ago": "{n}週間前",
   "health_months_ago": "{n}ヶ月前",
   "schedule_pet_prefix": "{petName}: {title}",
-
   "record_action_save": "保存",
   "record_action_cancel": "キャンセル",
   "record_action_delete": "削除",
   "record_action_change": "変更",
   "record_action_remove": "削除",
-
   "record_amount_little": "少量",
   "record_amount_normal": "普通",
   "record_amount_alot": "多量",
-
   "meal_appetite_excellent": "完食",
   "meal_appetite_good": "良好",
   "meal_appetite_normal": "普通",
   "meal_appetite_poor": "残した",
   "meal_appetite_none": "食べない",
-
   "poop_form_hard": "硬便",
   "poop_form_lumpy": "コロコロ",
   "poop_form_normal": "普通",
   "poop_form_soft": "軟便",
   "poop_form_watery": "水様",
-
   "poop_color_brown": "茶",
   "poop_color_black": "黒",
   "poop_color_red": "赤",
   "poop_color_yellow": "黄",
   "poop_color_pale": "淡色",
-
   "pee_color_pale": "淡色",
   "pee_color_yellow": "黄",
   "pee_color_dark": "濃い",
   "pee_color_amber": "琥珀",
   "pee_color_red": "赤",
   "pee_color_cloudy": "濁り",
-
   "vomit_color_yellow": "黄",
   "vomit_color_brown": "茶",
   "vomit_color_clear": "透明",
@@ -930,10 +879,8 @@
   "vomit_color_less": "閉じる",
   "vomit_color_describe_label": "色を説明",
   "vomit_color_describe_hint": "例: オレンジ、ピンクなど",
-
   "vomit_contains_food": "食べ物が混じる",
   "vomit_foreign_object": "異物の可能性",
-
   "appbar_new_meal": "新しい食事",
   "appbar_new_poop": "新しいうんち",
   "appbar_new_pee": "新しいおしっこ",
@@ -979,10 +926,8 @@
   "temperature_chart_hero": "体温の推移。",
   "gallery_empty_hero": "写真はまだありません",
   "gallery_load_failed": "ギャラリーを読み込めませんでした",
-
   "gallery_app_bar": "ギャラリー",
   "gallery_empty": "写真がまだありません",
-
   "common_editing": "編集中",
   "common_time": "時刻",
   "common_trend": "推移",
@@ -1011,7 +956,198 @@
   "record_diary_title_optional": "タイトル(任意)",
   "record_diary_body_label": "本文",
   "record_meal_select_food_eyebrow": "ごはん",
-
+  "common_copy": "コピー",
+  "notification_vaccination_upcoming_title": "ワクチンの期限が近いです",
+  "notification_vaccination_upcoming_body": "{kind}: あと3日で期限です",
+  "@notification_vaccination_upcoming_body": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "notification_vaccination_today_title": "ワクチンの期限です",
+  "notification_vaccination_today_body": "{kind}: 今日が期限です",
+  "@notification_vaccination_today_body": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "notification_medication_default_body": "お薬の時間です",
+  "onboarding_pillars_1_title": "体系的記録",
+  "onboarding_pillars_1_note": "ごはん・うんち・体重などを毎日記録",
+  "onboarding_pillars_2_title": "AI相談",
+  "onboarding_pillars_2_note": "うちの子の様子や写真をAIに相談",
+  "onboarding_pillars_3_title": "家族共有",
+  "onboarding_pillars_3_note": "最大3グループ × 5人で一緒に見守る",
+  "onboarding_pillars_4_title": "お別れの後も",
+  "onboarding_pillars_4_note": "月命日通知や思い出として残す",
+  "onboarding_pillars_5_title": "長期で見える",
+  "onboarding_pillars_5_note": "体重・体温の推移、通院記録、日記",
+  "group_detail_leave_button": "グループから退出",
+  "group_detail_leaving": "退出中...",
+  "group_detail_leave_note": "退出するとこのグループの記録と写真は\n端末から完全に削除されます。",
+  "group_detail_remove_member_title": "メンバーを除名",
+  "group_detail_remove_member_action": "除名",
+  "group_detail_leave_dialog_title": "グループから退出",
+  "group_detail_leave_dialog_body": "このグループの全データ(記録・写真)が端末から削除されます。\nこの操作は元に戻せません。",
+  "group_detail_leave_action": "退出",
+  "group_detail_member_action_make_editor": "Editor にする",
+  "group_detail_member_action_make_viewer": "Viewer にする",
+  "group_detail_member_action_remove": "除名",
+  "invite_permission_picker_hero": "Editor or\nViewer.",
+  "invite_permission_picker_body": "この招待で参加した人に、どこまでの操作を\n許可しますか?",
+  "invite_permission_editor_label": "Editor",
+  "invite_permission_editor_note": "記録の追加・編集・削除ができる",
+  "invite_permission_viewer_label": "Viewer",
+  "invite_permission_viewer_note": "閲覧のみ。記録の追加や編集はできない",
+  "invite_code_dialog_permission_label": "権限: {permission}",
+  "@invite_code_dialog_permission_label": {
+    "placeholders": {
+      "permission": {
+        "type": "String"
+      }
+    }
+  },
+  "invite_code_dialog_expiry_label": "有効期限: あと {hours}h",
+  "@invite_code_dialog_expiry_label": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "create_group_body": "家族や信頼できる友人と、\nうちの子の記録を共有できるグループ。\n5人まで参加可能、最大3グループ作れます。",
+  "create_group_name_field_label": "Group name",
+  "create_group_display_name_field_label": "Your display name",
+  "create_group_display_name_hint": "例: お父さん, ママ",
+  "create_group_display_name_note": "グループのメンバーに表示される名前です。\n後から設定で変更できます。",
+  "create_group_submit_label": "Create",
+  "create_group_submitting_label": "Creating...",
+  "create_group_note": "NOTE\nグループ作成には Pro プランが必要です。\n参加するだけなら無料で可能です。",
+  "create_group_pro_required_message": "グループ作成は Pro プラン限定です",
+  "create_group_view_plans_action": "VIEW PLANS",
+  "join_by_code_body": "グループのオーナーから受け取った\n6桁の招待コードを入力してください。",
+  "join_by_code_code_field_label": "Invite code",
+  "join_by_code_code_hint": "000000",
+  "join_by_code_display_name_note": "グループのメンバーに表示される名前です。",
+  "join_by_code_submit_label": "Join group",
+  "join_by_code_submitting_label": "Joining...",
+  "join_by_code_note": "NOTE\n参加は無料です。\nコードの有効期限は発行から72時間です。",
+  "duplicate_pet_warning_title": "同じ名前のペットに注意",
+  "duplicate_pet_warning_local_intro": "あなたは現在、以下のペットを記録しています:",
+  "duplicate_pet_warning_body": "\"{groupName}\" に同じ名前のペットがいる場合、\n別のペットとして同期されます。\n同じ子の場合は、両方の記録が分かれてしまうので\nグループ参加後にペット情報を確認してください。",
+  "@duplicate_pet_warning_body": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_share_picker_title": "Share existing pet",
+  "pet_share_picker_body": "Personal で記録していたペットをグループへ移動します。\n記録もまとめて共有され、メンバー全員から見られるようになります。",
+  "pet_share_picker_load_error": "ペット一覧の取得に失敗しました\n{error}",
+  "@pet_share_picker_load_error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_share_picker_empty": "Personal に共有できるペットがいません。",
+  "pet_share_picker_confirm_title": "このグループへ共有",
+  "pet_share_picker_confirm_body": "{petName} をこのグループに共有しますか?\n\n記録(食事/排泄/体重ほか)もまとめて移動し、メンバー全員から閲覧できるようになります。",
+  "@pet_share_picker_confirm_body": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_share_picker_confirm_action": "共有する",
+  "pet_share_picker_success": "{petName} を共有しました ({count} 件のレコードを移動)",
+  "@pet_share_picker_success": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pet_share_picker_failure": "共有に失敗しました: {error}",
+  "@pet_share_picker_failure": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_species_dog_short": "犬",
+  "pet_species_cat_short": "猫",
+  "validator_required": "この項目は必須です",
+  "validator_min_length": "{min}文字以上で入力してください",
+  "@validator_min_length": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "validator_max_length": "{max}文字以内で入力してください",
+  "@validator_max_length": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "validator_numeric": "数値を入力してください",
+  "validator_integer": "整数で入力してください",
+  "validator_number_range": "{min}〜{max} の範囲で入力してください",
+  "@validator_number_range": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "validator_phone": "電話番号の形式が正しくありません",
+  "weight_validation_required": "体重を入力してください",
+  "weight_validation_positive": "0より大きい値を入力してください",
+  "weight_validation_max": "200kg以下で入力してください",
+  "record_validation_time_required": "時刻を選んでください",
+  "record_validation_future_time": "未来の時刻は記録できません",
+  "meal_validation_food_required": "ご飯の銘柄を入力してください",
+  "meal_validation_amount_non_negative": "0以上の数値を入力してください",
+  "meal_validation_amount_max": "10,000g 以下で入力してください",
+  "meal_validation_appetite_required": "食いつきを選んでください",
+  "meal_validation_time_required": "食事時刻を選んでください",
+  "vomit_validation_color_required": "色を選んでください",
+  "vomit_validation_color_description_required": "色の説明を入力してください",
+  "vomit_validation_amount_required": "量を選んでください",
+  "vomit_validation_count_range": "回数は1〜10で指定してください",
+  "visit_validation_reason_required": "主訴を入力してください",
+  "visit_validation_date_required": "通院日を選んでください",
+  "visit_validation_future_date": "未来の日付は記録できません",
+  "visit_validation_amount_non_negative": "0円以上で入力してください",
+  "visit_validation_amount_max": "金額が大きすぎます",
+  "pet_validation_name_required": "名前を入力してください",
+  "create_group_validation_name_required": "グループ名を入力してください",
+  "create_group_validation_name_max": "50文字以内で入力してください",
+  "create_group_validation_display_name_required": "表示名を入力してください",
+  "create_group_validation_display_name_max": "20文字以内で入力してください",
+  "create_group_validation_limit_reached": "グループは最大3つまで作成できます",
+  "pet_validation_type_required": "犬か猫を選んでください",
+  "pet_validation_weight_min_lte_max": "下限は上限以下にしてください",
+  "pet_validation_weight_max_gte_min": "上限は下限以上にしてください",
+  "pet_validation_name_required_specific": "名前を入力してください",
   "@_PLACEHOLDERS": {
     "description": "後続Chunkで画面ごとの文言を追加していく"
   }

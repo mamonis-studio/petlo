@@ -100,7 +100,7 @@ class _JoinByCodeScreenState extends ConsumerState<JoinByCodeScreen> {
         leading: TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(
-            'CANCEL',
+            AppLocalizations.of(context).common_cancel.toUpperCase(),
             style: TextStyle(
               fontFamily: 'JetBrainsMono',
               fontSize: 9,
@@ -128,7 +128,7 @@ class _JoinByCodeScreenState extends ConsumerState<JoinByCodeScreen> {
                 padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
               ),
               Text(
-                'グループのオーナーから受け取った\n6桁の招待コードを入力してください。',
+                l10n.join_by_code_body,
                 style: typo.bodyMedium
                     .copyWith(color: colors.fgMuted, height: 1.7),
               ),
@@ -136,9 +136,9 @@ class _JoinByCodeScreenState extends ConsumerState<JoinByCodeScreen> {
 
               // ===== 6桁コード入力 =====
               EditorialTextField(
-                label: 'Invite code',
+                label: l10n.join_by_code_code_field_label,
                 controller: _codeC,
-                hint: '000000',
+                hint: l10n.join_by_code_code_hint,
                 required: true,
                 maxLength: 6,
                 keyboardType: TextInputType.number,
@@ -149,9 +149,9 @@ class _JoinByCodeScreenState extends ConsumerState<JoinByCodeScreen> {
 
               // ===== 表示名 =====
               EditorialTextField(
-                label: 'Your display name',
+                label: l10n.create_group_display_name_field_label,
                 controller: _nameC,
-                hint: '例: お父さん, ママ',
+                hint: l10n.create_group_display_name_hint,
                 required: true,
                 maxLength: 20,
                 textCapitalization: TextCapitalization.words,
@@ -160,7 +160,7 @@ class _JoinByCodeScreenState extends ConsumerState<JoinByCodeScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'グループのメンバーに表示される名前です。',
+                l10n.join_by_code_display_name_note,
                 style: typo.bodySmall
                     .copyWith(color: colors.fgFaint, height: 1.5),
               ),
@@ -175,7 +175,9 @@ class _JoinByCodeScreenState extends ConsumerState<JoinByCodeScreen> {
               ],
 
               PrimaryButton(
-                label: s.isSubmitting ? 'Joining...' : 'Join group',
+                label: s.isSubmitting
+                    ? l10n.join_by_code_submitting_label
+                    : l10n.join_by_code_submit_label,
                 onPressed: !s.canSubmit
                     ? null
                     : () => _onJoin(controller),
@@ -189,7 +191,7 @@ class _JoinByCodeScreenState extends ConsumerState<JoinByCodeScreen> {
                   border: Border.all(color: colors.line, width: 1),
                 ),
                 child: Text(
-                  'NOTE\n参加は無料です。\nコードの有効期限は発行から72時間です。',
+                  l10n.join_by_code_note,
                   style: TextStyle(
                     fontFamily: 'JetBrainsMono',
                     fontSize: 10,
@@ -346,10 +348,11 @@ class _DuplicatePetWarningDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return AlertDialog(
       backgroundColor: colors.bg,
       title: Text(
-        '同じ名前のペットに注意',
+        l10n.duplicate_pet_warning_title,
         style: typo.bodyLarge.copyWith(color: colors.fg),
       ),
       content: Column(
@@ -357,7 +360,7 @@ class _DuplicatePetWarningDialog extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            'あなたは現在、以下のペットを記録しています:',
+            l10n.duplicate_pet_warning_local_intro,
             style: typo.bodySmall.copyWith(color: colors.fgMuted),
           ),
           const SizedBox(height: 8),
@@ -372,7 +375,7 @@ class _DuplicatePetWarningDialog extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '"$groupName" に同じ名前のペットがいる場合、\n別のペットとして同期されます。\n同じ子の場合は、両方の記録が分かれてしまうので\nグループ参加後にペット情報を確認してください。',
+            l10n.duplicate_pet_warning_body(groupName),
             style:
                 typo.bodySmall.copyWith(color: colors.fgMuted, height: 1.6),
           ),
@@ -381,7 +384,7 @@ class _DuplicatePetWarningDialog extends StatelessWidget {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('OK'),
+          child: Text(l10n.common_ok),
         ),
       ],
     );

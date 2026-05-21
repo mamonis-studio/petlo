@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/database_provider.dart';
 import '../../providers/photo_storage_provider.dart';
 import '../../providers/scope_providers.dart';
@@ -81,8 +82,8 @@ class VomitFormController extends FamilyNotifier<VomitFormState, int?> {
   void updateNotes(String v) => state = state.copyWith(notes: v);
   void updatePhotoFile(File? v) => state = state.copyWith(photoFile: v);
 
-  Future<VomitFormSaveOutcome> save() async {
-    final validated = state.validate();
+  Future<VomitFormSaveOutcome> save(AppLocalizations l10n) async {
+    final validated = state.validate(l10n);
     if (validated.errors.hasAny) {
       state = validated;
       return VomitFormSaveOutcome.validationFailed;

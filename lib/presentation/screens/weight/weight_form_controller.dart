@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/database_provider.dart';
 import '../../providers/scope_providers.dart';
 import '../../providers/weights_providers.dart';
@@ -62,8 +63,8 @@ class WeightFormController extends FamilyNotifier<WeightFormState, int?> {
   void updateNotes(String v) => state = state.copyWith(notes: v);
 
   // Save
-  Future<WeightFormSaveOutcome> save() async {
-    final validated = state.validate();
+  Future<WeightFormSaveOutcome> save(AppLocalizations l10n) async {
+    final validated = state.validate(l10n);
     if (validated.errors.hasAny) {
       state = validated;
       return WeightFormSaveOutcome.validationFailed;

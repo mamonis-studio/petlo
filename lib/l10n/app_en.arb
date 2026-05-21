@@ -1,7 +1,6 @@
 {
   "@@locale": "en",
   "appName": "petlo",
-
   "common_ok": "OK",
   "common_cancel": "Cancel",
   "common_save": "Save",
@@ -10,7 +9,7 @@
   "common_back": "Back",
   "common_next": "Next",
   "common_done": "Done",
-  "common_loading": "Loading…",
+  "common_loading": "Loading...",
   "common_error_generic": "Something went wrong",
   "common_unexpected_error": "An unexpected error occurred",
   "common_retry": "Try again",
@@ -21,13 +20,11 @@
   "common_update": "Update",
   "common_saving": "Saving...",
   "common_updating": "Updating...",
-
   "pet_type_dog": "Dog",
   "pet_type_cat": "Cat",
   "pet_sex_male": "Male",
   "pet_sex_female": "Female",
   "pet_sex_unknown": "Unknown",
-
   "pet_form_app_bar_new": "New Pet",
   "pet_form_app_bar_edit": "Edit Pet",
   "pet_form_eyebrow_new": "Add a pet",
@@ -59,14 +56,12 @@
   "pet_form_field_emergency_vet_helper": "24-hour clinic for urgencies",
   "pet_form_error_validation": "Please check your input",
   "pet_form_error_save_failed": "Failed to save. Please try again.",
-
   "tab_home": "Home",
   "tab_life": "Life",
   "tab_health": "Health",
   "tab_plans": "Plans",
   "tab_more": "More",
   "tab_ai": "AI",
-
   "common_view": "View",
   "common_open": "Open",
   "common_join": "Join",
@@ -81,13 +76,11 @@
   "common_choose_from_library": "Choose from library",
   "common_local_only": "Local only",
   "common_pro_only_period": "Pro-only period",
-
   "onboarding_welcome_eyebrow": "Welcome",
   "onboarding_welcome_hero_line1": "Watch over them,",
   "onboarding_welcome_hero_line2": "with family and AI.",
   "onboarding_welcome_body": "Log your pet's daily life systematically,\nask AI for advice, share with family.\nKeep memories even after farewell.",
   "onboarding_welcome_cta": "Begin",
-
   "onboarding_pillars_eyebrow": "Five pillars",
   "onboarding_pillars_hero": "Five\npillars.",
   "onboarding_pillars_pillar_record_title": "Systematic records",
@@ -101,19 +94,16 @@
   "onboarding_pillars_pillar_memorial_title": "Beyond farewell",
   "onboarding_pillars_pillar_memorial_body": "Keep recording memories after the rainbow bridge.",
   "onboarding_pillars_cta": "Continue",
-
   "onboarding_petform_eyebrow": "About them",
   "onboarding_petform_hero": "Tell us\nabout them.",
   "onboarding_petform_body": "You can add detailed info later at your pace.",
   "onboarding_petform_cta": "Continue",
   "onboarding_petform_skip": "Skip",
-
   "onboarding_done_eyebrow": "Welcome aboard",
   "onboarding_done_hero": "All\nset.",
   "onboarding_done_body": "You're all set.\nLet's start with the first record.",
   "onboarding_done_helper": "Use the Home tab for today's records,\nand More tab for settings and Pro plans.",
   "onboarding_done_cta": "Begin petlo",
-
   "home_eyebrow_today": "Today",
   "home_section_quick_log": "Quick log",
   "home_section_memories": "Memories",
@@ -128,11 +118,9 @@
   "home_quick_vomit": "Vomit",
   "home_memories_diary": "Diary",
   "home_memories_gallery": "Gallery",
-
   "life_eyebrow_log": "Log",
   "life_hero": "Daily logs.",
   "life_empty_body": "Select a pet to view records.",
-
   "health_eyebrow_health": "Health",
   "health_hero": "Health,\ntracked.",
   "health_section_records": "Records",
@@ -145,11 +133,9 @@
   "health_record_temperature": "Temperature",
   "health_chart_weight": "Weight trend",
   "health_chart_temperature": "Temperature trend",
-
   "plans_eyebrow_schedule": "Schedule",
   "plans_hero": "Plans.",
   "plans_empty_body": "Select a pet to view plans and reminders.",
-
   "more_eyebrow": "Settings & more",
   "more_hero": "More.",
   "more_section_memories": "Memories",
@@ -170,17 +156,16 @@
   "more_pro_cta_hero": "Unlock\neverything.",
   "more_pro_cta_body": "Unlimited records, AI consult, family sharing.\n7-day free trial.",
   "more_pro_cta_button": "View plans",
-
   "group_selector_label": "Group",
   "group_selector_personal": "Personal",
-
   "group_closure_snackbar_warning": "Group warning for {groupName}",
   "@group_closure_snackbar_warning": {
     "placeholders": {
-      "groupName": {"type": "String"}
+      "groupName": {
+        "type": "String"
+      }
     }
   },
-
   "home_quick_label_meal": "Meal",
   "home_quick_label_stool": "Stool",
   "home_quick_label_pee": "Pee",
@@ -188,7 +173,6 @@
   "home_action_add_diary": "Add diary",
   "home_action_gallery": "Gallery",
   "home_register_pet": "Register a pet",
-
   "more_section_ai_label": "AI",
   "more_section_family": "Family",
   "more_section_reminders": "Reminders",
@@ -218,9 +202,7 @@
   "more_pro_view_plans": "View plans",
   "more_select_pet_first": "Please select a pet first",
   "more_link_open_failed": "Could not open link",
-
   "pet_selector_add": "Add",
-
   "common_select": "Select",
   "common_anything_to_remember": "Anything to remember?",
   "common_when": "When",
@@ -231,7 +213,6 @@
   "common_today": "Today",
   "common_yesterday": "Yesterday",
   "common_no_pet_selected": "Please select a pet",
-  "common_loading": "Loading...",
   "common_failed_to_load": "Failed to load",
   "common_input_invalid": "Please check your input",
   "common_save_failed": "Failed to save",
@@ -241,7 +222,6 @@
   "common_deleted": "Deleted",
   "common_yes_short": "Yes",
   "common_no_short": "No",
-
   "life_eyebrow": "Log",
   "life_section_logs": "Logs",
   "life_filter_all": "All",
@@ -251,17 +231,14 @@
   "life_filter_vomit": "Vomit",
   "life_filter_diary": "Diary",
   "life_no_records_today": "No records yet today",
-
   "health_section_records_label": "Records",
   "health_section_charts_label": "Charts",
   "health_no_pet_body": "Select a pet to view health records and charts",
-
   "plans_eyebrow": "Schedule",
   "plans_section_today": "Today",
   "plans_section_upcoming": "Upcoming",
   "plans_section_overdue": "Overdue",
   "plans_no_plans_body": "No plans yet",
-
   "pillar_record_title": "Systematic records",
   "pillar_record_body": "Records that hold up to vet review.",
   "pillar_ai_title": "AI consult",
@@ -272,12 +249,10 @@
   "pillar_share_body": "Sync with up to 5 people via 6-digit code.",
   "pillar_memorial_title": "Beyond farewell",
   "pillar_memorial_body": "Keep recording memories after the rainbow bridge.",
-
   "onboarding_petform_name_label": "Pet name",
   "onboarding_petform_name_hint": "e.g. Taro",
   "onboarding_petform_type_label": "Type",
   "onboarding_petform_birthday_label": "Birthday (optional)",
-
   "record_meal_app_bar": "Meal record",
   "record_meal_eyebrow": "Today",
   "record_meal_hero_line1": "Today's",
@@ -292,7 +267,6 @@
   "record_meal_appetite_poor": "Poor",
   "record_meal_appetite_none": "None",
   "record_meal_recent_section": "Recent meals",
-
   "record_poop_app_bar": "Stool record",
   "record_poop_form_label": "Form",
   "record_poop_color_label": "Color",
@@ -307,14 +281,12 @@
   "record_poop_color_dark": "Dark",
   "record_poop_color_red": "Red (blood)",
   "record_poop_color_white": "White",
-
   "record_pee_app_bar": "Pee record",
   "record_pee_color_label": "Color",
   "record_pee_color_clear": "Clear",
   "record_pee_color_yellow": "Yellow",
   "record_pee_color_dark_yellow": "Dark yellow",
   "record_pee_color_red": "Red (blood)",
-
   "record_vomit_app_bar": "Vomit record",
   "record_vomit_count_label": "Count",
   "record_vomit_contains_food": "Contains food",
@@ -330,42 +302,35 @@
   "record_vomit_color_green": "Green",
   "record_vomit_color_black": "Black",
   "record_vomit_color_other_free": "Other (free text)",
-
   "record_weight_app_bar": "Weight record",
   "record_weight_eyebrow": "Today",
   "record_weight_hero": "Log weight.",
   "record_weight_unit_kg": "kg",
   "record_weight_unit_lb": "lb",
-
   "record_temperature_app_bar": "Temperature record",
   "record_temperature_eyebrow": "Today",
   "record_temperature_hero": "Log temperature.",
   "record_temperature_unit_c": "°C",
   "record_temperature_unit_f": "°F",
-
   "record_visit_app_bar": "Visit record",
   "record_visit_clinic_label": "Clinic",
   "record_visit_doctor_label": "Doctor",
   "record_visit_diagnosis_label": "Diagnosis",
   "record_visit_prescription_label": "Prescription",
   "record_visit_cost_label": "Cost",
-
   "record_vaccination_app_bar": "Vaccination record",
   "record_vaccination_name_label": "Vaccine",
   "record_vaccination_clinic_label": "Clinic",
   "record_vaccination_next_due_label": "Next due",
-
   "record_diary_app_bar": "Diary",
   "record_diary_title_label": "Title",
   "record_diary_content_label": "Content",
   "record_diary_content_hint": "Anything about today",
   "record_diary_mood_label": "Mood",
-
   "groups_list_eyebrow": "Family sharing",
   "groups_list_empty_body": "No groups yet.\nCreate one or join with a code.",
   "groups_list_create_button": "Create group",
   "groups_list_join_button": "Join with code",
-
   "group_detail_app_bar": "Group detail",
   "group_detail_eyebrow_role": "Your role",
   "group_detail_section_members": "Members",
@@ -377,32 +342,27 @@
   "group_detail_change_role_owner": "Owner",
   "group_detail_change_role_editor": "Editor",
   "group_detail_change_role_viewer": "Viewer",
-
   "create_group_app_bar": "New group",
   "create_group_eyebrow": "Create",
   "create_group_name_label": "Group name",
-  "create_group_name_hint": "e.g. Family",
+  "create_group_name_hint": "Example: The Yamada family's pets",
   "create_group_create_button": "Create",
-
   "join_by_code_app_bar": "Join by code",
   "join_by_code_eyebrow": "Join",
   "join_by_code_label": "Invite code (6 digits)",
   "join_by_code_hint": "e.g. 123456",
   "join_by_code_button": "Join",
-
   "settings_theme_app_bar": "Theme",
   "settings_theme_eyebrow": "Appearance",
   "settings_theme_option_light": "Light",
   "settings_theme_option_dark": "Dark",
   "settings_theme_option_system": "System",
-
   "settings_language_app_bar": "Language",
   "settings_language_eyebrow": "Language",
   "settings_language_section_available": "Available languages",
   "settings_language_change_in_os": "Please change the language in the device Settings app.",
   "settings_language_open_failed": "Could not open Settings app",
   "settings_language_open_settings": "Open Settings",
-
   "settings_about_app_bar": "About petlo",
   "settings_about_eyebrow": "Pet life log",
   "settings_about_section_legal": "Legal",
@@ -413,10 +373,8 @@
   "settings_about_terms": "Terms of use",
   "settings_about_contact": "Contact",
   "settings_about_link_open_failed": "Could not open link",
-
   "settings_developer_app_bar": "Developer",
   "settings_developer_eyebrow": "Developer",
-
   "backup_app_bar": "Backup",
   "backup_eyebrow": "Auto",
   "backup_section_status": "Status",
@@ -425,24 +383,6 @@
   "backup_provider_google_drive": "Google Drive",
   "backup_set_up": "Set up auto backup",
   "backup_remind_later": "Remind me later",
-
-  "paywall_eyebrow": "petlo Pro",
-  "paywall_section_features": "Pro features",
-  "paywall_section_plans": "Plans",
-  "paywall_plan_monthly": "Monthly plan",
-  "paywall_plan_yearly": "Yearly plan",
-  "paywall_trial_label": "{days}-day free trial",
-  "@paywall_trial_label": {
-    "placeholders": {
-      "days": {"type": "int"}
-    }
-  },
-  "paywall_subscribe_button": "Subscribe",
-  "paywall_restore_button": "Restore purchases",
-  "paywall_terms_link": "Terms of use",
-  "paywall_privacy_link": "Privacy policy",
-  "paywall_close": "Close",
-
   "ai_chat_app_bar": "AI consult",
   "ai_chat_eyebrow": "AI",
   "ai_chat_input_hint": "Ask about your pet",
@@ -461,7 +401,6 @@
   "ai_chat_system_quota": "Monthly limit reached. Pro plan removes the limit.",
   "ai_chat_image_camera": "Take a photo",
   "ai_chat_image_gallery": "Choose from library",
-
   "medication_reminders_app_bar": "Medication reminders",
   "medication_reminders_eyebrow": "Reminders",
   "medication_reminders_empty": "No reminders yet",
@@ -478,7 +417,6 @@
   "tab_select_pet_health": "Select a pet from above\nto view health records.",
   "tab_select_pet_life": "Select a pet from above\nto view daily records.",
   "tab_select_pet_plans": "Select a pet from above\nto view the calendar.",
-
   "appbar_groups": "Groups",
   "appbar_join_group": "Join group",
   "appbar_new_group": "New group",
@@ -501,16 +439,33 @@
   "appbar_vaccination": "Vaccination",
   "appbar_diary": "Diary",
   "appbar_about": "About petlo",
-
   "groups_snackbar_create_success": "Group created",
   "groups_snackbar_max_groups": "You can have up to 3 groups",
   "groups_snackbar_invite_issue_failed": "Failed to issue invite code",
   "groups_snackbar_role_changed": "Changed role of {name}",
-  "@groups_snackbar_role_changed": {"placeholders": {"name": {"type": "String"}}},
+  "@groups_snackbar_role_changed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "groups_snackbar_member_removed": "Removed {name}",
-  "@groups_snackbar_member_removed": {"placeholders": {"name": {"type": "String"}}},
+  "@groups_snackbar_member_removed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "groups_snackbar_member_remove_confirm": "Remove {name} from this group?",
-  "@groups_snackbar_member_remove_confirm": {"placeholders": {"name": {"type": "String"}}},
+  "@groups_snackbar_member_remove_confirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "groups_snackbar_left": "Left the group",
   "groups_snackbar_code_copied": "Code copied",
   "groups_snackbar_invite_invalid": "Invite code invalid or expired",
@@ -519,14 +474,18 @@
   "groups_snackbar_already_member": "You are already a member",
   "groups_snackbar_max_3_groups": "You can join up to 3 groups",
   "groups_snackbar_joined": "Joined {groupName}",
-  "@groups_snackbar_joined": {"placeholders": {"groupName": {"type": "String"}}},
+  "@groups_snackbar_joined": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
   "groups_snackbar_create_pro_only": "Group creation requires Pro plan",
   "groups_snackbar_load_failed": "Failed to load groups",
-
   "settings_snackbar_change_in_os": "Please change language in device Settings",
   "settings_snackbar_open_settings_failed": "Could not open Settings",
   "settings_snackbar_link_open_failed": "Could not open link",
-
   "developer_snackbar_onboarding_reset": "Onboarding reset.\nPlease restart the app",
   "developer_snackbar_backup_reminder_cleared": "Backup reminder suppression cleared",
   "developer_snackbar_pro_reset": "Pro status reset to free",
@@ -539,14 +498,12 @@
   "developer_action_clear_backup_reminder_note": "Clear 30-day suppression of \"Remind later\"",
   "developer_action_reset_pro": "Reset Pro status",
   "developer_action_reset_pro_note": "Reset Pro to free (will be restored on receipt re-validation)",
-
   "record_field_notes": "Notes",
   "record_field_notes_hint": "Anything to remember?",
   "record_field_when_now": "Now",
   "record_meal_amount_grams": "g",
   "record_weight_input_label": "Weight",
   "record_temperature_input_label": "Temperature",
-
   "paywall_pro_welcome_snackbar": "Welcome to Pro!",
   "paywall_link_open_failed": "Could not open link",
   "paywall_subhero": "Unlimited records, AI consult, family sharing.\nKeep everything about your pet — the right way.",
@@ -561,7 +518,6 @@
   "paywall_feature_pets": "Multiple pets",
   "paywall_feature_pets_body": "Register as many pets as you want",
   "paywall_trial_subscribe": "Start 7-day trial",
-  "paywall_subscribe_now": "Subscribe",
   "paywall_processing": "Processing...",
   "paywall_best_value_badge": "BEST VALUE",
   "paywall_per_month_suffix": "/ month",
@@ -569,7 +525,9 @@
   "paywall_yearly_monthly_equiv": "≈ {amount} / month",
   "@paywall_yearly_monthly_equiv": {
     "placeholders": {
-      "amount": { "type": "String" }
+      "amount": {
+        "type": "String"
+      }
     }
   },
   "paywall_legal_note": "Cancel anytime during trial.\nAuto-renews after the trial ends.",
@@ -586,14 +544,12 @@
   "paywall_tier_monthly": "Monthly",
   "paywall_tier_yearly": "Yearly",
   "paywall_tier_dash": "—",
-
   "ai_chat_input_placeholder": "Type your question...",
   "ai_chat_send_button": "Send",
   "ai_chat_response_failed": "Failed to get response",
   "ai_chat_subheader": "Ask AI about your pet.",
   "ai_chat_disclaimer": "AI answers are for reference. Always consult your vet for final decisions.",
   "ai_chat_petlo_response_label": "petlo · response",
-
   "med_reminder_field_medicine": "Medicine",
   "med_reminder_field_medicine_hint": "e.g. Royal Canin",
   "med_reminder_field_dosage": "Dosage",
@@ -604,7 +560,6 @@
   "med_reminder_section_medicine": "Medicine info",
   "med_reminder_action_save": "Save",
   "med_reminder_delete_confirm": "Delete this medication reminder?",
-
   "enum_poop_form_watery": "Watery",
   "enum_poop_form_loose": "Loose",
   "enum_poop_form_soft": "Soft",
@@ -648,7 +603,6 @@
   "enum_group_status_pending_deletion": "Closing",
   "enum_group_status_frozen": "Frozen",
   "enum_group_status_deletion_scheduled": "Scheduled for deletion",
-
   "weekday_short_sun": "Sun",
   "weekday_short_mon": "Mon",
   "weekday_short_tue": "Tue",
@@ -656,17 +610,33 @@
   "weekday_short_thu": "Thu",
   "weekday_short_fri": "Fri",
   "weekday_short_sat": "Sat",
-
   "relative_today": "Today",
   "relative_yesterday": "Yesterday",
   "relative_x_days_ago": "{days} days ago",
-  "@relative_x_days_ago": {"placeholders": {"days": {"type": "int"}}},
+  "@relative_x_days_ago": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "relative_just_now": "Just now",
   "relative_x_minutes_ago": "{minutes} min ago",
-  "@relative_x_minutes_ago": {"placeholders": {"minutes": {"type": "int"}}},
+  "@relative_x_minutes_ago": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "relative_x_hours_ago": "{hours} h ago",
-  "@relative_x_hours_ago": {"placeholders": {"hours": {"type": "int"}}},
-
+  "@relative_x_hours_ago": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
   "backup_status_last_backup": "Last",
   "backup_status_never": "Never",
   "backup_status_in_progress": "In progress",
@@ -675,7 +645,6 @@
   "onboarding_pet_form_select_type": "Please select type",
   "onboarding_pet_form_register_failed": "Failed to register pet",
   "chart_range_pro_only": "Pro-only range",
-
   "record_hero_meal": "Meal.",
   "record_hero_poop": "Stool.",
   "record_hero_pee": "Pee.",
@@ -685,7 +654,6 @@
   "record_hero_visit": "Visit.",
   "record_hero_vaccination": "Vaccination.",
   "record_hero_diary": "Diary.",
-
   "record_field_food": "Food",
   "record_field_food_hint": "Royal Canin, chicken, etc.",
   "record_field_amount": "Amount",
@@ -714,7 +682,6 @@
   "record_field_remove_photo": "Remove",
   "record_field_select_photo": "Select photo",
   "record_field_optional_label": "(optional)",
-  "record_field_notes_hint": "Anything to remember?",
   "record_field_tap_to_select": "Tap to select",
   "record_field_photo_label": "Photo",
   "record_field_notes_label": "Notes",
@@ -731,7 +698,6 @@
   "record_field_diary_body_hint": "Today's events, feelings, memories…",
   "record_field_tags_label": "Tags (optional)",
   "record_field_tags_hint": "e.g. walk, park, toy",
-
   "record_kind_meal": "Meal",
   "record_kind_stool": "Stool",
   "record_kind_pee": "Pee",
@@ -746,7 +712,6 @@
   "record_kind_unspecified": "(none)",
   "record_yesterday_label": "Yesterday",
   "record_list_empty": "Nothing here yet.",
-
   "settings_app_bar_title": "Settings",
   "settings_eyebrow": "Settings",
   "settings_hero": "Settings.",
@@ -768,7 +733,6 @@
   "settings_language_helper": "Language follows the device's Settings > petlo.",
   "notifications_enabled": "Notifications enabled",
   "notifications_disabled_open_settings": "Notifications disabled. Enable in OS settings.",
-
   "other_section_account": "Account",
   "other_account_guest_title": "Using as guest",
   "other_account_guest_subtitle": "Account linking coming soon",
@@ -782,7 +746,6 @@
   "other_item_settings": "Settings",
   "other_item_open_settings": "Open",
   "other_item_contact": "Contact",
-
   "plans_legend_urgent": "Urgent",
   "plans_legend_health": "Health",
   "plans_legend_daily": "Daily",
@@ -797,7 +760,6 @@
   "plans_more_count": "+{n} more",
   "plans_every_day": "Every day",
   "plans_birthday_suffix": "'s birthday",
-
   "schedule_category_vaccination": "Vaccination",
   "schedule_category_medication": "Medication",
   "schedule_category_visit": "Visit",
@@ -808,18 +770,15 @@
   "schedule_category_anniversary": "Anniversary",
   "schedule_category_custom": "Custom",
   "schedule_category_urgent": "Urgent",
-
   "schedule_recurrence_none": "None",
   "schedule_recurrence_daily": "Daily",
   "schedule_recurrence_weekly": "Weekly",
   "schedule_recurrence_monthly": "Monthly",
   "schedule_recurrence_yearly": "Yearly",
-
   "schedule_notification_none": "None",
   "schedule_notification_on_day": "On the day",
   "schedule_notification_day_before": "Day before",
   "schedule_notification_week_before": "1 week before",
-
   "schedule_appbar_new": "New schedule",
   "schedule_appbar_edit": "Edit schedule",
   "schedule_hero_new": "A new plan.",
@@ -846,11 +805,9 @@
   "schedule_list_empty": "No plans yet.",
   "schedule_day_add_button": "+ Add plan",
   "schedule_day_section_existing": "Plans on this day",
-
   "pet_form_show_more_details": "Add more details",
   "pet_form_hide_more_details": "Collapse",
   "pet_form_details_later_helper": "You can add breed, ideal weight, and contacts later.",
-
   "tab_eyebrow_home": "Home",
   "tab_eyebrow_life": "Life",
   "tab_eyebrow_health": "Health",
@@ -867,7 +824,6 @@
   "ai_tab_cta_open": "Start AI consult",
   "ai_tab_cta_upgrade": "Upgrade to Pro",
   "ai_tab_pro_note": "AI consult is a Pro plan feature.",
-
   "health_weight_trend": "Weight trend",
   "health_temp_trend": "Temp trend",
   "health_no_visits": "No visits recorded yet",
@@ -877,42 +833,35 @@
   "health_weeks_ago": "{n} wk ago",
   "health_months_ago": "{n} mo ago",
   "schedule_pet_prefix": "{petName}: {title}",
-
   "record_action_save": "Save",
   "record_action_cancel": "Cancel",
   "record_action_delete": "Delete",
   "record_action_change": "Change",
   "record_action_remove": "Remove",
-
   "record_amount_little": "Little",
   "record_amount_normal": "Normal",
   "record_amount_alot": "A lot",
-
   "meal_appetite_excellent": "Ate all",
   "meal_appetite_good": "Ate well",
   "meal_appetite_normal": "Normal",
   "meal_appetite_poor": "Left some",
   "meal_appetite_none": "Refused",
-
   "poop_form_hard": "Hard",
   "poop_form_lumpy": "Lumpy",
   "poop_form_normal": "Normal",
   "poop_form_soft": "Soft",
   "poop_form_watery": "Watery",
-
   "poop_color_brown": "Brown",
   "poop_color_black": "Black",
   "poop_color_red": "Red",
   "poop_color_yellow": "Yellow",
   "poop_color_pale": "Pale",
-
   "pee_color_pale": "Pale",
   "pee_color_yellow": "Yellow",
   "pee_color_dark": "Dark",
   "pee_color_amber": "Amber",
   "pee_color_red": "Red",
   "pee_color_cloudy": "Cloudy",
-
   "vomit_color_yellow": "Yellow",
   "vomit_color_brown": "Brown",
   "vomit_color_clear": "Clear",
@@ -927,10 +876,8 @@
   "vomit_color_less": "Less",
   "vomit_color_describe_label": "Describe the color",
   "vomit_color_describe_hint": "e.g. Orange-ish, Pink, etc.",
-
   "vomit_contains_food": "Contains food",
   "vomit_foreign_object": "Possible foreign object",
-
   "appbar_new_meal": "New meal",
   "appbar_new_poop": "New stool",
   "appbar_new_pee": "New pee",
@@ -976,10 +923,8 @@
   "temperature_chart_hero": "Temperature,\nover time.",
   "gallery_empty_hero": "No photos yet",
   "gallery_load_failed": "Could not load gallery",
-
   "gallery_app_bar": "Gallery",
   "gallery_empty": "No photos yet",
-
   "common_editing": "Editing",
   "common_time": "Time",
   "common_trend": "Trend",
@@ -1007,5 +952,197 @@
   "record_diary_eyebrow": "Diary",
   "record_diary_title_optional": "Title (optional)",
   "record_diary_body_label": "Body",
-  "record_meal_select_food_eyebrow": "Meal"
+  "record_meal_select_food_eyebrow": "Meal",
+  "common_copy": "Copy",
+  "notification_vaccination_upcoming_title": "Vaccination due soon",
+  "notification_vaccination_upcoming_body": "{kind}: due in 3 days",
+  "@notification_vaccination_upcoming_body": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "notification_vaccination_today_title": "Vaccination due today",
+  "notification_vaccination_today_body": "{kind}: due today",
+  "@notification_vaccination_today_body": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "notification_medication_default_body": "Time for medication",
+  "onboarding_pillars_1_title": "Systematic records",
+  "onboarding_pillars_1_note": "Log meals, stool, weight, and more daily",
+  "onboarding_pillars_2_title": "AI consultations",
+  "onboarding_pillars_2_note": "Consult AI with your pet's symptoms and photos",
+  "onboarding_pillars_3_title": "Family sharing",
+  "onboarding_pillars_3_note": "Watch over together: up to 3 groups × 5 members",
+  "onboarding_pillars_4_title": "After they're gone, too",
+  "onboarding_pillars_4_note": "Monthly memorials and lasting memories",
+  "onboarding_pillars_5_title": "Long-term view",
+  "onboarding_pillars_5_note": "Weight & temperature trends, vet visits, diary",
+  "group_detail_leave_button": "Leave this group",
+  "group_detail_leaving": "Leaving...",
+  "group_detail_leave_note": "Leaving deletes this group's records and photos\nfrom this device.",
+  "group_detail_remove_member_title": "Remove member",
+  "group_detail_remove_member_action": "Remove",
+  "group_detail_leave_dialog_title": "Leave group",
+  "group_detail_leave_dialog_body": "All data (records and photos) for this group will be deleted from this device.\nThis cannot be undone.",
+  "group_detail_leave_action": "Leave",
+  "group_detail_member_action_make_editor": "Make Editor",
+  "group_detail_member_action_make_viewer": "Make Viewer",
+  "group_detail_member_action_remove": "Remove",
+  "invite_permission_picker_hero": "Editor or\nViewer.",
+  "invite_permission_picker_body": "How much access do you want to grant\nto people who join with this invite?",
+  "invite_permission_editor_label": "Editor",
+  "invite_permission_editor_note": "Can add, edit, and delete records",
+  "invite_permission_viewer_label": "Viewer",
+  "invite_permission_viewer_note": "View only. Cannot add or edit records",
+  "invite_code_dialog_permission_label": "Permission: {permission}",
+  "@invite_code_dialog_permission_label": {
+    "placeholders": {
+      "permission": {
+        "type": "String"
+      }
+    }
+  },
+  "invite_code_dialog_expiry_label": "Expires in {hours}h",
+  "@invite_code_dialog_expiry_label": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "create_group_body": "A group to share your pet's records\nwith family and trusted friends.\nUp to 5 members per group, max 3 groups.",
+  "create_group_name_field_label": "Group name",
+  "create_group_display_name_field_label": "Your display name",
+  "create_group_display_name_hint": "Example: Dad, Mom",
+  "create_group_display_name_note": "This name is shown to other group members.\nYou can change it later in settings.",
+  "create_group_submit_label": "Create",
+  "create_group_submitting_label": "Creating...",
+  "create_group_note": "NOTE\nCreating a group requires Pro.\nJoining a group is free.",
+  "create_group_pro_required_message": "Group creation is Pro-only",
+  "create_group_view_plans_action": "VIEW PLANS",
+  "join_by_code_body": "Enter the 6-digit invite code\nyou received from the group owner.",
+  "join_by_code_code_field_label": "Invite code",
+  "join_by_code_code_hint": "000000",
+  "join_by_code_display_name_note": "This name is shown to other group members.",
+  "join_by_code_submit_label": "Join group",
+  "join_by_code_submitting_label": "Joining...",
+  "join_by_code_note": "NOTE\nJoining is free.\nInvite codes expire 72 hours after issue.",
+  "duplicate_pet_warning_title": "Watch out for duplicate names",
+  "duplicate_pet_warning_local_intro": "You are currently tracking these pets:",
+  "duplicate_pet_warning_body": "If \"{groupName}\" has a pet with the same name,\nit will be synced as a different pet.\nIf they are the same pet, records will be split,\nso check pet info after joining the group.",
+  "@duplicate_pet_warning_body": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_share_picker_title": "Share existing pet",
+  "pet_share_picker_body": "Move pets you've tracked in Personal into this group.\nRecords are shared too, so all members can view them.",
+  "pet_share_picker_load_error": "Failed to load pet list\n{error}",
+  "@pet_share_picker_load_error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_share_picker_empty": "No pets in Personal to share.",
+  "pet_share_picker_confirm_title": "Share with this group",
+  "pet_share_picker_confirm_body": "Share {petName} with this group?\n\nRecords (meals, stool, weight, etc.) move along too and become visible to all members.",
+  "@pet_share_picker_confirm_body": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_share_picker_confirm_action": "Share",
+  "pet_share_picker_success": "Shared {petName} ({count} records moved)",
+  "@pet_share_picker_success": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pet_share_picker_failure": "Share failed: {error}",
+  "@pet_share_picker_failure": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_species_dog_short": "Dog",
+  "pet_species_cat_short": "Cat",
+  "validator_required": "This field is required",
+  "validator_min_length": "Enter at least {min} characters",
+  "@validator_min_length": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "validator_max_length": "Enter at most {max} characters",
+  "@validator_max_length": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "validator_numeric": "Enter a number",
+  "validator_integer": "Enter an integer",
+  "validator_number_range": "Enter a value between {min} and {max}",
+  "@validator_number_range": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "validator_phone": "Invalid phone number format",
+  "weight_validation_required": "Enter weight",
+  "weight_validation_positive": "Enter a value greater than 0",
+  "weight_validation_max": "Must be at most 200 kg",
+  "record_validation_time_required": "Select a time",
+  "record_validation_future_time": "Cannot record a future time",
+  "meal_validation_food_required": "Enter the food brand",
+  "meal_validation_amount_non_negative": "Enter 0 or greater",
+  "meal_validation_amount_max": "Must be at most 10,000g",
+  "meal_validation_appetite_required": "Select appetite",
+  "meal_validation_time_required": "Select meal time",
+  "vomit_validation_color_required": "Select a color",
+  "vomit_validation_color_description_required": "Describe the color",
+  "vomit_validation_amount_required": "Select amount",
+  "vomit_validation_count_range": "Count must be between 1 and 10",
+  "visit_validation_reason_required": "Enter the reason for visit",
+  "visit_validation_date_required": "Select the visit date",
+  "visit_validation_future_date": "Cannot record a future date",
+  "visit_validation_amount_non_negative": "Enter 0 or greater",
+  "visit_validation_amount_max": "Amount is too large",
+  "pet_validation_name_required": "Enter a name",
+  "create_group_validation_name_required": "Enter a group name",
+  "create_group_validation_name_max": "Enter at most 50 characters",
+  "create_group_validation_display_name_required": "Enter your display name",
+  "create_group_validation_display_name_max": "Enter at most 20 characters",
+  "create_group_validation_limit_reached": "You can create up to 3 groups",
+  "pet_validation_type_required": "Select dog or cat",
+  "pet_validation_weight_min_lte_max": "Min must be less than or equal to max",
+  "pet_validation_weight_max_gte_min": "Max must be greater than or equal to min",
+  "pet_validation_name_required_specific": "Enter a name"
 }

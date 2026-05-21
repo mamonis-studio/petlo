@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 @immutable
 class VomitFormErrors {
@@ -68,18 +69,18 @@ class VomitFormState {
 
   bool get isEditing => editingVomitId != null;
 
-  VomitFormState validate() {
+  VomitFormState validate(AppLocalizations l10n) {
     final errs = VomitFormErrors(
-      color: color == null ? '色を選んでください' : null,
+      color: color == null ? l10n.vomit_validation_color_required : null,
       colorOtherText: color == VomitColor.other && colorOtherText.trim().isEmpty
-          ? '色の説明を入力してください'
+          ? l10n.vomit_validation_color_description_required
           : null,
-      amount: amount == null ? '量を選んでください' : null,
-      count: count < 1 || count > 10 ? '回数は1〜10で指定してください' : null,
+      amount: amount == null ? l10n.vomit_validation_amount_required : null,
+      count: count < 1 || count > 10 ? l10n.vomit_validation_count_range : null,
       vomitedAt: vomitedAt == null
-          ? '時刻を選んでください'
+          ? l10n.record_validation_time_required
           : (vomitedAt!.isAfter(DateTime.now().add(const Duration(minutes: 5)))
-              ? '未来の時刻は記録できません'
+              ? l10n.record_validation_future_time
               : null),
     );
     return copyWith(errors: errs);

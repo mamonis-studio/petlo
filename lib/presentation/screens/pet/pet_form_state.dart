@@ -17,6 +17,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../widgets/forms/validators.dart';
 
 /// フォームのバリデーション結果を集約。
@@ -124,14 +125,16 @@ class PetFormState {
   bool get isEditing => editingPetId != null;
 
   /// バリデーション。エラーは新しい PetFormState を返して伝える。
-  PetFormState validate() {
+  /// build 34: l10n を受け取って localizable な error message を生成する。
+  PetFormState validate(AppLocalizations l10n) {
     final PetFormErrors errs = PetFormErrors(
       name: Validators.compose(<Validator>[
-        Validators.required(message: '名前を入力してください'),
-        Validators.minLength(1),
-        Validators.maxLength(50),
+        Validators.required(l10n,
+            message: l10n.pet_validation_name_required_specific),
+        Validators.minLength(l10n, 1),
+        Validators.maxLength(l10n, 50),
       ])(name),
-      type: type == null ? '犬か猫を選んでください' : null,
+      type: type == null ? l10n.pet_validation_type_required : null,
       // build 6 で任意化 (DB nullable)、build 12 でバリデーションも撤去
       breed: null,
       // build 22: 性別も任意化 (DB nullable)、未選択でも保存可能
@@ -139,15 +142,15 @@ class PetFormState {
       idealWeightMinG: idealWeightMinG != null &&
               idealWeightMaxG != null &&
               idealWeightMinG! > idealWeightMaxG!
-          ? '下限は上限以下にしてください'
+          ? l10n.pet_validation_weight_min_lte_max
           : null,
       idealWeightMaxG: idealWeightMaxG != null &&
               idealWeightMinG != null &&
               idealWeightMaxG! < idealWeightMinG!
-          ? '上限は下限以上にしてください'
+          ? l10n.pet_validation_weight_max_gte_min
           : null,
-      primaryVetPhone: Validators.phoneNumberOrEmpty()(primaryVetPhone),
-      emergencyVetPhone: Validators.phoneNumberOrEmpty()(emergencyVetPhone),
+      primaryVetPhone: Validators.phoneNumberOrEmpty(l10n)(primaryVetPhone),
+      emergencyVetPhone: Validators.phoneNumberOrEmpty(l10n)(emergencyVetPhone),
     );
     return copyWith(errors: errs);
   }

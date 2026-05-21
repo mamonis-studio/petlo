@@ -20,10 +20,12 @@
 // ============================================================================
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../data/local/app_database.dart';
 import '../../data/repositories/medication_reminders_repository.dart';
 import '../../data/repositories/vaccinations_repository.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../utils/logger.dart';
 import 'notification_service.dart';
 
@@ -198,12 +200,15 @@ class NotificationScheduler {
 
       final int baseId = NotificationService.idForVaccination(vaccinationId);
 
+      // build 34: 通知文言を l10n 化 (context 無いので platform locale を読む)
+      final AppLocalizations l10n = _platformL10n();
+
       // 3日前
       if (threeDaysBefore.isAfter(DateTime.now())) {
         await _service.scheduleOneTime(
           id: baseId,
-          title: 'ワクチンの期限が近いです',
-          body: '${v.kind}: あと3日で期限です',
+          title: l10n.notification_vaccination_upcoming_title,
+          body: l10n.notification_vaccination_upcoming_body(v.kind),
           scheduledAt: threeDaysBefore,
           channelId: 'petlo_vaccinations',
           channelName: 'petlo vaccinations',
@@ -214,8 +219,8 @@ class NotificationScheduler {
       if (onDay.isAfter(DateTime.now())) {
         await _service.scheduleOneTime(
           id: baseId + 1,
-          title: 'ワクチンの期限です',
-          body: '${v.kind}: 今日が期限です',
+          title: l10n.notification_vaccination_today_title,
+          body: l10n.notification_vaccination_today_body(v.kind),
           scheduledAt: onDay,
           channelId: 'petlo_vaccinations',
           channelName: 'petlo vaccinations',
@@ -258,6 +263,21 @@ class NotificationScheduler {
     final List<String> parts = <String>[];
     if (dosage != null && dosage.trim().isNotEmpty) parts.add(dosage);
     if (notes != null && notes.trim().isNotEmpty) parts.add(notes);
-    return parts.isEmpty ? 'お薬の時間です' : parts.join(' · ');
+    return parts.isEmpty
+        ? _platformL10n().notification_medication_default_body
+        : parts.join(' · ');
+  }
+
+  /// build 34: context が無いコードパス用に platform locale で l10n を解決する。
+  /// supportedLocales に含まれていれば一致、そうでなければ template (ja) に
+  /// フォールバックする。
+  AppLocalizations _platformL10n() {
+    final Locale platform =
+        WidgetsBinding.instance.platformDispatcher.locale;
+    final Locale chosen = AppLocalizations.supportedLocales.firstWhere(
+      (Locale l) => l.languageCode == platform.languageCode,
+      orElse: () => const Locale('ja'),
+    );
+    return lookupAppLocalizations(chosen);
   }
 }

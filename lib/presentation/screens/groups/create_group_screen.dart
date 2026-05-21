@@ -96,7 +96,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
         leading: TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(
-            'CANCEL',
+            AppLocalizations.of(context).common_cancel.toUpperCase(),
             style: TextStyle(
               fontFamily: 'JetBrainsMono',
               fontSize: 9,
@@ -124,7 +124,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                 padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
               ),
               Text(
-                '家族や信頼できる友人と、\nうちの子の記録を共有できるグループ。\n5人まで参加可能、最大3グループ作れます。',
+                l10n.create_group_body,
                 style: typo.bodyMedium.copyWith(
                   color: colors.fgMuted,
                   height: 1.7,
@@ -133,9 +133,9 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
               const SizedBox(height: AppDimensions.paddingSection),
 
               EditorialTextField(
-                label: 'Group name',
+                label: l10n.create_group_name_field_label,
                 controller: _nameC,
-                hint: '例: 山田家のうちの子たち',
+                hint: l10n.create_group_name_hint,
                 required: true,
                 maxLength: 50,
                 errorText: s.nameError,
@@ -145,9 +145,9 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
 
               // build 18: 表示名 (グループ内であなたを呼ぶ名前)
               EditorialTextField(
-                label: 'Your display name',
+                label: l10n.create_group_display_name_field_label,
                 controller: _displayNameC,
-                hint: '例: お父さん, ママ',
+                hint: l10n.create_group_display_name_hint,
                 required: true,
                 maxLength: 20,
                 textCapitalization: TextCapitalization.words,
@@ -156,7 +156,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'グループのメンバーに表示される名前です。\n後から設定で変更できます。',
+                l10n.create_group_display_name_note,
                 style: typo.bodySmall
                     .copyWith(color: colors.fgFaint, height: 1.5),
               ),
@@ -171,7 +171,9 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
               ],
 
               PrimaryButton(
-                label: s.isSubmitting ? 'Creating...' : 'Create',
+                label: s.isSubmitting
+                    ? l10n.create_group_submitting_label
+                    : l10n.create_group_submit_label,
                 onPressed: s.isSubmitting ? null : () => _onSubmit(controller),
               ),
               const SizedBox(height: 16),
@@ -183,7 +185,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                   border: Border.all(color: colors.line, width: 1),
                 ),
                 child: Text(
-                  'NOTE\nグループ作成には Pro プランが必要です。\n参加するだけなら無料で可能です。',
+                  l10n.create_group_note,
                   style: TextStyle(
                     fontFamily: 'JetBrainsMono',
                     fontSize: 10,
@@ -201,7 +203,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
   }
 
   Future<void> _onSubmit(CreateGroupController controller) async {
-    final result = await controller.submit();
+    final result = await controller.submit(AppLocalizations.of(context));
     if (!mounted) return;
     switch (result.outcome) {
       case CreateGroupOutcome.success:
@@ -218,10 +220,11 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
       case CreateGroupOutcome.proRequired:
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('グループ作成は Pro プラン限定です'),
+            content: Text(
+                AppLocalizations.of(context).create_group_pro_required_message),
             behavior: SnackBarBehavior.floating,
             action: SnackBarAction(
-              label: 'VIEW PLANS',
+              label: AppLocalizations.of(context).create_group_view_plans_action,
               onPressed: () => PaywallScreen.push(context),
             ),
           ),

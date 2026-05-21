@@ -27,6 +27,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 /// 同名ペット警告ダイアログを表示。
 ///
@@ -122,7 +123,7 @@ class _DuplicateNameDialog extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: Text(
-                      'CANCEL',
+                      AppLocalizations.of(context).common_cancel.toUpperCase(),
                       style: typo.button.copyWith(color: colors.fg),
                     ),
                   ),

@@ -35,6 +35,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/local/app_database.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/group_selection_controller.dart';
 import '../../providers/groups_providers.dart';
 import '../../providers/scope_providers.dart';
@@ -179,7 +180,7 @@ class _Header extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(8),
               child: Text(
-                'CANCEL',
+                AppLocalizations.of(context).common_cancel.toUpperCase(),
                 style: typo.metaSmall.copyWith(color: colors.fgMuted),
               ),
             ),

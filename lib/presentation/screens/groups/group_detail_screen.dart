@@ -239,8 +239,10 @@ class GroupDetailScreen extends ConsumerWidget {
                               children: <Widget>[
                                 Text(
                                   state.isLeaving
-                                      ? 'Leaving...'
-                                      : 'Leave this group',
+                                      ? AppLocalizations.of(context)
+                                          .group_detail_leaving
+                                      : AppLocalizations.of(context)
+                                          .group_detail_leave_button,
                                   style: TextStyle(
                                     fontFamily: 'Manrope',
                                     fontSize: 14,
@@ -250,7 +252,8 @@ class GroupDetailScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  '退出するとこのグループの記録と写真は\n端末から完全に削除されます。',
+                                  AppLocalizations.of(context)
+                                      .group_detail_leave_note,
                                   style: TextStyle(
                                     fontFamily: 'Manrope',
                                     fontSize: 12,
@@ -341,17 +344,20 @@ class GroupDetailScreen extends ConsumerWidget {
   ) async {
     final bool? confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('メンバーを除名'),
-        content: Text(AppLocalizations.of(context).groups_snackbar_member_remove_confirm(displayName)),
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: Text(AppLocalizations.of(dialogContext)
+            .group_detail_remove_member_title),
+        content: Text(AppLocalizations.of(dialogContext)
+            .groups_snackbar_member_remove_confirm(displayName)),
         actions: <Widget>[
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('キャンセル'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(AppLocalizations.of(dialogContext).common_cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('除名'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(AppLocalizations.of(dialogContext)
+                .group_detail_remove_member_action),
           ),
         ],
       ),
@@ -375,18 +381,20 @@ class GroupDetailScreen extends ConsumerWidget {
   ) async {
     final bool? confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('グループから退出'),
-        content: const Text(
-            'このグループの全データ(記録・写真)が端末から削除されます。\nこの操作は元に戻せません。'),
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: Text(AppLocalizations.of(dialogContext)
+            .group_detail_leave_dialog_title),
+        content: Text(AppLocalizations.of(dialogContext)
+            .group_detail_leave_dialog_body),
         actions: <Widget>[
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('キャンセル'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(AppLocalizations.of(dialogContext).common_cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('退出'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(AppLocalizations.of(dialogContext)
+                .group_detail_leave_action),
           ),
         ],
       ),
@@ -547,20 +555,24 @@ class _MemberRow extends StatelessWidget {
                     onRemove?.call();
                 }
               },
-              itemBuilder: (_) => <PopupMenuEntry<_MemberAction>>[
+              itemBuilder: (BuildContext menuCtx) =>
+                  <PopupMenuEntry<_MemberAction>>[
                 if (permission != MemberPermission.editor)
-                  const PopupMenuItem<_MemberAction>(
+                  PopupMenuItem<_MemberAction>(
                     value: _MemberAction.makeEditor,
-                    child: Text('Editor にする'),
+                    child: Text(AppLocalizations.of(menuCtx)
+                        .group_detail_member_action_make_editor),
                   ),
                 if (permission != MemberPermission.viewer)
-                  const PopupMenuItem<_MemberAction>(
+                  PopupMenuItem<_MemberAction>(
                     value: _MemberAction.makeViewer,
-                    child: Text('Viewer にする'),
+                    child: Text(AppLocalizations.of(menuCtx)
+                        .group_detail_member_action_make_viewer),
                   ),
-                const PopupMenuItem<_MemberAction>(
+                PopupMenuItem<_MemberAction>(
                   value: _MemberAction.remove,
-                  child: Text('除名'),
+                  child: Text(AppLocalizations.of(menuCtx)
+                      .group_detail_member_action_remove),
                 ),
               ],
             ),
@@ -592,26 +604,26 @@ class _PermissionPickerSheet extends StatelessWidget {
             EyebrowText(AppLocalizations.of(context).section_invite_permission),
             const SizedBox(height: 8),
             Text(
-              'Editor or\nViewer.',
+              AppLocalizations.of(context).invite_permission_picker_hero,
               style: typo.heroName
                   .copyWith(height: 0.95, fontSize: 36),
             ),
             const SizedBox(height: 16),
             Text(
-              'この招待で参加した人に、どこまでの操作を\n許可しますか?',
+              AppLocalizations.of(context).invite_permission_picker_body,
               style: typo.bodyMedium
                   .copyWith(color: colors.fgMuted, height: 1.6),
             ),
             const SizedBox(height: 24),
             _PickerRow(
-              label: 'Editor',
-              note: '記録の追加・編集・削除ができる',
+              label: AppLocalizations.of(context).invite_permission_editor_label,
+              note: AppLocalizations.of(context).invite_permission_editor_note,
               onTap: () =>
                   Navigator.of(context).pop(MemberPermission.editor),
             ),
             _PickerRow(
-              label: 'Viewer',
-              note: '閲覧のみ。記録の追加や編集はできない',
+              label: AppLocalizations.of(context).invite_permission_viewer_label,
+              note: AppLocalizations.of(context).invite_permission_viewer_note,
               onTap: () =>
                   Navigator.of(context).pop(MemberPermission.viewer),
             ),
@@ -714,12 +726,14 @@ class _IssuedCodeDialog extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '権限: ${result.grantedPermission.name.toUpperCase()}',
+            AppLocalizations.of(context).invite_code_dialog_permission_label(
+                result.grantedPermission.name.toUpperCase()),
             style: typo.bodySmall.copyWith(color: colors.fgMuted),
           ),
           const SizedBox(height: 4),
           Text(
-            '有効期限: あと ${hours}h',
+            AppLocalizations.of(context)
+                .invite_code_dialog_expiry_label(hours.toString()),
             style: typo.bodySmall.copyWith(color: colors.fgMuted),
           ),
         ],
@@ -738,11 +752,11 @@ class _IssuedCodeDialog extends StatelessWidget {
               );
             }
           },
-          child: const Text('Copy'),
+          child: Text(AppLocalizations.of(context).common_copy),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
+          child: Text(AppLocalizations.of(context).common_close),
         ),
       ],
     );

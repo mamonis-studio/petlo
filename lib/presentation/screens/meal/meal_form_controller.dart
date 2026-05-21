@@ -23,6 +23,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/database_provider.dart';
 import '../../providers/foods_providers.dart';
 import '../../providers/meals_providers.dart';
@@ -134,9 +135,9 @@ class MealFormController extends FamilyNotifier<MealFormState, int?> {
   // Save
   // ============================================================================
 
-  Future<MealFormSaveOutcome> save() async {
+  Future<MealFormSaveOutcome> save(AppLocalizations l10n) async {
     // 1. バリデーション
-    final MealFormState validated = state.validate();
+    final MealFormState validated = state.validate(l10n);
     if (validated.errors.hasAny) {
       state = validated;
       return MealFormSaveOutcome.validationFailed;

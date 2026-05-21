@@ -320,7 +320,8 @@ class _MealRecordScreenState extends ConsumerState<MealRecordScreen> {
   // Save
   // ============================================================================
   Future<void> _onSave(MealFormController controller) async {
-    final MealFormSaveOutcome outcome = await controller.save();
+    final MealFormSaveOutcome outcome =
+        await controller.save(AppLocalizations.of(context));
 
     switch (outcome) {
       case MealFormSaveOutcome.success:

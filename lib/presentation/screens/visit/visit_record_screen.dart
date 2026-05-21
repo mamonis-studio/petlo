@@ -293,7 +293,7 @@ class _VisitRecordScreenState extends ConsumerState<VisitRecordScreen> {
   }
 
   Future<void> _onSave(VisitFormController controller) async {
-    final r = await controller.save();
+    final r = await controller.save(AppLocalizations.of(context));
     switch (r) {
       case VisitFormSaveOutcome.success:
         if (mounted) {

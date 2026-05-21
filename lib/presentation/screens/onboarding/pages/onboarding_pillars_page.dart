@@ -31,34 +31,34 @@ class OnboardingPillarsPage extends StatelessWidget {
             size: EyebrowSize.large,
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
           ),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 _PillarRow(
                   number: '01',
-                  title: '体系的記録',
-                  note: 'ごはん・うんち・体重などを毎日記録',
+                  title: l10n.onboarding_pillars_1_title,
+                  note: l10n.onboarding_pillars_1_note,
                 ),
                 _PillarRow(
                   number: '02',
-                  title: 'AI相談',
-                  note: 'うちの子の様子や写真をAIに相談',
+                  title: l10n.onboarding_pillars_2_title,
+                  note: l10n.onboarding_pillars_2_note,
                 ),
                 _PillarRow(
                   number: '03',
-                  title: '家族共有',
-                  note: '最大3グループ × 5人で一緒に見守る',
+                  title: l10n.onboarding_pillars_3_title,
+                  note: l10n.onboarding_pillars_3_note,
                 ),
                 _PillarRow(
                   number: '04',
-                  title: 'お別れの後も',
-                  note: '月命日通知や思い出として残す',
+                  title: l10n.onboarding_pillars_4_title,
+                  note: l10n.onboarding_pillars_4_note,
                 ),
                 _PillarRow(
                   number: '05',
-                  title: '長期で見える',
-                  note: '体重・体温の推移、通院記録、日記',
+                  title: l10n.onboarding_pillars_5_title,
+                  note: l10n.onboarding_pillars_5_note,
                   isLast: true,
                 ),
               ],

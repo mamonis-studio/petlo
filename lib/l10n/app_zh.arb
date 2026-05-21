@@ -1,7 +1,6 @@
 {
   "@@locale": "zh",
   "appName": "petlo",
-
   "common_ok": "好",
   "common_cancel": "取消",
   "common_save": "保存",
@@ -21,13 +20,11 @@
   "common_update": "更新",
   "common_saving": "保存中…",
   "common_updating": "更新中…",
-
   "pet_type_dog": "狗",
   "pet_type_cat": "猫",
   "pet_sex_male": "公",
   "pet_sex_female": "母",
   "pet_sex_unknown": "未知",
-
   "pet_form_app_bar_new": "新宠物",
   "pet_form_app_bar_edit": "编辑宠物",
   "pet_form_eyebrow_new": "添加宠物",
@@ -59,14 +56,12 @@
   "pet_form_field_emergency_vet_helper": "24小时急救诊所",
   "pet_form_error_validation": "输入内容有问题",
   "pet_form_error_save_failed": "保存失败,请重试",
-
   "tab_home": "主页",
   "tab_life": "日常",
   "tab_health": "健康",
   "tab_plans": "计划",
   "tab_more": "更多",
   "tab_ai": "AI咨询",
-
   "common_view": "查看",
   "common_open": "打开",
   "common_join": "加入",
@@ -81,13 +76,11 @@
   "common_choose_from_library": "从相册选择",
   "common_local_only": "仅本地",
   "common_pro_only_period": "Pro限定期间",
-
   "onboarding_welcome_eyebrow": "欢迎",
   "onboarding_welcome_hero_line1": "守护宠物,",
   "onboarding_welcome_hero_line2": "与家人和AI一起。",
   "onboarding_welcome_body": "系统记录宠物日常,\n咨询AI,与家人共享。\n告别之后亦可留作回忆。",
   "onboarding_welcome_cta": "开始",
-
   "onboarding_pillars_eyebrow": "五大支柱",
   "onboarding_pillars_hero": "五大\n支柱。",
   "onboarding_pillars_pillar_record_title": "系统记录",
@@ -101,19 +94,16 @@
   "onboarding_pillars_pillar_memorial_title": "告别之后",
   "onboarding_pillars_pillar_memorial_body": "渡过彩虹桥后亦可继续记录回忆。",
   "onboarding_pillars_cta": "下一步",
-
   "onboarding_petform_eyebrow": "关于宠物",
   "onboarding_petform_hero": "宠物\n的资料。",
   "onboarding_petform_body": "详细资料可以稍后慢慢添加。",
   "onboarding_petform_cta": "下一步",
   "onboarding_petform_skip": "跳过",
-
   "onboarding_done_eyebrow": "欢迎",
   "onboarding_done_hero": "准备\n就绪。",
   "onboarding_done_body": "准备完成。\n开始第一条记录吧。",
   "onboarding_done_helper": "主页标签查看今天的记录,\n更多标签查看设置和Pro计划。",
   "onboarding_done_cta": "开始 petlo",
-
   "home_eyebrow_today": "今天",
   "home_section_quick_log": "快速记录",
   "home_section_memories": "回忆",
@@ -128,11 +118,9 @@
   "home_quick_vomit": "呕吐",
   "home_memories_diary": "日记",
   "home_memories_gallery": "相册",
-
   "life_eyebrow_log": "日志",
   "life_hero": "日常记录。",
   "life_empty_body": "选择宠物以查看记录。",
-
   "health_eyebrow_health": "健康",
   "health_hero": "健康\n记录。",
   "health_section_records": "记录",
@@ -145,11 +133,9 @@
   "health_record_temperature": "体温",
   "health_chart_weight": "体重趋势",
   "health_chart_temperature": "体温趋势",
-
   "plans_eyebrow_schedule": "日程",
   "plans_hero": "计划。",
   "plans_empty_body": "选择宠物以查看计划与提醒。",
-
   "more_eyebrow": "设置与更多",
   "more_hero": "更多。",
   "more_section_memories": "回忆",
@@ -170,17 +156,16 @@
   "more_pro_cta_hero": "解锁\n全部功能。",
   "more_pro_cta_body": "无限记录、AI咨询、家庭共享。\n附7天免费试用。",
   "more_pro_cta_button": "查看计划",
-
   "group_selector_label": "群组",
   "group_selector_personal": "个人",
-
   "group_closure_snackbar_warning": "{groupName} 有群组警告",
   "@group_closure_snackbar_warning": {
     "placeholders": {
-      "groupName": {"type": "String"}
+      "groupName": {
+        "type": "String"
+      }
     }
   },
-
   "home_quick_label_meal": "餐食",
   "home_quick_label_stool": "便便",
   "home_quick_label_pee": "尿尿",
@@ -188,7 +173,6 @@
   "home_action_add_diary": "写日记",
   "home_action_gallery": "相册",
   "home_register_pet": "登记宠物",
-
   "more_section_ai_label": "AI功能",
   "more_section_family": "家庭共享",
   "more_section_reminders": "提醒",
@@ -218,9 +202,7 @@
   "more_pro_view_plans": "查看计划",
   "more_select_pet_first": "请先选择宠物",
   "more_link_open_failed": "无法打开链接",
-
   "pet_selector_add": "添加",
-
   "common_select": "选择",
   "common_anything_to_remember": "有什么备注吗?",
   "common_when": "时间",
@@ -231,7 +213,6 @@
   "common_today": "今天",
   "common_yesterday": "昨天",
   "common_no_pet_selected": "请选择宠物",
-  "common_loading": "加载中…",
   "common_failed_to_load": "加载失败",
   "common_input_invalid": "输入内容有问题",
   "common_save_failed": "保存失败",
@@ -241,7 +222,6 @@
   "common_deleted": "已删除",
   "common_yes_short": "是",
   "common_no_short": "否",
-
   "life_eyebrow": "日志",
   "life_section_logs": "记录",
   "life_filter_all": "全部",
@@ -251,17 +231,14 @@
   "life_filter_vomit": "呕吐",
   "life_filter_diary": "日记",
   "life_no_records_today": "今天还没有记录",
-
   "health_section_records_label": "记录",
   "health_section_charts_label": "趋势图",
   "health_no_pet_body": "选择宠物以查看健康记录与趋势",
-
   "plans_eyebrow": "日程",
   "plans_section_today": "今天",
   "plans_section_upcoming": "即将",
   "plans_section_overdue": "已过期",
   "plans_no_plans_body": "暂无计划",
-
   "pillar_record_title": "系统记录",
   "pillar_record_body": "经得起兽医检阅的记录体系。",
   "pillar_ai_title": "AI咨询",
@@ -272,12 +249,10 @@
   "pillar_share_body": "6位代码与最多5人同步。",
   "pillar_memorial_title": "告别之后",
   "pillar_memorial_body": "渡过彩虹桥后亦可继续记录回忆。",
-
   "onboarding_petform_name_label": "宠物名字",
   "onboarding_petform_name_hint": "例: 太郎",
   "onboarding_petform_type_label": "类型",
   "onboarding_petform_birthday_label": "生日(可选)",
-
   "record_meal_app_bar": "餐食记录",
   "record_meal_eyebrow": "今天",
   "record_meal_hero_line1": "今天的",
@@ -292,7 +267,6 @@
   "record_meal_appetite_poor": "不佳",
   "record_meal_appetite_none": "不吃",
   "record_meal_recent_section": "近期餐食",
-
   "record_poop_app_bar": "便便记录",
   "record_poop_form_label": "形状",
   "record_poop_color_label": "颜色",
@@ -307,14 +281,12 @@
   "record_poop_color_dark": "黑色",
   "record_poop_color_red": "红色(血)",
   "record_poop_color_white": "白色",
-
   "record_pee_app_bar": "尿尿记录",
   "record_pee_color_label": "颜色",
   "record_pee_color_clear": "透明",
   "record_pee_color_yellow": "黄色",
   "record_pee_color_dark_yellow": "深黄色",
   "record_pee_color_red": "红色(血)",
-
   "record_vomit_app_bar": "呕吐记录",
   "record_vomit_count_label": "次数",
   "record_vomit_contains_food": "含有食物",
@@ -330,42 +302,35 @@
   "record_vomit_color_green": "绿色",
   "record_vomit_color_black": "黑色",
   "record_vomit_color_other_free": "其他(自由填写)",
-
   "record_weight_app_bar": "体重记录",
   "record_weight_eyebrow": "今天",
   "record_weight_hero": "记录体重。",
   "record_weight_unit_kg": "kg",
   "record_weight_unit_lb": "lb",
-
   "record_temperature_app_bar": "体温记录",
   "record_temperature_eyebrow": "今天",
   "record_temperature_hero": "记录体温。",
   "record_temperature_unit_c": "°C",
   "record_temperature_unit_f": "°F",
-
   "record_visit_app_bar": "看诊记录",
   "record_visit_clinic_label": "医院名称",
   "record_visit_doctor_label": "兽医姓名",
   "record_visit_diagnosis_label": "诊断",
   "record_visit_prescription_label": "处方",
   "record_visit_cost_label": "费用",
-
   "record_vaccination_app_bar": "疫苗记录",
   "record_vaccination_name_label": "疫苗名称",
   "record_vaccination_clinic_label": "接种地点",
   "record_vaccination_next_due_label": "下次预约日",
-
   "record_diary_app_bar": "日记",
   "record_diary_title_label": "标题",
   "record_diary_content_label": "正文",
   "record_diary_content_hint": "今天宠物的事情",
   "record_diary_mood_label": "心情",
-
   "groups_list_eyebrow": "家庭共享",
   "groups_list_empty_body": "还没有群组。\n创建一个或用邀请码加入。",
   "groups_list_create_button": "创建群组",
   "groups_list_join_button": "用邀请码加入",
-
   "group_detail_app_bar": "群组详情",
   "group_detail_eyebrow_role": "你的权限",
   "group_detail_section_members": "成员",
@@ -377,32 +342,27 @@
   "group_detail_change_role_owner": "群主",
   "group_detail_change_role_editor": "编辑者",
   "group_detail_change_role_viewer": "查看者",
-
   "create_group_app_bar": "新建群组",
   "create_group_eyebrow": "创建",
   "create_group_name_label": "群组名称",
-  "create_group_name_hint": "例: 家庭",
+  "create_group_name_hint": "例如:山田家的宠物们",
   "create_group_create_button": "创建",
-
   "join_by_code_app_bar": "用邀请码加入",
   "join_by_code_eyebrow": "加入",
   "join_by_code_label": "邀请码(6位)",
   "join_by_code_hint": "例: 123456",
   "join_by_code_button": "加入",
-
   "settings_theme_app_bar": "外观主题",
   "settings_theme_eyebrow": "外观",
   "settings_theme_option_light": "浅色",
   "settings_theme_option_dark": "深色",
   "settings_theme_option_system": "跟随系统",
-
   "settings_language_app_bar": "语言",
   "settings_language_eyebrow": "语言",
   "settings_language_section_available": "可用语言",
   "settings_language_change_in_os": "请在系统设置应用中更改语言。",
   "settings_language_open_failed": "无法打开设置应用",
   "settings_language_open_settings": "打开设置",
-
   "settings_about_app_bar": "关于 petlo",
   "settings_about_eyebrow": "宠物日志",
   "settings_about_section_legal": "法律",
@@ -413,10 +373,8 @@
   "settings_about_terms": "使用条款",
   "settings_about_contact": "联系",
   "settings_about_link_open_failed": "无法打开链接",
-
   "settings_developer_app_bar": "开发者设置",
   "settings_developer_eyebrow": "开发者",
-
   "backup_app_bar": "备份",
   "backup_eyebrow": "自动",
   "backup_section_status": "状态",
@@ -425,24 +383,6 @@
   "backup_provider_google_drive": "Google Drive",
   "backup_set_up": "设置自动备份",
   "backup_remind_later": "稍后提醒",
-
-  "paywall_eyebrow": "petlo Pro",
-  "paywall_section_features": "Pro 特权",
-  "paywall_section_plans": "套餐",
-  "paywall_plan_monthly": "月度套餐",
-  "paywall_plan_yearly": "年度套餐",
-  "paywall_trial_label": "{days}天 免费试用",
-  "@paywall_trial_label": {
-    "placeholders": {
-      "days": {"type": "int"}
-    }
-  },
-  "paywall_subscribe_button": "订阅",
-  "paywall_restore_button": "恢复购买",
-  "paywall_terms_link": "使用条款",
-  "paywall_privacy_link": "隐私政策",
-  "paywall_close": "关闭",
-
   "ai_chat_app_bar": "AI咨询",
   "ai_chat_eyebrow": "AI",
   "ai_chat_input_hint": "请咨询关于宠物的事",
@@ -461,7 +401,6 @@
   "ai_chat_system_quota": "本月用量已达上限。Pro 套餐无限制。",
   "ai_chat_image_camera": "拍照",
   "ai_chat_image_gallery": "从相册选择",
-
   "medication_reminders_app_bar": "用药提醒",
   "medication_reminders_eyebrow": "提醒",
   "medication_reminders_empty": "还没有提醒",
@@ -478,7 +417,6 @@
   "tab_select_pet_health": "从上方选择宠物以\n查看健康记录。",
   "tab_select_pet_life": "从上方选择宠物以\n查看日常记录。",
   "tab_select_pet_plans": "从上方选择宠物以\n查看日历。",
-
   "appbar_groups": "群组",
   "appbar_join_group": "加入群组",
   "appbar_new_group": "新建群组",
@@ -501,16 +439,33 @@
   "appbar_vaccination": "疫苗",
   "appbar_diary": "日记",
   "appbar_about": "关于 petlo",
-
   "groups_snackbar_create_success": "已创建群组",
   "groups_snackbar_max_groups": "群组最多3个",
   "groups_snackbar_invite_issue_failed": "生成邀请码失败",
   "groups_snackbar_role_changed": "已修改 {name} 的权限",
-  "@groups_snackbar_role_changed": {"placeholders": {"name": {"type": "String"}}},
+  "@groups_snackbar_role_changed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "groups_snackbar_member_removed": "已移除 {name}",
-  "@groups_snackbar_member_removed": {"placeholders": {"name": {"type": "String"}}},
+  "@groups_snackbar_member_removed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "groups_snackbar_member_remove_confirm": "从此群组移除 {name}?",
-  "@groups_snackbar_member_remove_confirm": {"placeholders": {"name": {"type": "String"}}},
+  "@groups_snackbar_member_remove_confirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "groups_snackbar_left": "已退出群组",
   "groups_snackbar_code_copied": "已复制代码",
   "groups_snackbar_invite_invalid": "邀请码无效或已过期",
@@ -519,14 +474,18 @@
   "groups_snackbar_already_member": "你已是此群组成员",
   "groups_snackbar_max_3_groups": "最多可加入3个群组",
   "groups_snackbar_joined": "已加入 {groupName}",
-  "@groups_snackbar_joined": {"placeholders": {"groupName": {"type": "String"}}},
+  "@groups_snackbar_joined": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
   "groups_snackbar_create_pro_only": "创建群组需要 Pro 套餐",
   "groups_snackbar_load_failed": "加载群组失败",
-
   "settings_snackbar_change_in_os": "请在系统设置应用中更改语言",
   "settings_snackbar_open_settings_failed": "无法打开设置应用",
   "settings_snackbar_link_open_failed": "无法打开链接",
-
   "developer_snackbar_onboarding_reset": "已重置引导。\n请重启应用",
   "developer_snackbar_backup_reminder_cleared": "已清除警告横幅抑制",
   "developer_snackbar_pro_reset": "已将 Pro 状态重置为免费",
@@ -539,14 +498,12 @@
   "developer_action_clear_backup_reminder_note": "解除「稍后提醒」的30天抑制",
   "developer_action_reset_pro": "重置 Pro 状态",
   "developer_action_reset_pro_note": "将 Pro 状态重置为免费(凭据重新验证后会恢复)",
-
   "record_field_notes": "备注",
-  "record_field_notes_hint": "有什么要记录的吗?",
+  "record_field_notes_hint": "想要记下什么?",
   "record_field_when_now": "现在",
   "record_meal_amount_grams": "g",
   "record_weight_input_label": "体重",
   "record_temperature_input_label": "体温",
-
   "paywall_pro_welcome_snackbar": "欢迎加入 Pro!",
   "paywall_link_open_failed": "无法打开链接",
   "paywall_subhero": "无限记录、AI咨询、家庭共享。\n珍藏宠物的一切。",
@@ -561,7 +518,6 @@
   "paywall_feature_pets": "多只宠物",
   "paywall_feature_pets_body": "可以注册任意只数",
   "paywall_trial_subscribe": "Start 7-day trial",
-  "paywall_subscribe_now": "订阅",
   "paywall_processing": "处理中...",
   "paywall_best_value_badge": "BEST VALUE",
   "paywall_per_month_suffix": "/ 月",
@@ -569,7 +525,9 @@
   "paywall_yearly_monthly_equiv": "约 {amount} / 月",
   "@paywall_yearly_monthly_equiv": {
     "placeholders": {
-      "amount": { "type": "String" }
+      "amount": {
+        "type": "String"
+      }
     }
   },
   "paywall_legal_note": "试用期内可随时取消。\n试用期结束后自动续订。",
@@ -586,14 +544,12 @@
   "paywall_tier_monthly": "月度",
   "paywall_tier_yearly": "年度",
   "paywall_tier_dash": "—",
-
   "ai_chat_input_placeholder": "输入问题…",
   "ai_chat_send_button": "发送",
   "ai_chat_response_failed": "未能获取回复",
   "ai_chat_subheader": "向AI咨询关于宠物的事。",
   "ai_chat_disclaimer": "AI回答仅供参考,最终请咨询兽医。",
   "ai_chat_petlo_response_label": "petlo · 回复",
-
   "med_reminder_field_medicine": "药品名称",
   "med_reminder_field_medicine_hint": "例: 皇家",
   "med_reminder_field_dosage": "剂量",
@@ -604,7 +560,6 @@
   "med_reminder_section_medicine": "药品信息",
   "med_reminder_action_save": "保存",
   "med_reminder_delete_confirm": "删除此用药提醒?",
-
   "enum_poop_form_watery": "水样",
   "enum_poop_form_loose": "稀软",
   "enum_poop_form_soft": "略软",
@@ -648,7 +603,6 @@
   "enum_group_status_pending_deletion": "警告中",
   "enum_group_status_frozen": "冻结中",
   "enum_group_status_deletion_scheduled": "计划删除",
-
   "weekday_short_sun": "日",
   "weekday_short_mon": "一",
   "weekday_short_tue": "二",
@@ -656,17 +610,33 @@
   "weekday_short_thu": "四",
   "weekday_short_fri": "五",
   "weekday_short_sat": "六",
-
   "relative_today": "今天",
   "relative_yesterday": "昨天",
   "relative_x_days_ago": "{days}天前",
-  "@relative_x_days_ago": {"placeholders": {"days": {"type": "int"}}},
+  "@relative_x_days_ago": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "relative_just_now": "刚刚",
   "relative_x_minutes_ago": "{minutes}分钟前",
-  "@relative_x_minutes_ago": {"placeholders": {"minutes": {"type": "int"}}},
+  "@relative_x_minutes_ago": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "relative_x_hours_ago": "{hours}小时前",
-  "@relative_x_hours_ago": {"placeholders": {"hours": {"type": "int"}}},
-
+  "@relative_x_hours_ago": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
   "backup_status_last_backup": "上次",
   "backup_status_never": "未执行",
   "backup_status_in_progress": "进行中",
@@ -675,7 +645,6 @@
   "onboarding_pet_form_select_type": "请选择类型",
   "onboarding_pet_form_register_failed": "宠物登记失败",
   "chart_range_pro_only": "Pro限定时段",
-
   "record_hero_meal": "餐食。",
   "record_hero_poop": "便便。",
   "record_hero_pee": "尿尿。",
@@ -685,7 +654,6 @@
   "record_hero_visit": "看诊。",
   "record_hero_vaccination": "疫苗。",
   "record_hero_diary": "日记。",
-
   "record_field_food": "食物",
   "record_field_food_hint": "皇家、鸡肉 等",
   "record_field_amount": "分量",
@@ -714,7 +682,6 @@
   "record_field_remove_photo": "删除",
   "record_field_select_photo": "选择照片",
   "record_field_optional_label": "(可选)",
-  "record_field_notes_hint": "想要记下什么?",
   "record_field_tap_to_select": "点击选择",
   "record_field_photo_label": "照片",
   "record_field_notes_label": "备注",
@@ -731,7 +698,6 @@
   "record_field_diary_body_hint": "今天发生的事、感受、回忆…",
   "record_field_tags_label": "标签(可选)",
   "record_field_tags_hint": "例: 散步、公园、玩具",
-
   "record_kind_meal": "餐食",
   "record_kind_stool": "便便",
   "record_kind_pee": "尿尿",
@@ -746,7 +712,6 @@
   "record_kind_unspecified": "(无)",
   "record_yesterday_label": "昨天",
   "record_list_empty": "还没有记录。",
-
   "settings_app_bar_title": "设置",
   "settings_eyebrow": "Settings",
   "settings_hero": "设置。",
@@ -768,7 +733,6 @@
   "settings_language_helper": "语言跟随设备「设置 > petlo」。",
   "notifications_enabled": "已开启通知",
   "notifications_disabled_open_settings": "通知已关闭。可在系统设置中开启。",
-
   "other_section_account": "账户",
   "other_account_guest_title": "以访客身份使用",
   "other_account_guest_subtitle": "账户绑定后续支持",
@@ -782,7 +746,6 @@
   "other_item_settings": "设置",
   "other_item_open_settings": "打开",
   "other_item_contact": "联系我们",
-
   "plans_legend_urgent": "紧急",
   "plans_legend_health": "健康",
   "plans_legend_daily": "日常",
@@ -797,7 +760,6 @@
   "plans_more_count": "+{n}",
   "plans_every_day": "每天",
   "plans_birthday_suffix": "的生日",
-
   "schedule_category_vaccination": "疫苗",
   "schedule_category_medication": "服药",
   "schedule_category_visit": "看诊",
@@ -808,18 +770,15 @@
   "schedule_category_anniversary": "纪念日",
   "schedule_category_custom": "自定义",
   "schedule_category_urgent": "紧急",
-
   "schedule_recurrence_none": "不重复",
   "schedule_recurrence_daily": "每天",
   "schedule_recurrence_weekly": "每周",
   "schedule_recurrence_monthly": "每月",
   "schedule_recurrence_yearly": "每年",
-
   "schedule_notification_none": "不通知",
   "schedule_notification_on_day": "当天",
   "schedule_notification_day_before": "前一天",
   "schedule_notification_week_before": "提前一周",
-
   "schedule_appbar_new": "新建预定",
   "schedule_appbar_edit": "编辑预定",
   "schedule_hero_new": "新预定。",
@@ -846,11 +805,9 @@
   "schedule_list_empty": "暂无预定",
   "schedule_day_add_button": "+ 添加预定",
   "schedule_day_section_existing": "当天的预定",
-
   "pet_form_show_more_details": "登记更多详情",
   "pet_form_hide_more_details": "收起详情",
   "pet_form_details_later_helper": "品种、理想体重、联系方式可以稍后添加。",
-
   "tab_eyebrow_home": "首页",
   "tab_eyebrow_life": "记录",
   "tab_eyebrow_health": "健康",
@@ -867,7 +824,6 @@
   "ai_tab_cta_open": "开始 AI 咨询",
   "ai_tab_cta_upgrade": "升级到 Pro",
   "ai_tab_pro_note": "AI 咨询是 Pro 套餐功能。",
-
   "health_weight_trend": "体重趋势",
   "health_temp_trend": "体温趋势",
   "health_no_visits": "尚无看诊记录",
@@ -877,42 +833,35 @@
   "health_weeks_ago": "{n}周前",
   "health_months_ago": "{n}个月前",
   "schedule_pet_prefix": "{petName}: {title}",
-
   "record_action_save": "保存",
   "record_action_cancel": "取消",
   "record_action_delete": "删除",
   "record_action_change": "更换",
   "record_action_remove": "删除",
-
   "record_amount_little": "少",
   "record_amount_normal": "正常",
   "record_amount_alot": "多",
-
   "meal_appetite_excellent": "全部吃完",
   "meal_appetite_good": "良好",
   "meal_appetite_normal": "一般",
   "meal_appetite_poor": "剩了一些",
   "meal_appetite_none": "拒食",
-
   "poop_form_hard": "硬",
   "poop_form_lumpy": "块状",
   "poop_form_normal": "正常",
   "poop_form_soft": "软",
   "poop_form_watery": "水样",
-
   "poop_color_brown": "棕色",
   "poop_color_black": "黑色",
   "poop_color_red": "红色",
   "poop_color_yellow": "黄色",
   "poop_color_pale": "浅色",
-
   "pee_color_pale": "淡",
   "pee_color_yellow": "黄",
   "pee_color_dark": "深",
   "pee_color_amber": "琥珀",
   "pee_color_red": "红",
   "pee_color_cloudy": "浑浊",
-
   "vomit_color_yellow": "黄",
   "vomit_color_brown": "棕",
   "vomit_color_clear": "透明",
@@ -927,10 +876,8 @@
   "vomit_color_less": "收起",
   "vomit_color_describe_label": "描述颜色",
   "vomit_color_describe_hint": "例: 橘色、粉色 等",
-
   "vomit_contains_food": "含有食物",
   "vomit_foreign_object": "可能误食异物",
-
   "appbar_new_meal": "新餐食",
   "appbar_new_poop": "新便便",
   "appbar_new_pee": "新尿尿",
@@ -976,10 +923,8 @@
   "temperature_chart_hero": "体温趋势。",
   "gallery_empty_hero": "暂无照片",
   "gallery_load_failed": "无法加载相册",
-
   "gallery_app_bar": "相册",
   "gallery_empty": "还没有照片",
-
   "common_editing": "编辑中",
   "common_time": "时刻",
   "common_trend": "趋势",
@@ -1007,5 +952,197 @@
   "record_diary_eyebrow": "日记",
   "record_diary_title_optional": "标题(可选)",
   "record_diary_body_label": "正文",
-  "record_meal_select_food_eyebrow": "餐食"
+  "record_meal_select_food_eyebrow": "餐食",
+  "common_copy": "复制",
+  "notification_vaccination_upcoming_title": "疫苗即将到期",
+  "notification_vaccination_upcoming_body": "{kind}:还有3天到期",
+  "@notification_vaccination_upcoming_body": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "notification_vaccination_today_title": "疫苗今日到期",
+  "notification_vaccination_today_body": "{kind}:今日到期",
+  "@notification_vaccination_today_body": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "notification_medication_default_body": "服药时间到了",
+  "onboarding_pillars_1_title": "体系化记录",
+  "onboarding_pillars_1_note": "每天记录餐食·便便·体重等",
+  "onboarding_pillars_2_title": "AI咨询",
+  "onboarding_pillars_2_note": "向AI咨询宠物状况和照片",
+  "onboarding_pillars_3_title": "家庭共享",
+  "onboarding_pillars_3_note": "最多3群组 × 5人一起守护",
+  "onboarding_pillars_4_title": "离别之后,也…",
+  "onboarding_pillars_4_note": "月忌通知与回忆留存",
+  "onboarding_pillars_5_title": "长期可见",
+  "onboarding_pillars_5_note": "体重·体温趋势、就诊记录、日记",
+  "group_detail_leave_button": "退出群组",
+  "group_detail_leaving": "退出中...",
+  "group_detail_leave_note": "退出后,该群组的记录和照片将\n从设备完全删除。",
+  "group_detail_remove_member_title": "除名成员",
+  "group_detail_remove_member_action": "除名",
+  "group_detail_leave_dialog_title": "退出群组",
+  "group_detail_leave_dialog_body": "该群组的全部数据(记录·照片)将从设备删除。\n此操作无法撤销。",
+  "group_detail_leave_action": "退出",
+  "group_detail_member_action_make_editor": "设为编辑者",
+  "group_detail_member_action_make_viewer": "设为查看者",
+  "group_detail_member_action_remove": "除名",
+  "invite_permission_picker_hero": "Editor or\nViewer.",
+  "invite_permission_picker_body": "通过此邀请加入的人,\n允许多少操作权限?",
+  "invite_permission_editor_label": "Editor",
+  "invite_permission_editor_note": "可以添加·编辑·删除记录",
+  "invite_permission_viewer_label": "Viewer",
+  "invite_permission_viewer_note": "仅查看。无法添加或编辑记录",
+  "invite_code_dialog_permission_label": "权限: {permission}",
+  "@invite_code_dialog_permission_label": {
+    "placeholders": {
+      "permission": {
+        "type": "String"
+      }
+    }
+  },
+  "invite_code_dialog_expiry_label": "有效期: {hours}小时后",
+  "@invite_code_dialog_expiry_label": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "create_group_body": "可与家人和信任的朋友\n共享宠物记录的群组。\n每群最多5人,最多可创建3个群组。",
+  "create_group_name_field_label": "Group name",
+  "create_group_display_name_field_label": "Your display name",
+  "create_group_display_name_hint": "例如:爸爸、妈妈",
+  "create_group_display_name_note": "群组成员将看到此名称。\n可在设置中更改。",
+  "create_group_submit_label": "Create",
+  "create_group_submitting_label": "Creating...",
+  "create_group_note": "NOTE\n创建群组需要 Pro 套餐。\n仅加入则免费。",
+  "create_group_pro_required_message": "仅 Pro 用户可创建群组",
+  "create_group_view_plans_action": "查看套餐",
+  "join_by_code_body": "请输入从群组所有者\n收到的6位邀请码。",
+  "join_by_code_code_field_label": "Invite code",
+  "join_by_code_code_hint": "000000",
+  "join_by_code_display_name_note": "群组成员将看到此名称。",
+  "join_by_code_submit_label": "Join group",
+  "join_by_code_submitting_label": "Joining...",
+  "join_by_code_note": "NOTE\n加入是免费的。\n邀请码自发行起72小时内有效。",
+  "duplicate_pet_warning_title": "注意同名宠物",
+  "duplicate_pet_warning_local_intro": "您目前正在记录以下宠物:",
+  "duplicate_pet_warning_body": "如果\"{groupName}\"中有同名宠物,\n将作为另一只宠物同步。\n如果是同一只,记录会被分开,\n请加入群组后确认宠物信息。",
+  "@duplicate_pet_warning_body": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_share_picker_title": "Share existing pet",
+  "pet_share_picker_body": "将在 Personal 中记录的宠物移动到群组。\n记录也将一并共享,所有成员都可查看。",
+  "pet_share_picker_load_error": "无法获取宠物列表\n{error}",
+  "@pet_share_picker_load_error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_share_picker_empty": "Personal 中没有可共享的宠物。",
+  "pet_share_picker_confirm_title": "共享到此群组",
+  "pet_share_picker_confirm_body": "将 {petName} 共享到此群组吗?\n\n记录(餐食/排泄/体重等)也将一并移动,所有成员可查看。",
+  "@pet_share_picker_confirm_body": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_share_picker_confirm_action": "共享",
+  "pet_share_picker_success": "已共享 {petName}({count} 条记录已移动)",
+  "@pet_share_picker_success": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pet_share_picker_failure": "共享失败: {error}",
+  "@pet_share_picker_failure": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_species_dog_short": "狗",
+  "pet_species_cat_short": "猫",
+  "validator_required": "此项为必填",
+  "validator_min_length": "至少输入 {min} 个字符",
+  "@validator_min_length": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "validator_max_length": "最多输入 {max} 个字符",
+  "@validator_max_length": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "validator_numeric": "请输入数字",
+  "validator_integer": "请输入整数",
+  "validator_number_range": "请输入 {min}–{max} 范围内的值",
+  "@validator_number_range": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "validator_phone": "电话号码格式不正确",
+  "weight_validation_required": "请输入体重",
+  "weight_validation_positive": "请输入大于 0 的值",
+  "weight_validation_max": "请输入 200 kg 以下的值",
+  "record_validation_time_required": "请选择时间",
+  "record_validation_future_time": "无法记录未来时间",
+  "meal_validation_food_required": "请输入食物品牌",
+  "meal_validation_amount_non_negative": "请输入 0 或更大值",
+  "meal_validation_amount_max": "请输入 10,000g 以下的值",
+  "meal_validation_appetite_required": "请选择食欲",
+  "meal_validation_time_required": "请选择用餐时间",
+  "vomit_validation_color_required": "请选择颜色",
+  "vomit_validation_color_description_required": "请描述颜色",
+  "vomit_validation_amount_required": "请选择量",
+  "vomit_validation_count_range": "次数请填 1–10",
+  "visit_validation_reason_required": "请输入主诉",
+  "visit_validation_date_required": "请选择就诊日期",
+  "visit_validation_future_date": "无法记录未来日期",
+  "visit_validation_amount_non_negative": "请输入 0 或更大值",
+  "visit_validation_amount_max": "金额过大",
+  "pet_validation_name_required": "请输入名字",
+  "create_group_validation_name_required": "请输入群组名",
+  "create_group_validation_name_max": "最多输入 50 个字符",
+  "create_group_validation_display_name_required": "请输入显示名称",
+  "create_group_validation_display_name_max": "最多输入 20 个字符",
+  "create_group_validation_limit_reached": "最多可创建 3 个群组",
+  "pet_validation_type_required": "请选择狗或猫",
+  "pet_validation_weight_min_lte_max": "下限须小于或等于上限",
+  "pet_validation_weight_max_gte_min": "上限须大于或等于下限",
+  "pet_validation_name_required_specific": "请输入名字"
 }

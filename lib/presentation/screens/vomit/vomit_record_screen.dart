@@ -243,7 +243,7 @@ class _VomitRecordScreenState extends ConsumerState<VomitRecordScreen> {
   }
 
   Future<void> _onSave(VomitFormController controller) async {
-    final r = await controller.save();
+    final r = await controller.save(AppLocalizations.of(context));
     switch (r) {
       case VomitFormSaveOutcome.success:
         if (mounted) {

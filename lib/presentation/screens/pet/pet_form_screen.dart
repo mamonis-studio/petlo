@@ -301,7 +301,8 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
   // Save handler
   // ============================================================================
   Future<void> _onSave(PetFormController controller) async {
-    final PetFormSaveOutcome outcome = await controller.save();
+    final PetFormSaveOutcome outcome =
+        await controller.save(AppLocalizations.of(context));
 
     switch (outcome) {
       case PetFormSaveOutcome.success:
