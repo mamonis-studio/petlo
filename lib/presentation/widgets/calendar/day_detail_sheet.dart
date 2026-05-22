@@ -15,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/date_formatters.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -123,7 +124,11 @@ class DayDetailSheet extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            _formatDateLabel(day, l10n),
+                            _formatDateLabel(
+                              day,
+                              l10n,
+                              Localizations.localeOf(context).toLanguageTag(),
+                            ),
                             style: TextStyle(
                               fontFamily: 'Manrope',
                               fontSize: 11,
@@ -133,7 +138,10 @@ class DayDetailSheet extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            _formatHeroDate(day),
+                            _formatHeroDate(
+                              day,
+                              Localizations.localeOf(context).toLanguageTag(),
+                            ),
                             style: TextStyle(
                               fontFamily: 'Fraunces',
                               fontStyle: FontStyle.italic,
@@ -265,26 +273,17 @@ class DayDetailSheet extends ConsumerWidget {
     );
   }
 
-  String _formatDateLabel(DateTime d, AppLocalizations l10n) {
+  String _formatDateLabel(DateTime d, AppLocalizations l10n, String localeTag) {
     final DateTime now = DateTime.now();
     final DateTime today = DateTime(now.year, now.month, now.day);
     final DateTime yest = today.subtract(const Duration(days: 1));
     if (d == today) return l10n.record_today_label;
     if (d == yest) return l10n.record_yesterday_label;
-    return '${d.year}.${d.month.toString().padLeft(2, "0")}.${d.day.toString().padLeft(2, "0")}';
+    return formatFullDate(d, localeTag);
   }
 
-  String _formatHeroDate(DateTime d) {
-    final String locale =
-        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
-    if (locale == 'ja' || locale == 'zh') {
-      return '${d.month}月 ${d.day}日';
-    }
-    const List<String> months = <String>[
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return '${months[d.month - 1]} ${d.day}';
+  String _formatHeroDate(DateTime d, String localeTag) {
+    return formatMonthDay(d, localeTag);
   }
 }
 

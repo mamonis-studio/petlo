@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/date_formatters.dart';
 import '../../../data/models/chart_range.dart';
 
 class PetloLineChart extends StatelessWidget {
@@ -50,6 +51,8 @@ class PetloLineChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
+    final String localeTag =
+        Localizations.localeOf(context).toLanguageTag();
 
     if (points.length < 2) {
       return SizedBox(
@@ -167,7 +170,8 @@ class PetloLineChart extends StatelessWidget {
                   }
                   final DateTime t =
                       DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                  final String label = _formatDateForRange(t, range);
+                  final String label =
+                      _formatDateForRange(t, range, localeTag);
                   return Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
@@ -246,7 +250,7 @@ class PetloLineChart extends StatelessWidget {
                       ? yAxisFormatter!(s.y)
                       : s.y.toStringAsFixed(1);
                   return LineTooltipItem(
-                    '$label$unitLabel\n${t.month}/${t.day}',
+                    '$label$unitLabel\n${formatMonthDayShort(t, localeTag)}',
                     TextStyle(
                       fontFamily: 'JetBrainsMono',
                       fontSize: 10,
@@ -264,18 +268,16 @@ class PetloLineChart extends StatelessWidget {
     );
   }
 
-  String _formatDateForRange(DateTime t, ChartRange range) {
+  String _formatDateForRange(DateTime t, ChartRange range, String localeTag) {
     switch (range) {
       case ChartRange.month1:
       case ChartRange.month3:
-        // 月/日
-        return '${t.month}/${t.day}';
+        return formatMonthDayShort(t, localeTag);
       case ChartRange.month6:
       case ChartRange.year1:
-        // 年/月
-        return '${t.year.toString().substring(2)}/${t.month}';
+        return formatYearMonthShort(t, localeTag);
       case ChartRange.all:
-        return '${t.year}';
+        return formatYear(t, localeTag);
     }
   }
 }

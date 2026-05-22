@@ -25,6 +25,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/backup/backup_settings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/date_formatters.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/section_label.dart';
@@ -163,7 +164,10 @@ class BackupSettingsScreen extends ConsumerWidget {
               if (settings.lastSuccessAt != null)
                 _DetailRow(
                   label: 'LAST BACKUP',
-                  value: _formatDateTime(settings.lastSuccessAt!),
+                  value: formatDateTime(
+                    settings.lastSuccessAt!,
+                    Localizations.localeOf(context).toLanguageTag(),
+                  ),
                   colors: colors,
                 ),
               if (settings.lastErrorMessage != null)
@@ -214,14 +218,6 @@ class BackupSettingsScreen extends ConsumerWidget {
       case BackupState.off:
         return '記録のバックアップが無効です。\n端末を紛失した時のために、\nクラウドへの自動バックアップを有効にしましょう。';
     }
-  }
-
-  String _formatDateTime(DateTime d) {
-    final String date =
-        '${d.year}/${d.month.toString().padLeft(2, "0")}/${d.day.toString().padLeft(2, "0")}';
-    final String time =
-        '${d.hour.toString().padLeft(2, "0")}:${d.minute.toString().padLeft(2, "0")}';
-    return '$date $time';
   }
 
   // ==========================================================================

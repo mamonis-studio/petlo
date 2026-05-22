@@ -22,6 +22,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/date_formatters.dart';
 import '../../../core/utils/unit_converters.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -240,7 +241,10 @@ class _LatestValueHeader extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          _formatRelative(t),
+          _formatRelative(
+            t,
+            Localizations.localeOf(context).toLanguageTag(),
+          ),
           style: TextStyle(
             fontFamily: 'JetBrainsMono',
             fontSize: 9,
@@ -252,13 +256,13 @@ class _LatestValueHeader extends StatelessWidget {
     );
   }
 
-  String _formatRelative(DateTime t) {
+  String _formatRelative(DateTime t, String localeTag) {
     final DateTime now = DateTime.now();
     final Duration diff = now.difference(t);
     if (diff.inDays == 0) return 'TODAY';
     if (diff.inDays == 1) return 'YESTERDAY';
     if (diff.inDays < 7) return '${diff.inDays} DAYS AGO';
-    return '${t.year}.${t.month.toString().padLeft(2, "0")}.${t.day.toString().padLeft(2, "0")}';
+    return formatFullDate(t, localeTag);
   }
 }
 
@@ -277,8 +281,10 @@ class _HistoryRow extends StatelessWidget {
 
     final DateTime t =
         DateTime.fromMillisecondsSinceEpoch(weight.measuredAt);
-    final String dateStr =
-        '${t.year}.${t.month.toString().padLeft(2, "0")}.${t.day.toString().padLeft(2, "0")}';
+    final String dateStr = formatFullDate(
+      t,
+      Localizations.localeOf(context).toLanguageTag(),
+    );
     final String kg = (weight.weightG / 1000.0).toStringAsFixed(2);
 
     return InkWell(

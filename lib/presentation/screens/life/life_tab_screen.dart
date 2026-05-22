@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/widgets/section_label.dart';
@@ -319,7 +320,11 @@ class _FilteredList extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(top: 8, bottom: 4),
             child: Text(
-              _humanizeDate(dateKey, l10n),
+              _humanizeDate(
+                dateKey,
+                l10n,
+                Localizations.localeOf(context).toLanguageTag(),
+              ),
               style: TextStyle(
                 fontFamily: 'Manrope',
                 fontSize: 11,
@@ -334,7 +339,7 @@ class _FilteredList extends ConsumerWidget {
     );
   }
 
-  String _humanizeDate(String key, AppLocalizations l10n) {
+  String _humanizeDate(String key, AppLocalizations l10n, String localeTag) {
     final DateTime now = DateTime.now();
     final String today =
         '${now.year}-${now.month.toString().padLeft(2, "0")}-${now.day.toString().padLeft(2, "0")}';
@@ -343,6 +348,17 @@ class _FilteredList extends ConsumerWidget {
         '${yest.year}-${yest.month.toString().padLeft(2, "0")}-${yest.day.toString().padLeft(2, "0")}';
     if (key == today) return l10n.record_today_label;
     if (key == yKey) return l10n.record_yesterday_label;
+    // key は 'yyyy-MM-dd' フォーマットの map key (上の byDate 生成と一致)。
+    // 表示用に locale 追従の完全日付へ整形する。
+    final List<String> parts = key.split('-');
+    if (parts.length == 3) {
+      final int? y = int.tryParse(parts[0]);
+      final int? m = int.tryParse(parts[1]);
+      final int? d = int.tryParse(parts[2]);
+      if (y != null && m != null && d != null) {
+        return formatFullDate(DateTime(y, m, d), localeTag);
+      }
+    }
     return key;
   }
 }

@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 
 class DateField extends StatelessWidget {
@@ -82,7 +83,10 @@ class DateField extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Text(
-                  value != null ? _formatDate(value!) : placeholder,
+                  value != null
+                      ? formatFullDate(value!,
+                          Localizations.localeOf(context).toLanguageTag())
+                      : placeholder,
                   style: typo.bodyLarge.copyWith(
                     color: value != null ? colors.fg : colors.fgFaint,
                     fontFeatures: <FontFeature>[
@@ -159,10 +163,4 @@ class DateField extends StatelessWidget {
     }
   }
 
-  String _formatDate(DateTime d) {
-    final String y = d.year.toString().padLeft(4, '0');
-    final String m = d.month.toString().padLeft(2, '0');
-    final String day = d.day.toString().padLeft(2, '0');
-    return '$y / $m / $day';
-  }
 }

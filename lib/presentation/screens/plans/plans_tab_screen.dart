@@ -19,6 +19,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/outlined_action_button.dart';
 import '../../../core/widgets/section_label.dart';
@@ -403,7 +404,10 @@ class _PlanRow extends StatelessWidget {
 
     final String dueLabel = due == null
         ? '—'
-        : '${due.year}.${due.month.toString().padLeft(2, "0")}.${due.day.toString().padLeft(2, "0")}';
+        : formatFullDate(
+            due,
+            Localizations.localeOf(context).toLanguageTag(),
+          );
 
     return InkWell(
       onTap: () => VaccinationRecordScreen.push(

@@ -17,6 +17,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/date_formatters.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
 
@@ -49,18 +50,18 @@ class GroupClosureBanner extends StatelessWidget {
   }
 
   /// 削除予定日 (formatted)
-  String? get _deletionDateLabel {
+  String? _deletionDateLabel(String localeTag) {
     if (group.pendingDeletionAt == null) return null;
     final DateTime closureAt =
         DateTime.fromMillisecondsSinceEpoch(group.pendingDeletionAt!);
     final DateTime deletion = closureAt.add(const Duration(days: 90));
-    return '${deletion.year}/${deletion.month.toString().padLeft(2, "0")}/${deletion.day.toString().padLeft(2, "0")}';
+    return formatFullDate(deletion, localeTag);
   }
 
   ({String header, String title, String body, Color color})
-      _statusContent(AppColors colors) {
+      _statusContent(AppColors colors, String localeTag) {
     final int? days = _daysUntilDeletion;
-    final String dateLabel = _deletionDateLabel ?? '近日';
+    final String dateLabel = _deletionDateLabel(localeTag) ?? '近日';
 
     return switch (group.status) {
       GroupStatus.pendingDeletion => (
@@ -100,7 +101,10 @@ class GroupClosureBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!shouldShow(group)) return const SizedBox.shrink();
     final AppColors colors = AppColors.of(context);
-    final content = _statusContent(colors);
+    final content = _statusContent(
+      colors,
+      Localizations.localeOf(context).toLanguageTag(),
+    );
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),

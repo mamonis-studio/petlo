@@ -20,6 +20,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/date_formatters.dart';
 import '../../../core/utils/unit_converters.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/outlined_action_button.dart';
@@ -570,8 +571,10 @@ class _VisitsList extends ConsumerWidget {
                       SizedBox(
                         width: 80,
                         child: Text(
-                          _formatDate(DateTime.fromMillisecondsSinceEpoch(
-                              v.visitedAt)),
+                          formatMonthDay(
+                            DateTime.fromMillisecondsSinceEpoch(v.visitedAt),
+                            Localizations.localeOf(context).toLanguageTag(),
+                          ),
                           style: typo.metaSmall
                               .copyWith(color: colors.fgMuted),
                         ),
@@ -635,8 +638,11 @@ class _VaccinationsList extends ConsumerWidget {
                       SizedBox(
                         width: 80,
                         child: Text(
-                          _formatDate(DateTime.fromMillisecondsSinceEpoch(
-                              vax.administeredAt)),
+                          formatMonthDay(
+                            DateTime.fromMillisecondsSinceEpoch(
+                                vax.administeredAt),
+                            Localizations.localeOf(context).toLanguageTag(),
+                          ),
                           style: typo.metaSmall
                               .copyWith(color: colors.fgMuted),
                         ),
@@ -653,7 +659,7 @@ class _VaccinationsList extends ConsumerWidget {
                         Padding(
                           padding: const EdgeInsets.only(left: 8),
                           child: Text(
-                            'NEXT ${_formatDateShort(DateTime.fromMillisecondsSinceEpoch(vax.nextDueAt!))}',
+                            'NEXT ${formatMonthDayShort(DateTime.fromMillisecondsSinceEpoch(vax.nextDueAt!), Localizations.localeOf(context).toLanguageTag())}',
                             style: typo.metaSmall.copyWith(
                               color: _isPast(DateTime.fromMillisecondsSinceEpoch(
                                       vax.nextDueAt!))
@@ -675,9 +681,3 @@ class _VaccinationsList extends ConsumerWidget {
 }
 
 bool _isPast(DateTime d) => d.isBefore(DateTime.now());
-
-String _formatDate(DateTime d) =>
-    '${d.year}.${d.month.toString().padLeft(2, "0")}.${d.day.toString().padLeft(2, "0")}';
-
-String _formatDateShort(DateTime d) =>
-    '${d.month.toString().padLeft(2, "0")}/${d.day.toString().padLeft(2, "0")}';
