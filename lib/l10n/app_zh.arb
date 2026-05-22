@@ -1205,5 +1205,9 @@
   "prompt_validation_empty": "请输入问题",
   "prompt_validation_too_long": "请控制在 {maxLength} 字以内",
   "prompt_validation_dangerous_keyword": "此问题无法发送给 AI,请换一种表达方式",
-  "prompt_validation_xml_injection": "不支持标签格式的字符串"
+  "prompt_validation_xml_injection": "不支持标签格式的字符串",
+  "groups_list_empty_hero": "还没有群组",
+  "gallery_empty_body": "在日记中添加的照片会显示在这里。",
+  "home_empty_share_action": "共享已有的宠物",
+  "home_empty_share_note": "可将在 Personal 中已注册的宠物共享至此群组。"
 }

@@ -20,6 +20,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/widgets/outlined_action_button.dart';
 import '../../../data/local/app_database.dart';
 import '../../providers/medication_reminders_providers.dart';
+import '../../widgets/empty_state.dart';
 import '../../providers/notification_scheduler_provider.dart';
 import '../../providers/scope_providers.dart';
 import 'medication_reminder_form_controller.dart';
@@ -92,7 +93,12 @@ class MedicationRemindersListScreen extends ConsumerWidget {
               remindersAsync.when(
                 data: (List<MedicationReminderEntity> list) {
                   if (list.isEmpty) {
-                    return _EmptyState(colors: colors, typo: typo);
+                    return EmptyState(
+                      title: AppLocalizations.of(context)
+                          .medication_reminders_empty,
+                      subtitle: AppLocalizations.of(context)
+                          .medication_reminders_description,
+                    );
                   }
                   // 有効と無効でセクション分け
                   final List<MedicationReminderEntity> active =
@@ -155,40 +161,6 @@ class MedicationRemindersListScreen extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.colors, required this.typo});
-
-  final AppColors colors;
-  final AppTypography typo;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            AppLocalizations.of(context).medication_reminders_empty,
-            style: TextStyle(
-              fontFamily: 'Fraunces',
-              fontStyle: FontStyle.italic,
-              fontSize: 28,
-              color: colors.fgMuted,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            AppLocalizations.of(context).medication_reminders_description,
-            style:
-                typo.bodyMedium.copyWith(color: colors.fgMuted, height: 1.5),
-          ),
-        ],
       ),
     );
   }

@@ -18,10 +18,10 @@ import 'package:path_provider/path_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/utils/logger.dart';
-import '../../../core/widgets/eyebrow_text.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../data/local/app_database.dart';
 import '../../providers/diaries_providers.dart';
+import '../../widgets/empty_state.dart';
 import 'photo_fullscreen_viewer.dart';
 
 class PetGalleryScreen extends ConsumerWidget {
@@ -77,7 +77,18 @@ class PetGalleryScreen extends ConsumerWidget {
             ];
 
             if (allPhotos.isEmpty) {
-              return _EmptyState(colors: colors);
+              return Center(
+                child: EmptyState(
+                  eyebrow: AppLocalizations.of(context).common_empty,
+                  title: AppLocalizations.of(context).gallery_empty_hero,
+                  subtitle: AppLocalizations.of(context).gallery_empty_body,
+                  titleSize: 32,
+                  titleColor: colors.fg,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  paddingHorizontal: AppDimensions.paddingPage,
+                  paddingVertical: AppDimensions.paddingPage,
+                ),
+              );
             }
 
             return GridView.builder(
@@ -101,48 +112,6 @@ class PetGalleryScreen extends ConsumerWidget {
               },
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.colors});
-
-  final AppColors colors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppDimensions.paddingPage),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            EyebrowText(AppLocalizations.of(context).common_empty),
-            const SizedBox(height: 8),
-            Text(
-              AppLocalizations.of(context).gallery_empty_hero,
-              style: TextStyle(
-                fontFamily: 'Fraunces',
-                fontStyle: FontStyle.italic,
-                fontSize: 32,
-                color: colors.fg,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Photos added to diary entries\nwill appear here.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Manrope',
-                fontSize: 13,
-                color: colors.fgMuted,
-                height: 1.5,
-              ),
-            ),
-          ],
         ),
       ),
     );

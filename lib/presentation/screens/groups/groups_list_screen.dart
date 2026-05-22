@@ -26,6 +26,7 @@ import '../../../core/widgets/section_label.dart';
 import '../../../core/widgets/outlined_action_button.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
+import '../../widgets/empty_state.dart';
 import '../../providers/groups_providers.dart';
 import '../../providers/pro_status_provider.dart';
 import '../paywall/paywall_screen.dart';
@@ -124,7 +125,12 @@ class GroupsListScreen extends ConsumerWidget {
               groupsAsync.when(
                 data: (List<GroupEntity> list) {
                   if (list.isEmpty) {
-                    return _EmptyState(colors: colors, typo: typo);
+                    return EmptyState(
+                      title: AppLocalizations.of(context)
+                          .groups_list_empty_hero,
+                      subtitle: AppLocalizations.of(context)
+                          .groups_list_empty_body,
+                    );
                   }
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -176,40 +182,6 @@ class GroupsListScreen extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.colors, required this.typo});
-
-  final AppColors colors;
-  final AppTypography typo;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            'No groups yet.',
-            style: TextStyle(
-              fontFamily: 'Fraunces',
-              fontStyle: FontStyle.italic,
-              fontSize: 28,
-              color: colors.fgMuted,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '上のボタンから新しいグループを作るか、\n6桁コードで友人のグループに参加できます。',
-            style: typo.bodyMedium
-                .copyWith(color: colors.fgMuted, height: 1.6),
-          ),
-        ],
       ),
     );
   }

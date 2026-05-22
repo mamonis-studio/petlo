@@ -1205,5 +1205,9 @@
   "prompt_validation_empty": "Enter a question",
   "prompt_validation_too_long": "Please keep within {maxLength} characters",
   "prompt_validation_dangerous_keyword": "This question cannot be sent to AI. Please rephrase.",
-  "prompt_validation_xml_injection": "Tag-style strings are not allowed"
+  "prompt_validation_xml_injection": "Tag-style strings are not allowed",
+  "groups_list_empty_hero": "No groups yet",
+  "gallery_empty_body": "Photos added to diary entries will appear here.",
+  "home_empty_share_action": "Share existing pet",
+  "home_empty_share_note": "You can share pets registered under Personal into this group."
 }

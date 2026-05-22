@@ -1284,6 +1284,10 @@
   },
   "prompt_validation_dangerous_keyword": "この質問はAIに送信できません。表現を変えてみてください",
   "prompt_validation_xml_injection": "タグ形式の文字列は使えません",
+  "groups_list_empty_hero": "まだグループがありません",
+  "gallery_empty_body": "日記に追加した写真がここに表示されます。",
+  "home_empty_share_action": "既存のペットを共有",
+  "home_empty_share_note": "Personal で登録済みのペットをこのグループに共有できます。",
   "@_PLACEHOLDERS": {
     "description": "後続Chunkで画面ごとの文言を追加していく"
   }

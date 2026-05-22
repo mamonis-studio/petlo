@@ -33,6 +33,7 @@ import '../../providers/pees_providers.dart';
 import '../../providers/poops_providers.dart';
 import '../../providers/scope_providers.dart';
 import '../../providers/vomits_providers.dart';
+import '../../widgets/empty_state.dart';
 import '../../widgets/petlo_scaffold.dart';
 import '../diary/diary_record_screen.dart';
 import '../gallery/pet_gallery_screen.dart';
@@ -139,7 +140,6 @@ class HomeTabScreen extends ConsumerWidget {
             if (noPets)
               _EmptyHomeState(
                 colors: colors,
-                typo: typo,
                 onAddPet: () => PetFormScreen.push(context),
                 onSharePet: () => PetSharePicker.show(
                   context,
@@ -178,14 +178,12 @@ class _SelectPetHint extends StatelessWidget {
 class _EmptyHomeState extends StatelessWidget {
   const _EmptyHomeState({
     required this.colors,
-    required this.typo,
     required this.onAddPet,
     this.onSharePet,
     this.showSharePet = false,
   });
 
   final AppColors colors;
-  final AppTypography typo;
   final VoidCallback onAddPet;
 
   /// build 20: グループスコープのときだけ「既存ペットを共有」を出す。
@@ -195,47 +193,24 @@ class _EmptyHomeState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            '${l10n.home_empty_hero_line1}\n${l10n.home_empty_hero_line2}',
-            style: TextStyle(
-              fontFamily: 'Fraunces',
-              fontStyle: FontStyle.italic,
-              fontSize: 36,
-              letterSpacing: -36 * 0.04,
-              height: 0.95,
-              color: colors.fg,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.home_empty_body,
-            style: typo.bodyMedium.copyWith(color: colors.fgMuted),
-          ),
-          const SizedBox(height: 24),
-          PrimaryButton(
-            label: l10n.home_register_pet,
-            onPressed: onAddPet,
-          ),
-          if (showSharePet && onSharePet != null) ...<Widget>[
-            const SizedBox(height: 12),
-            OutlinedActionButton(
-              label: 'Share existing pet',
-              onPressed: onSharePet!,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Personal で登録済みのペットをこのグループに共有できます。',
-              style:
-                  typo.bodySmall.copyWith(color: colors.fgFaint, height: 1.5),
-            ),
-          ],
-        ],
+    final bool showShare = showSharePet && onSharePet != null;
+    return EmptyState(
+      title: '${l10n.home_empty_hero_line1}\n${l10n.home_empty_hero_line2}',
+      subtitle: l10n.home_empty_body,
+      titleSize: 36,
+      titleColor: colors.fg,
+      cta: PrimaryButton(
+        label: l10n.home_register_pet,
+        onPressed: onAddPet,
       ),
+      secondaryCta: showShare
+          ? OutlinedActionButton(
+              label: l10n.home_empty_share_action,
+              onPressed: onSharePet!,
+            )
+          : null,
+      secondaryCtaNote:
+          showShare ? l10n.home_empty_share_note : null,
     );
   }
 }
