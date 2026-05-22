@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/database_provider.dart';
 import '../../providers/diaries_providers.dart';
 import '../../providers/photo_storage_provider.dart';
@@ -67,8 +68,8 @@ class DiaryFormController extends FamilyNotifier<DiaryFormState, int?> {
       state = state.copyWith(photoSlots: slots);
 
   // Save
-  Future<DiaryFormSaveOutcome> save() async {
-    final validated = state.validate();
+  Future<DiaryFormSaveOutcome> save(AppLocalizations l10n) async {
+    final validated = state.validate(l10n);
     if (validated.errors.hasAny) {
       state = validated;
       return DiaryFormSaveOutcome.validationFailed;

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/database_provider.dart';
 import '../../providers/pees_providers.dart';
 import '../../providers/scope_providers.dart';
@@ -60,8 +61,8 @@ class PeeFormController extends FamilyNotifier<PeeFormState, int?> {
   void updatePeedAt(DateTime? v) => state = state.copyWith(peedAt: v);
   void updateNotes(String v) => state = state.copyWith(notes: v);
 
-  Future<PeeFormSaveOutcome> save() async {
-    final validated = state.validate();
+  Future<PeeFormSaveOutcome> save(AppLocalizations l10n) async {
+    final validated = state.validate(l10n);
     if (validated.errors.hasAny) {
       state = validated;
       return PeeFormSaveOutcome.validationFailed;

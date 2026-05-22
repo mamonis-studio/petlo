@@ -6,6 +6,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../l10n/generated/app_localizations.dart';
+
 @immutable
 class VaccinationFormErrors {
   const VaccinationFormErrors({
@@ -52,18 +54,20 @@ class VaccinationFormState {
 
   bool get isEditing => editingVaccinationId != null;
 
-  VaccinationFormState validate() {
+  VaccinationFormState validate(AppLocalizations l10n) {
     final errs = VaccinationFormErrors(
-      kind: kind.trim().isEmpty ? 'ワクチン種別を入力してください' : null,
+      kind: kind.trim().isEmpty
+          ? l10n.vaccination_validation_kind_required
+          : null,
       administeredAt: administeredAt == null
-          ? '接種日を選んでください'
+          ? l10n.vaccination_validation_date_required
           : (administeredAt!.isAfter(
                   DateTime.now().add(const Duration(days: 1)))
-              ? '未来の日付は記録できません'
+              ? l10n.visit_validation_future_date
               : null),
       nextDueAt: (nextDueAt != null && administeredAt != null &&
               !nextDueAt!.isAfter(administeredAt!))
-          ? '次回予定日は接種日より後にしてください'
+          ? l10n.vaccination_validation_next_after_administered
           : null,
     );
     return copyWith(errors: errs);

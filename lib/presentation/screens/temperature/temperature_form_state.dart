@@ -5,6 +5,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 @immutable
 class TemperatureFormErrors {
@@ -45,18 +46,18 @@ class TemperatureFormState {
 
   bool get isEditing => editingTempId != null;
 
-  TemperatureFormState validate() {
+  TemperatureFormState validate(AppLocalizations l10n) {
     final errs = TemperatureFormErrors(
       tempCelsiusX10: tempCelsiusX10 == null
-          ? '体温を入力してください'
+          ? l10n.temperature_validation_required
           : (tempCelsiusX10! < 300 || tempCelsiusX10! > 450
-              ? '30.0〜45.0°Cの範囲で入力してください'
+              ? l10n.temperature_validation_range
               : null),
       measuredAt: measuredAt == null
-          ? '時刻を選んでください'
+          ? l10n.record_validation_time_required
           : (measuredAt!.isAfter(
                   DateTime.now().add(const Duration(minutes: 5)))
-              ? '未来の時刻は記録できません'
+              ? l10n.record_validation_future_time
               : null),
     );
     return copyWith(errors: errs);

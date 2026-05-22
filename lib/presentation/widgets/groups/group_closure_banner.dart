@@ -20,6 +20,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 class GroupClosureBanner extends StatelessWidget {
   const GroupClosureBanner({required this.group, super.key});
@@ -59,9 +60,11 @@ class GroupClosureBanner extends StatelessWidget {
   }
 
   ({String header, String title, String body, Color color})
-      _statusContent(AppColors colors, String localeTag) {
+      _statusContent(AppColors colors, String localeTag,
+          AppLocalizations l10n) {
     final int? days = _daysUntilDeletion;
-    final String dateLabel = _deletionDateLabel(localeTag) ?? '近日';
+    final String dateLabel =
+        _deletionDateLabel(localeTag) ?? l10n.group_closure_date_fallback;
 
     return switch (group.status) {
       GroupStatus.pendingDeletion => (
@@ -69,22 +72,19 @@ class GroupClosureBanner extends StatelessWidget {
           title: days == null
               ? '${group.name} will close soon.'
               : '${group.name} will close\nin $days days.',
-          body:
-              'オーナーの Pro プランが終了しました。\nオーナーが Pro を再開しないと、$dateLabel にこのグループはアーカイブされます。\n\n必要なデータは早めにエクスポートしてください。',
+          body: l10n.group_closure_pending_body(dateLabel),
           color: colors.accentWarn,
         ),
       GroupStatus.frozen => (
           header: 'GROUP FROZEN',
           title: '${group.name} is frozen.',
-          body:
-              'このグループは編集できなくなりました。\n閲覧のみ可能です。$dateLabel に完全に削除されます。\n\n今すぐデータをエクスポートしてください。',
+          body: l10n.group_closure_frozen_body(dateLabel),
           color: colors.accentDanger,
         ),
       GroupStatus.deletionScheduled => (
           header: 'FINAL WARNING',
           title: '${group.name} will be\ndeleted soon.',
-          body:
-              '$dateLabel にこのグループは完全に削除されます。\n写真も含めて復元できません。\n\n今すぐデータをエクスポートしてください。',
+          body: l10n.group_closure_final_body(dateLabel),
           color: colors.accentDanger,
         ),
       // shouldShow で除外済みなので到達しないが、防御的に
@@ -104,6 +104,7 @@ class GroupClosureBanner extends StatelessWidget {
     final content = _statusContent(
       colors,
       Localizations.localeOf(context).toLanguageTag(),
+      AppLocalizations.of(context),
     );
 
     return Container(

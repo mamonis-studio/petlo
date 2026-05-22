@@ -10,8 +10,6 @@
 //
 // ============================================================================
 
-import 'dart:ui' show PlatformDispatcher;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -66,13 +64,14 @@ class _OnboardingPetFormPageState
   Future<void> _onSubmit() async {
     if (_isSubmitting) return;
 
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final String name = _nameC.text.trim();
     if (name.isEmpty) {
-      setState(() => _nameError = '名前を入力してください');
+      setState(() => _nameError = l10n.pet_validation_name_required);
       return;
     }
     if (name.length > 50) {
-      setState(() => _nameError = '50文字以内で入力してください');
+      setState(() => _nameError = l10n.create_group_validation_name_max);
       return;
     }
     if (_selectedType == null) {
@@ -108,7 +107,7 @@ class _OnboardingPetFormPageState
                 petId: petId,
                 petName: name,
                 birthdayMsec: _birthday!.millisecondsSinceEpoch,
-                birthdaySuffix: _onboardingBirthdaySuffix(),
+                birthdaySuffix: l10n.onboarding_pet_birthday_suffix,
               );
         } catch (e, st) {
           PetloLogger.instance.w('upsert birthday schedule failed',
@@ -331,9 +330,3 @@ class _PrimaryCta extends StatelessWidget {
   }
 }
 
-String _onboardingBirthdaySuffix() {
-  final String code = PlatformDispatcher.instance.locale.languageCode;
-  if (code == 'ja') return 'の誕生日';
-  if (code == 'zh') return '的生日';
-  return "'s birthday";
-}

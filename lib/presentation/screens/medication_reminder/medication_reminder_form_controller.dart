@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/medication_reminders_providers.dart';
 import '../../providers/notification_scheduler_provider.dart';
 import '../../providers/scope_providers.dart';
@@ -117,10 +118,11 @@ class MedicationReminderFormController
   // ==========================================================================
   // Save
   // ==========================================================================
-  Future<MedicationReminderSaveOutcome> save({
+  Future<MedicationReminderSaveOutcome> save(
+    AppLocalizations l10n, {
     bool isProUser = false,
   }) async {
-    final validated = state.validate();
+    final validated = state.validate(l10n);
     if (validated.errors.hasAny) {
       state = validated;
       return MedicationReminderSaveOutcome.validationFailed;

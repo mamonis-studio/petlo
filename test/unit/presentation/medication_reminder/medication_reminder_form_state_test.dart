@@ -2,8 +2,14 @@
 // petlo - MedicationReminderFormState Tests
 // ============================================================================
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:petlo/l10n/generated/app_localizations.dart';
 import 'package:petlo/presentation/screens/medication_reminder/medication_reminder_form_state.dart';
+
+// build 39: validate(l10n) シグネチャ化に伴い、テストでも l10n を渡す。
+// 表示文言は問わないので template (ja) 固定で十分。
+final AppLocalizations l10n = lookupAppLocalizations(const Locale('ja'));
 
 void main() {
   // ==========================================================================
@@ -15,7 +21,7 @@ void main() {
         medicineName: '',
         times: <String>['09:00'],
       );
-      expect(s.validate().errors.medicineName, isNotNull);
+      expect(s.validate(l10n).errors.medicineName, isNotNull);
     });
 
     test('rejects whitespace-only medicineName', () {
@@ -23,7 +29,7 @@ void main() {
         medicineName: '   ',
         times: <String>['09:00'],
       );
-      expect(s.validate().errors.medicineName, isNotNull);
+      expect(s.validate(l10n).errors.medicineName, isNotNull);
     });
 
     test('rejects medicineName over 50 chars', () {
@@ -31,7 +37,7 @@ void main() {
         medicineName: 'a' * 51,
         times: const <String>['09:00'],
       );
-      expect(s.validate().errors.medicineName, isNotNull);
+      expect(s.validate(l10n).errors.medicineName, isNotNull);
     });
 
     test('rejects empty times', () {
@@ -39,7 +45,7 @@ void main() {
         medicineName: 'フィラリア錠',
         times: <String>[],
       );
-      expect(s.validate().errors.times, isNotNull);
+      expect(s.validate(l10n).errors.times, isNotNull);
     });
 
     test('rejects malformed time format', () {
@@ -47,7 +53,7 @@ void main() {
         medicineName: 'フィラリア錠',
         times: <String>['9:00'], // hh が1桁
       );
-      expect(s.validate().errors.times, isNotNull);
+      expect(s.validate(l10n).errors.times, isNotNull);
     });
 
     test('rejects endDate before startDate', () {
@@ -57,7 +63,7 @@ void main() {
         startDate: DateTime(2025, 6, 1),
         endDate: DateTime(2025, 5, 1),
       );
-      expect(s.validate().errors.dateRange, isNotNull);
+      expect(s.validate(l10n).errors.dateRange, isNotNull);
     });
 
     test('valid with empty weekdays (= every day)', () {
@@ -66,7 +72,7 @@ void main() {
         times: <String>['09:00'],
         weekdays: <int>{}, // 空 = 毎日
       );
-      expect(s.validate().errors.hasAny, isFalse);
+      expect(s.validate(l10n).errors.hasAny, isFalse);
       expect(s.isEveryday, isTrue);
     });
 
@@ -76,7 +82,7 @@ void main() {
         times: <String>['08:00', '20:00'],
         weekdays: <int>{1, 3, 5}, // 月水金
       );
-      expect(s.validate().errors.hasAny, isFalse);
+      expect(s.validate(l10n).errors.hasAny, isFalse);
       expect(s.isEveryday, isFalse);
     });
 
@@ -87,7 +93,7 @@ void main() {
         startDate: DateTime(2025, 6, 1),
         endDate: DateTime(2025, 6, 1),
       );
-      expect(s.validate().errors.dateRange, isNull);
+      expect(s.validate(l10n).errors.dateRange, isNull);
     });
   });
 

@@ -5,6 +5,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 @immutable
 class PeeFormErrors {
@@ -45,15 +46,17 @@ class PeeFormState {
 
   bool get isEditing => editingPeeId != null;
 
-  PeeFormState validate() {
+  PeeFormState validate(AppLocalizations l10n) {
     final errs = PeeFormErrors(
-      color: color == null ? '色を選んでください' : null,
-      amount: amount == null ? '量を選んでください' : null,
-      count: count < 1 || count > 10 ? '回数は1〜10で指定してください' : null,
+      color: color == null ? l10n.pee_validation_color_required : null,
+      amount: amount == null ? l10n.pee_validation_amount_required : null,
+      count: count < 1 || count > 10
+          ? l10n.pee_validation_count_range
+          : null,
       peedAt: peedAt == null
-          ? '時刻を選んでください'
+          ? l10n.record_validation_time_required
           : (peedAt!.isAfter(DateTime.now().add(const Duration(minutes: 5)))
-              ? '未来の時刻は記録できません'
+              ? l10n.record_validation_future_time
               : null),
     );
     return copyWith(errors: errs);

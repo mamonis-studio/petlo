@@ -87,7 +87,7 @@ class GroupsListScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
               ),
               Text(
-                '家族や友人と、うちの子の記録を共有。',
+                l10n.groups_list_intro_subtitle,
                 style: typo.bodyMedium
                     .copyWith(color: colors.fgMuted, height: 1.6),
               ),
@@ -100,8 +100,8 @@ class GroupsListScreen extends ConsumerWidget {
                   if (!isPro) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content:
-                            const Text('グループ作成は Pro プラン限定です'),
+                        content: Text(
+                            l10n.groups_list_pro_required_snackbar),
                         behavior: SnackBarBehavior.floating,
                         action: SnackBarAction(
                           label: 'VIEW PLANS',
@@ -116,7 +116,7 @@ class GroupsListScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 10),
               OutlinedActionButton(
-                label: 'Join with code',
+                label: l10n.groups_list_join_button_label,
                 onPressed: () => JoinByCodeScreen.push(context),
               ),
               const SizedBox(height: 32),
@@ -165,7 +165,7 @@ class GroupsListScreen extends ConsumerWidget {
                 error: (Object e, _) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 40),
                   child: Text(
-                    'Failed to load groups',
+                    l10n.groups_list_load_failed,
                     style: typo.bodySmall.copyWith(color: colors.fgMuted),
                   ),
                 ),
@@ -173,7 +173,7 @@ class GroupsListScreen extends ConsumerWidget {
 
               const SizedBox(height: 32),
               Text(
-                '最大3つのグループに参加できます。',
+                l10n.groups_list_limit_note,
                 style: typo.bodySmall.copyWith(
                   color: colors.fgFaint,
                   height: 1.5,

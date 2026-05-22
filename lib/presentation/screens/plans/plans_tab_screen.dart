@@ -783,11 +783,10 @@ class _ScheduleListRow extends ConsumerWidget {
     final DateTime today = DateTime(now.year, now.month, now.day);
     final DateTime d = DateTime(t.year, t.month, t.day);
     if (d == today) return l10n.record_today_label;
-    final String code = Localizations.localeOf(context).languageCode;
-    if (code == 'ja' || code == 'zh') {
-      return '${t.month}月${t.day}日';
-    }
-    return '${t.month}/${t.day}';
+    return formatMonthDay(
+      t,
+      Localizations.localeOf(context).toLanguageTag(),
+    );
   }
 
   String? _resolvePetName(WidgetRef ref) {

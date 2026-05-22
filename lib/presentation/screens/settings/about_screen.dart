@@ -124,7 +124,7 @@ class AboutScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'うちの子のすべて、家族とAIで見守る。\n犬・猫の日常を体系的に記録し、\nAIに相談でき、家族で共有できる。\nお別れの後も、思い出として残せる。',
+                AppLocalizations.of(context).about_app_description,
                 style: typo.bodyLarge
                     .copyWith(color: colors.fg, height: 1.7),
               ),
@@ -169,7 +169,7 @@ class AboutScreen extends StatelessWidget {
               const SectionLabel('mamonis.studio'),
               const SizedBox(height: 8),
               Text(
-                '個人開発スタジオ。\nシンプル × ニッチ × ローカルファーストなアプリを\n少人数で丁寧に作っています。',
+                AppLocalizations.of(context).about_studio_description,
                 style: typo.bodyMedium
                     .copyWith(color: colors.fgMuted, height: 1.6),
               ),

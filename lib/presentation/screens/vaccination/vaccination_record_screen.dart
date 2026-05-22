@@ -49,14 +49,15 @@ class _VaccinationRecordScreenState
 
   bool _initialSynced = false;
 
-  /// よくあるワクチン種別 (タップで _kindC に挿入)
-  static const List<String> _commonKinds = <String>[
-    '混合ワクチン',
-    '狂犬病',
-    'レプトスピラ',
-    '猫3種混合',
-    'FeLV',
-  ];
+  /// よくあるワクチン種別 (タップで _kindC に挿入)。
+  /// build 39: ハードコードを l10n 経由に。FeLV は固有名詞なのでそのまま。
+  List<String> _commonKinds(AppLocalizations l10n) => <String>[
+        l10n.vaccination_suggestion_combined,
+        l10n.vaccination_suggestion_rabies,
+        l10n.vaccination_suggestion_leptospira,
+        l10n.vaccination_suggestion_cat_three,
+        'FeLV',
+      ];
 
   @override
   void initState() {
@@ -170,7 +171,7 @@ class _VaccinationRecordScreenState
 
               // よくある種別の suggestion チップ
               _SuggestionChips(
-                kinds: _commonKinds,
+                kinds: _commonKinds(AppLocalizations.of(context)),
                 onTap: (String k) {
                   _kindC.text = k;
                   controller.updateKind(k);
@@ -270,7 +271,7 @@ class _VaccinationRecordScreenState
   }
 
   Future<void> _onSave(VaccinationFormController controller) async {
-    final r = await controller.save();
+    final r = await controller.save(AppLocalizations.of(context));
     switch (r) {
       case VaccinationFormSaveOutcome.success:
         if (mounted) {

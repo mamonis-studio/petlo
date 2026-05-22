@@ -224,7 +224,8 @@ class _PoopRecordScreenState extends ConsumerState<PoopRecordScreen> {
   }
 
   Future<void> _onSave(PoopFormController controller) async {
-    final PoopFormSaveOutcome r = await controller.save();
+    final PoopFormSaveOutcome r =
+        await controller.save(AppLocalizations.of(context));
     switch (r) {
       case PoopFormSaveOutcome.success:
         if (mounted) {

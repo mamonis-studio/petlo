@@ -152,9 +152,9 @@ class AiService {
         case 400:
           return AiBadRequestException(errMsg ?? 'リクエストが不正です');
         case 401:
-          return const AiUnauthorizedException();
+          return AiUnauthorizedException();
         case 403:
-          return const AiProRequiredException();
+          return AiProRequiredException();
         case 429:
           // remaining_count が body に含まれてる可能性
           final int remaining = (body is Map<String, dynamic>

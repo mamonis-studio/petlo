@@ -37,11 +37,11 @@ class CalendarHeader extends StatelessWidget {
   }
 
   String _monthLabel(BuildContext context) {
-    final String locale = Localizations.localeOf(context).languageCode;
-    if (locale == 'ja' || locale == 'zh') {
-      return '${focusedMonth.month}月';
-    }
-    return DateFormat.MMMM(locale).format(focusedMonth);
+    final String localeTag =
+        Localizations.localeOf(context).toLanguageTag();
+    // ja: '5月' / zh: '5月' / en: 'May'。
+    // DateFormat スケルトンはロケールごとに自動切替する。
+    return DateFormat.MMMM(localeTag).format(focusedMonth);
   }
 
   @override

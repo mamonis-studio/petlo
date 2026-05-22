@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/database_provider.dart';
 import '../../providers/photo_storage_provider.dart';
 import '../../providers/poops_providers.dart';
@@ -69,8 +70,8 @@ class PoopFormController extends FamilyNotifier<PoopFormState, int?> {
   void updatePhotoFile(File? v) => state = state.copyWith(photoFile: v);
 
   // Save
-  Future<PoopFormSaveOutcome> save() async {
-    final PoopFormState validated = state.validate();
+  Future<PoopFormSaveOutcome> save(AppLocalizations l10n) async {
+    final PoopFormState validated = state.validate(l10n);
     if (validated.errors.hasAny) {
       state = validated;
       return PoopFormSaveOutcome.validationFailed;

@@ -33,6 +33,7 @@ import '../../../core/utils/logger.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/pet_avatar.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 class PetPhotoPicker extends StatelessWidget {
   const PetPhotoPicker({
@@ -181,6 +182,7 @@ class PetPhotoPicker extends StatelessWidget {
   /// キャンセル時は null。
   Future<File?> _cropToSquare(BuildContext context, String path) async {
     final AppColors colors = AppColors.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
     try {
       final CroppedFile? cropped = await ImageCropper().cropImage(
         sourcePath: path,
@@ -191,14 +193,14 @@ class PetPhotoPicker extends StatelessWidget {
         maxHeight: 1024,
         uiSettings: <PlatformUiSettings>[
           IOSUiSettings(
-            title: 'トリミング',
-            doneButtonTitle: '確定',
-            cancelButtonTitle: 'キャンセル',
+            title: l10n.image_cropper_title,
+            doneButtonTitle: l10n.image_cropper_done,
+            cancelButtonTitle: l10n.image_cropper_cancel,
             aspectRatioLockEnabled: true,
             resetAspectRatioEnabled: false,
           ),
           AndroidUiSettings(
-            toolbarTitle: 'トリミング',
+            toolbarTitle: l10n.image_cropper_title,
             toolbarColor: colors.fg,
             toolbarWidgetColor: colors.bg,
             backgroundColor: colors.bg,

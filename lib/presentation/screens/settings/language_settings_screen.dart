@@ -109,7 +109,7 @@ class LanguageSettingsScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
               ),
               Text(
-                '日本語 · English · 简体中文 に対応しています。\n\n端末の言語設定に従って自動的に切り替わります。\nアプリ単位で言語を変えたい場合は、\nOSの設定アプリから petlo を選んで変更してください。',
+                l10n.settings_language_body,
                 style: typo.bodyMedium
                     .copyWith(color: colors.fgMuted, height: 1.7),
               ),

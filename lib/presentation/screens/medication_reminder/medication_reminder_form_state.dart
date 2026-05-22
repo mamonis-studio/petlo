@@ -4,6 +4,8 @@
 
 import 'package:flutter/foundation.dart';
 
+import '../../../l10n/generated/app_localizations.dart';
+
 @immutable
 class MedicationReminderFormErrors {
   const MedicationReminderFormErrors({
@@ -62,21 +64,21 @@ class MedicationReminderFormState {
   /// 「毎日」表示用ヘルパー
   bool get isEveryday => weekdays.isEmpty;
 
-  MedicationReminderFormState validate() {
+  MedicationReminderFormState validate(AppLocalizations l10n) {
     String? medicineNameErr;
     if (medicineName.trim().isEmpty) {
-      medicineNameErr = '薬の名前を入力してください';
+      medicineNameErr = l10n.medication_reminder_validation_medicine_required;
     } else if (medicineName.trim().length > 50) {
-      medicineNameErr = '50文字以内で入力してください';
+      medicineNameErr = l10n.create_group_validation_name_max;
     }
 
     String? timesErr;
     if (times.isEmpty) {
-      timesErr = '少なくとも1つ時刻を追加してください';
+      timesErr = l10n.medication_reminder_validation_times_required;
     } else {
       for (final String t in times) {
         if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(t)) {
-          timesErr = '時刻形式が不正です: $t';
+          timesErr = l10n.medication_reminder_validation_time_format(t);
           break;
         }
       }
@@ -85,7 +87,8 @@ class MedicationReminderFormState {
     String? dateRangeErr;
     if (startDate != null && endDate != null) {
       if (endDate!.isBefore(startDate!)) {
-        dateRangeErr = '終了日は開始日より後にしてください';
+        dateRangeErr =
+            l10n.medication_reminder_validation_end_after_start;
       }
     }
 

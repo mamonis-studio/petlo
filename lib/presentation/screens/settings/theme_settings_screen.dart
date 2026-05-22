@@ -70,7 +70,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
               ),
               Text(
-                'iOS / Android のシステム設定に追従するか、\n手動で固定するか選べます。',
+                l10n.settings_theme_body,
                 style: typo.bodyMedium.copyWith(
                   color: colors.fgMuted,
                   height: 1.6,
@@ -116,14 +116,14 @@ class _ThemeOption extends StatelessWidget {
     }
   }
 
-  String get _description {
+  String _description(AppLocalizations l10n) {
     switch (mode) {
       case AppThemeMode.light:
-        return '常に明るい外観';
+        return l10n.settings_theme_description_light;
       case AppThemeMode.dark:
-        return '常に暗い外観';
+        return l10n.settings_theme_description_dark;
       case AppThemeMode.system:
-        return '端末の設定に追従';
+        return l10n.settings_theme_description_system;
     }
   }
 
@@ -131,6 +131,7 @@ class _ThemeOption extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -173,7 +174,7 @@ class _ThemeOption extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _description,
+                    _description(l10n),
                     style: typo.bodySmall.copyWith(color: colors.fgMuted),
                   ),
                 ],

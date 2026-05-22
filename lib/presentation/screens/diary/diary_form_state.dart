@@ -4,6 +4,7 @@
 
 import 'package:flutter/foundation.dart';
 
+import '../../../l10n/generated/app_localizations.dart';
 import '../../widgets/forms/multi_photo_picker.dart';
 
 @immutable
@@ -42,13 +43,13 @@ class DiaryFormState {
 
   bool get isEditing => editingDiaryId != null;
 
-  DiaryFormState validate() {
+  DiaryFormState validate(AppLocalizations l10n) {
     final errs = DiaryFormErrors(
-      body: body.trim().isEmpty ? '本文を入力してください' : null,
+      body: body.trim().isEmpty ? l10n.diary_validation_body_required : null,
       eventAt: eventAt == null
-          ? '日付を選んでください'
+          ? l10n.diary_validation_date_required
           : (eventAt!.isAfter(DateTime.now().add(const Duration(days: 1)))
-              ? '未来の日付は記録できません'
+              ? l10n.visit_validation_future_date
               : null),
     );
     return copyWith(errors: errs);

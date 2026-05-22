@@ -350,7 +350,8 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
     );
 
     if (confirmed == true) {
-      final PetFormFinalSaveOutcome outcome = await controller.confirmAndSave();
+      final PetFormFinalSaveOutcome outcome =
+          await controller.confirmAndSave(AppLocalizations.of(context));
       if (!mounted) return;
       if (outcome == PetFormFinalSaveOutcome.success) {
         Navigator.of(context).pop(true);

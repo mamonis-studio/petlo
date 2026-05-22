@@ -188,7 +188,7 @@ class _MedicationReminderRecordScreenState
               EditorialTextField(
                 label: AppLocalizations.of(context).medication_reminder_form_medicine_label,
                 controller: _medicineNameC,
-                hint: '例: フィラリア錠 / インスリン',
+                hint: AppLocalizations.of(context).medication_reminder_form_medicine_hint,
                 required: true,
                 maxLength: 50,
                 errorText: s.errors.medicineName,
@@ -297,7 +297,10 @@ class _MedicationReminderRecordScreenState
 
   Future<void> _onSave(MedicationReminderFormController controller) async {
     final bool isPro = ref.read(isProProvider);
-    final r = await controller.save(isProUser: isPro);
+    final r = await controller.save(
+      AppLocalizations.of(context),
+      isProUser: isPro,
+    );
     if (!mounted) return;
     switch (r) {
       case MedicationReminderSaveOutcome.success:
@@ -362,7 +365,7 @@ class _PermissionBanner extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'リマインダーは作成できますが、\n通知が届きません。許可しますか?',
+            AppLocalizations.of(context).medication_reminder_notification_permission_body,
             style: TextStyle(
               fontFamily: 'Manrope',
               fontSize: 13,

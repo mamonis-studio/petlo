@@ -17,6 +17,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/eyebrow_text.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 class TagInputField extends StatefulWidget {
   const TagInputField({
@@ -92,8 +93,12 @@ class _TagInputFieldState extends State<TagInputField> {
                 textInputAction: TextInputAction.done,
                 style: typo.bodyLarge,
                 decoration: InputDecoration(
-                  hintText:
-                      atLimit ? '${widget.maxTags} 個まで' : (widget.hint ?? '入力して追加'),
+                  hintText: atLimit
+                      ? AppLocalizations.of(context)
+                          .tag_input_field_max_reached(widget.maxTags)
+                      : (widget.hint ??
+                          AppLocalizations.of(context)
+                              .tag_input_field_placeholder),
                   hintStyle: typo.bodyLarge.copyWith(color: colors.fgFaint),
                   border: _underline(colors.line),
                   enabledBorder: _underline(colors.line),

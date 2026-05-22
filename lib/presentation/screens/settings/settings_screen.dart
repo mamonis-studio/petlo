@@ -107,8 +107,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               // build 18: 家族共有メンバー表示名
               _Row(
-                title: '表示名',
-                subtitle: ref.watch(displayNameProvider) ?? '未設定',
+                title: l10n.settings_row_display_name_title,
+                subtitle: ref.watch(displayNameProvider) ??
+                    l10n.settings_row_display_name_unset,
                 onTap: () => DisplayNameScreen.push(context),
               ),
               // build 31: バックアップ行を v1.0 では非表示 (擬似実装のため)。
@@ -398,10 +399,11 @@ class _SubscriptionStatus extends ConsumerWidget {
     final AppTypography typo = AppTypography.of(context);
     final ProStatus status = ref.watch(proStatusProvider);
     final bool isPro = ref.watch(isProProvider);
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final String label = switch (status.state) {
       ProState.active => isPro ? 'Pro' : 'Free',
-      ProState.grace => 'Pro · 猶予期間',
-      ProState.cancelled => 'Pro · 解約済み',
+      ProState.grace => l10n.settings_pro_status_grace,
+      ProState.cancelled => l10n.settings_pro_status_cancelled,
       ProState.free => isPro ? 'Pro (Force)' : 'Free',
     };
     return Text(

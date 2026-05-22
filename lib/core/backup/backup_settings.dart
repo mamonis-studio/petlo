@@ -22,6 +22,8 @@
 
 import 'package:flutter/foundation.dart';
 
+import '../../l10n/generated/app_localizations.dart';
+
 /// バックアップの状態
 enum BackupState {
   /// 無効
@@ -84,10 +86,11 @@ enum BackupProvider {
     }
   }
 
-  String get displayLabel {
+  /// build 39: l10n を受け取り、`none` ケースだけ翻訳。固有名詞ストア名はそのまま。
+  String displayLabel(AppLocalizations l10n) {
     switch (this) {
       case BackupProvider.none:
-        return '未設定';
+        return l10n.backup_provider_unset;
       case BackupProvider.iCloud:
         return 'iCloud Drive';
       case BackupProvider.googleDrive:

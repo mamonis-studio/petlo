@@ -18,6 +18,7 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/eyebrow_text.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 class DateField extends StatelessWidget {
   const DateField({
@@ -28,7 +29,7 @@ class DateField extends StatelessWidget {
     this.lastDate,
     this.required = false,
     this.errorText,
-    this.placeholder = 'タップして選択',
+    this.placeholder,
     super.key,
   });
 
@@ -39,7 +40,9 @@ class DateField extends StatelessWidget {
   final DateTime? lastDate;
   final bool required;
   final String? errorText;
-  final String placeholder;
+
+  /// 未指定時は `l10n.date_field_placeholder` (build 39)。
+  final String? placeholder;
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +89,8 @@ class DateField extends StatelessWidget {
                   value != null
                       ? formatFullDate(value!,
                           Localizations.localeOf(context).toLanguageTag())
-                      : placeholder,
+                      : (placeholder ??
+                          AppLocalizations.of(context).date_field_placeholder),
                   style: typo.bodyLarge.copyWith(
                     color: value != null ? colors.fg : colors.fgFaint,
                     fontFeatures: <FontFeature>[

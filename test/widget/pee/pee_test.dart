@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:petlo/data/local/app_database.dart';
 import 'package:petlo/data/local/database_enums.dart';
 import 'package:petlo/data/repositories/pees_repository.dart';
+import 'package:petlo/l10n/generated/app_localizations.dart';
 import 'package:petlo/presentation/providers/database_provider.dart';
 import 'package:petlo/presentation/providers/scope_providers.dart';
 import 'package:petlo/presentation/screens/pee/pee_form_controller.dart';
@@ -18,6 +19,9 @@ import 'package:petlo/presentation/widgets/pee/pee_color_selector.dart';
 import 'package:petlo/presentation/widgets/records/count_stepper.dart';
 
 import '../../helpers/test_app.dart';
+
+// build 39: validate/save(l10n) シグネチャ化に伴い l10n を渡す。
+final AppLocalizations _l10n = lookupAppLocalizations(const Locale('ja'));
 
 void main() {
   // ==========================================================================
@@ -35,7 +39,7 @@ void main() {
         amount: RecordAmount.normal,
         count: 11,
       );
-      expect(s.validate().errors.count, isNotNull);
+      expect(s.validate(_l10n).errors.count, isNotNull);
     });
 
     test('valid state passes', () {
@@ -45,7 +49,7 @@ void main() {
         count: 1,
         peedAt: DateTime.now().subtract(const Duration(minutes: 1)),
       );
-      expect(s.validate().errors.hasAny, isFalse);
+      expect(s.validate(_l10n).errors.hasAny, isFalse);
     });
   });
 
@@ -259,7 +263,7 @@ void main() {
         ..updateAmount(RecordAmount.normal)
         ..updateCount(2);
 
-      final r = await ctrl.save();
+      final r = await ctrl.save(_l10n);
       expect(r, PeeFormSaveOutcome.success);
 
       final repo = PeesRepository(db);

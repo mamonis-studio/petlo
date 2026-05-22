@@ -26,6 +26,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/backup_settings_provider.dart';
 import '../../screens/backup/backup_settings_screen.dart';
 
@@ -79,7 +80,7 @@ class BackupBanner extends ConsumerWidget {
 
           // サブコピー
           Text(
-            '100件以上の記録があります。\n端末を紛失すると失われてしまうので、\n自動バックアップを有効にしましょう。',
+            AppLocalizations.of(context).backup_banner_upsell_body,
             style: TextStyle(
               fontFamily: 'Manrope',
               fontSize: 13,

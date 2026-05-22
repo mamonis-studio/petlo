@@ -16,7 +16,6 @@
 // ============================================================================
 
 import 'dart:io';
-import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -200,18 +199,18 @@ class PetFormController extends FamilyNotifier<PetFormState, int?> {
       return PetFormSaveOutcome.duplicateNameNeedsConfirmation;
     }
 
-    return _doSave();
+    return _doSave(l10n);
   }
 
   /// 2段階目: 同名警告ダイアログでユーザーが「続行」を選んだ後の確認後save。
-  Future<PetFormFinalSaveOutcome> confirmAndSave() async {
-    final PetFormSaveOutcome result = await _doSave();
+  Future<PetFormFinalSaveOutcome> confirmAndSave(AppLocalizations l10n) async {
+    final PetFormSaveOutcome result = await _doSave(l10n);
     return result == PetFormSaveOutcome.success
         ? PetFormFinalSaveOutcome.success
         : PetFormFinalSaveOutcome.dbError;
   }
 
-  Future<PetFormSaveOutcome> _doSave() async {
+  Future<PetFormSaveOutcome> _doSave(AppLocalizations l10n) async {
     state = state.copyWith(isSubmitting: true);
 
     try {
@@ -286,7 +285,7 @@ class PetFormController extends FamilyNotifier<PetFormState, int?> {
               petId: petId,
               petName: state.name.trim(),
               birthdayMsec: state.birthday == null ? null : birthdayMsec,
-              birthdaySuffix: _birthdaySuffix(),
+              birthdaySuffix: l10n.onboarding_pet_birthday_suffix,
             );
       } catch (e, st) {
         PetloLogger.instance
@@ -328,12 +327,3 @@ class PetFormController extends FamilyNotifier<PetFormState, int?> {
   }
 }
 
-/// ペット birthday 自動 schedule のタイトルサフィックス。
-/// 端末ロケール基準で生成(後で UI から編集可能)。
-String _birthdaySuffix() {
-  final String code =
-      PlatformDispatcher.instance.locale.languageCode;
-  if (code == 'ja') return 'の誕生日';
-  if (code == 'zh') return '的生日';
-  return "'s birthday";
-}

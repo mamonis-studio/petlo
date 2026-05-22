@@ -1288,6 +1288,158 @@
   "gallery_empty_body": "日記に追加した写真がここに表示されます。",
   "home_empty_share_action": "既存のペットを共有",
   "home_empty_share_note": "Personal で登録済みのペットをこのグループに共有できます。",
+  "groups_list_intro_subtitle": "家族や友人と、うちの子の記録を共有。",
+  "groups_list_pro_required_snackbar": "グループ作成は Pro プラン限定です",
+  "groups_list_join_button_label": "招待コードで参加",
+  "groups_list_load_failed": "グループの読み込みに失敗しました",
+  "groups_list_limit_note": "最大3つのグループに参加できます。",
+  "ai_chat_intro_body": "うちの子の様子で気になることを\nAIに相談してみてください。\n\n直近7日の記録 + 30日サマリーを文脈として、\n獣医師に行く前のセルフチェックの参考に。",
+  "ai_chat_disclaimer_label": "NOTE",
+  "ai_chat_disclaimer_body": "気になる症状は獣医師にご相談ください。\nAIの返答は参考情報であり、診断ではありません。",
+  "ai_chat_offline_banner": "OFFLINE — メッセージは送信できません",
+  "ai_chat_input_hint_offline": "オフライン中",
+  "ai_chat_error_offline": "オフラインです。接続を確認してください",
+  "ai_chat_error_pro_required": "AI相談は Pro プラン限定です",
+  "ai_chat_error_quota_exceeded": "今月の利用回数 ({count} 回) を超えました",
+  "@ai_chat_error_quota_exceeded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ai_chat_error_no_pet": "ペットを選択してください",
+  "ai_chat_error_pet_context_failed": "ペット情報を取得できませんでした",
+  "ai_chat_error_network": "ネットワークエラーです。再試行してください",
+  "ai_chat_error_unexpected": "予期しないエラーが発生しました",
+  "ai_service_error_auth_required": "認証エラーです。再ログインしてください",
+  "ai_service_error_quota_generic": "今月の利用回数を超えました",
+  "settings_row_display_name_title": "表示名",
+  "settings_row_display_name_unset": "未設定",
+  "settings_pro_status_grace": "Pro · 猶予期間",
+  "settings_pro_status_cancelled": "Pro · 解約済み",
+  "about_app_description": "うちの子のすべて、家族とAIで見守る。\n犬・猫の日常を体系的に記録し、\nAIに相談でき、家族で共有できる。\nお別れの後も、思い出として残せる。",
+  "about_studio_description": "個人開発スタジオ。\nシンプル × ニッチ × ローカルファーストなアプリを\n少人数で丁寧に作っています。",
+  "settings_theme_body": "iOS / Android のシステム設定に追従するか、\n手動で固定するか選べます。",
+  "settings_theme_description_light": "常に明るい外観",
+  "settings_theme_description_dark": "常に暗い外観",
+  "settings_theme_description_system": "端末の設定に追従",
+  "settings_language_body": "日本語 · English · 简体中文 に対応しています。\n\n端末の言語設定に従って自動的に切り替わります。\nアプリ単位で言語を変えたい場合は、\nOSの設定アプリから petlo を選んで変更してください。",
+  "display_name_validation_required": "表示名を入力してください",
+  "display_name_validation_max": "20文字以内で入力してください",
+  "display_name_saved_snackbar": "表示名を保存しました",
+  "display_name_saved_local_snackbar": "ローカルに保存しました(後で同期されます)",
+  "display_name_body": "家族共有グループのメンバーに表示される名前です。\n本名でなく愛称・続柄 (お父さん、ママ、など) でも OK。",
+  "display_name_hint": "例: お父さん, ママ",
+  "backup_settings_disclaimer": "NOTE\n記録は暗号化されてクラウドに保存されます。\n端末を買い替えた時はサインインで復元可能。\n\nv1.0 はバックアップ機能のプレビュー版です。\nクラウド連携の本実装は次回アップデート予定です。",
+  "backup_status_on_message": "うちの子の記録を {provider} に\n自動でバックアップしています。",
+  "@backup_status_on_message": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "backup_status_setup_in_progress": "バックアップを設定しています...",
+  "backup_status_error_message": "バックアップに失敗しました。\n下のボタンから再試行できます。",
+  "backup_status_off_message": "記録のバックアップが無効です。\n端末を紛失した時のために、\nクラウドへの自動バックアップを有効にしましょう。",
+  "backup_enable_success_snackbar": "バックアップが有効になりました",
+  "backup_enable_failed_snackbar": "バックアップの有効化に失敗しました",
+  "backup_disable_dialog_title": "バックアップを停止",
+  "backup_disable_dialog_body": "バックアップを停止すると、記録がクラウドに保存されなくなります。",
+  "backup_disable_dialog_action": "停止",
+  "backup_now_success_snackbar": "バックアップが完了しました",
+  "backup_now_failed_snackbar": "バックアップに失敗しました",
+  "backup_banner_setup_in_progress": "バックアップ準備中",
+  "backup_banner_today": "今日バックアップ済み",
+  "backup_banner_days_ago": "{days} 日前にバックアップ",
+  "@backup_banner_days_ago": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "backup_banner_off": "バックアップは無効です",
+  "backup_banner_connecting": "プロバイダに接続中...",
+  "backup_banner_failed": "バックアップに失敗しました",
+  "medication_reminder_form_medicine_hint": "例: フィラリア錠 / インスリン",
+  "medication_reminder_notification_permission_body": "リマインダーは作成できますが、\n通知が届きません。許可しますか?",
+  "vaccination_suggestion_combined": "混合ワクチン",
+  "vaccination_suggestion_rabies": "狂犬病",
+  "vaccination_suggestion_leptospira": "レプトスピラ",
+  "vaccination_suggestion_cat_three": "猫3種混合",
+  "onboarding_pet_birthday_suffix": "の誕生日",
+  "group_closure_date_fallback": "近日",
+  "group_closure_pending_body": "オーナーの Pro プランが終了しました。\nオーナーが Pro を再開しないと、{dateLabel} にこのグループはアーカイブされます。\n\n必要なデータは早めにエクスポートしてください。",
+  "@group_closure_pending_body": {
+    "placeholders": {
+      "dateLabel": {
+        "type": "String"
+      }
+    }
+  },
+  "group_closure_frozen_body": "このグループは編集できなくなりました。\n閲覧のみ可能です。{dateLabel} に完全に削除されます。\n\n今すぐデータをエクスポートしてください。",
+  "@group_closure_frozen_body": {
+    "placeholders": {
+      "dateLabel": {
+        "type": "String"
+      }
+    }
+  },
+  "group_closure_final_body": "{dateLabel} にこのグループは完全に削除されます。\n写真も含めて復元できません。\n\n今すぐデータをエクスポートしてください。",
+  "@group_closure_final_body": {
+    "placeholders": {
+      "dateLabel": {
+        "type": "String"
+      }
+    }
+  },
+  "backup_banner_upsell_body": "100件以上の記録があります。\n端末を紛失すると失われてしまうので、\n自動バックアップを有効にしましょう。",
+  "tab_shell_group_closure_warning_title": "{groupName} のグループ警告があります",
+  "@tab_shell_group_closure_warning_title": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "temperature_validation_required": "体温を入力してください",
+  "temperature_validation_range": "30.0〜45.0°Cの範囲で入力してください",
+  "pee_validation_color_required": "色を選んでください",
+  "pee_validation_amount_required": "量を選んでください",
+  "pee_validation_count_range": "回数は1〜10で指定してください",
+  "poop_validation_form_required": "形状を選んでください",
+  "diary_validation_body_required": "本文を入力してください",
+  "diary_validation_date_required": "日付を選んでください",
+  "vaccination_validation_kind_required": "ワクチン種別を入力してください",
+  "vaccination_validation_date_required": "接種日を選んでください",
+  "vaccination_validation_next_after_administered": "次回予定日は接種日より後にしてください",
+  "medication_reminder_validation_medicine_required": "薬の名前を入力してください",
+  "medication_reminder_validation_times_required": "少なくとも1つ時刻を追加してください",
+  "medication_reminder_validation_time_format": "時刻形式が不正です: {time}",
+  "@medication_reminder_validation_time_format": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "medication_reminder_validation_end_after_start": "終了日は開始日より後にしてください",
+  "date_field_placeholder": "タップして選択",
+  "tag_input_field_placeholder": "入力して追加",
+  "tag_input_field_max_reached": "{max} 個まで",
+  "@tag_input_field_max_reached": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "image_cropper_title": "トリミング",
+  "image_cropper_done": "確定",
+  "image_cropper_cancel": "キャンセル",
+  "backup_provider_unset": "未設定",
   "@_PLACEHOLDERS": {
     "description": "後続Chunkで画面ごとの文言を追加していく"
   }

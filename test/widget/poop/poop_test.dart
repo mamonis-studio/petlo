@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:petlo/data/local/app_database.dart';
 import 'package:petlo/data/local/database_enums.dart';
 import 'package:petlo/data/repositories/poops_repository.dart';
+import 'package:petlo/l10n/generated/app_localizations.dart';
 import 'package:petlo/presentation/providers/database_provider.dart';
 import 'package:petlo/presentation/providers/scope_providers.dart';
 import 'package:petlo/presentation/screens/poop/poop_form_controller.dart';
@@ -19,6 +20,9 @@ import 'package:petlo/presentation/widgets/poop/poop_form_selector.dart';
 
 import '../../helpers/test_app.dart';
 
+// build 39: validate/save(l10n) シグネチャ化に伴い l10n を渡す。
+final AppLocalizations _l10n = lookupAppLocalizations(const Locale('ja'));
+
 void main() {
   // ==========================================================================
   // PoopFormState (Pure DTO)
@@ -26,7 +30,7 @@ void main() {
   group('PoopFormState validate', () {
     test('rejects when required fields are missing', () {
       const PoopFormState s = PoopFormState();
-      final v = s.validate();
+      final v = s.validate(_l10n);
       expect(v.errors.form, isNotNull);
       expect(v.errors.color, isNotNull);
       expect(v.errors.amount, isNotNull);
@@ -40,7 +44,7 @@ void main() {
         amount: RecordAmount.normal,
         pooedAt: DateTime.now().add(const Duration(hours: 1)),
       );
-      expect(s.validate().errors.pooedAt, isNotNull);
+      expect(s.validate(_l10n).errors.pooedAt, isNotNull);
     });
 
     test('valid state has no errors', () {
@@ -50,7 +54,7 @@ void main() {
         amount: RecordAmount.normal,
         pooedAt: DateTime.now().subtract(const Duration(minutes: 1)),
       );
-      expect(s.validate().errors.hasAny, isFalse);
+      expect(s.validate(_l10n).errors.hasAny, isFalse);
     });
   });
 
@@ -225,7 +229,7 @@ void main() {
         ..updateColor(PoopColor.brown)
         ..updateAmount(RecordAmount.normal);
 
-      final r = await ctrl.save();
+      final r = await ctrl.save(_l10n);
       expect(r, PoopFormSaveOutcome.success);
 
       final repo = PoopsRepository(db);
@@ -236,7 +240,7 @@ void main() {
     test('validate fail prevents save', () async {
       await createPet();
       final ctrl = container.read(poopFormControllerProvider(null).notifier);
-      final r = await ctrl.save();
+      final r = await ctrl.save(_l10n);
       expect(r, PoopFormSaveOutcome.validationFailed);
 
       final state = container.read(poopFormControllerProvider(null));

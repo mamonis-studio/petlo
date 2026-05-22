@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 @immutable
 class PoopFormErrors {
@@ -56,15 +57,15 @@ class PoopFormState {
 
   bool get isEditing => editingPoopId != null;
 
-  PoopFormState validate() {
+  PoopFormState validate(AppLocalizations l10n) {
     final PoopFormErrors errs = PoopFormErrors(
-      form: form == null ? '形状を選んでください' : null,
-      color: color == null ? '色を選んでください' : null,
-      amount: amount == null ? '量を選んでください' : null,
+      form: form == null ? l10n.poop_validation_form_required : null,
+      color: color == null ? l10n.pee_validation_color_required : null,
+      amount: amount == null ? l10n.pee_validation_amount_required : null,
       pooedAt: pooedAt == null
-          ? '時刻を選んでください'
+          ? l10n.record_validation_time_required
           : (pooedAt!.isAfter(DateTime.now().add(const Duration(minutes: 5)))
-              ? '未来の時刻は記録できません'
+              ? l10n.record_validation_future_time
               : null),
     );
     return copyWith(errors: errs);

@@ -150,7 +150,7 @@ class AiChatController extends Notifier<AiChatState> {
     final bool online = ref.read(canUseAiProvider);
     if (!online) {
       state = state.copyWith(
-        errorMessage: 'オフラインです。接続を確認してください',
+        errorMessage: l10n.ai_chat_error_offline,
         lastErrorReason: AiChatErrorReason.offline,
       );
       return false;
@@ -160,7 +160,7 @@ class AiChatController extends Notifier<AiChatState> {
     final bool isPro = ref.read(isProProvider);
     if (!isPro) {
       state = state.copyWith(
-        errorMessage: 'AI相談は Pro プラン限定です',
+        errorMessage: l10n.ai_chat_error_pro_required,
         lastErrorReason: AiChatErrorReason.proRequired,
       );
       return false;
@@ -172,8 +172,8 @@ class AiChatController extends Notifier<AiChatState> {
           await ref.read(currentMonthAiUsageProvider.future);
       if (used >= AppConstants.proAiChatPerMonth) {
         state = state.copyWith(
-          errorMessage:
-              '今月の利用回数(${AppConstants.proAiChatPerMonth}回)を超えました',
+          errorMessage: l10n.ai_chat_error_quota_exceeded(
+              AppConstants.proAiChatPerMonth),
           lastErrorReason: AiChatErrorReason.quotaExceeded,
         );
         return false;
@@ -188,7 +188,7 @@ class AiChatController extends Notifier<AiChatState> {
     // ===== 2. ペット選択チェック =====
     if (state.petId == null) {
       state = state.copyWith(
-        errorMessage: 'ペットを選択してください',
+        errorMessage: l10n.ai_chat_error_no_pet,
         lastErrorReason: AiChatErrorReason.noPet,
       );
       return false;
@@ -222,7 +222,7 @@ class AiChatController extends Notifier<AiChatState> {
     if (petContext == null) {
       state = state.copyWith(
         isSending: false,
-        errorMessage: 'ペット情報を取得できませんでした',
+        errorMessage: l10n.ai_chat_error_pet_context_failed,
         lastErrorReason: AiChatErrorReason.noPet,
       );
       return false;
@@ -337,7 +337,7 @@ class AiChatController extends Notifier<AiChatState> {
     } on AiNetworkException {
       state = state.copyWith(
         isSending: false,
-        errorMessage: 'ネットワークエラーです。再試行してください',
+        errorMessage: l10n.ai_chat_error_network,
         lastErrorReason: AiChatErrorReason.network,
       );
       return false;
@@ -360,7 +360,7 @@ class AiChatController extends Notifier<AiChatState> {
           .w('AI send unexpected error', error: e, stackTrace: st);
       state = state.copyWith(
         isSending: false,
-        errorMessage: '予期しないエラーが発生しました',
+        errorMessage: l10n.ai_chat_error_unexpected,
         lastErrorReason: AiChatErrorReason.unknown,
       );
       return false;

@@ -20,6 +20,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../data/local/app_database.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../providers/groups_providers.dart';
 import '../providers/pet_selection_controller.dart';
 import '../providers/pets_providers.dart';
@@ -82,7 +83,8 @@ class _TabShellState extends ConsumerState<TabShell> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                '${group.name} のグループ警告があります',
+                AppLocalizations.of(context)
+                    .tab_shell_group_closure_warning_title(group.name),
                 style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 13,

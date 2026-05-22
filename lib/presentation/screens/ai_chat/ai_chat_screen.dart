@@ -306,7 +306,7 @@ class _EmptyState extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
           ),
           Text(
-            'うちの子の様子で気になることを\nAIに相談してみてください。\n\n直近7日の記録 + 30日サマリーを文脈として、\n獣医師に行く前のセルフチェックの参考に。',
+            AppLocalizations.of(context).ai_chat_intro_body,
             style: typo.bodyMedium.copyWith(
               color: colors.fgMuted,
               height: 1.7,
@@ -319,7 +319,7 @@ class _EmptyState extends StatelessWidget {
               border: Border.all(color: colors.line, width: 1),
             ),
             child: Text(
-              'NOTE\n気になる症状は獣医師にご相談ください。\nAIの返答は参考情報であり、診断ではありません。',
+              '${AppLocalizations.of(context).ai_chat_disclaimer_label}\n${AppLocalizations.of(context).ai_chat_disclaimer_body}',
               style: TextStyle(
                 fontFamily: 'JetBrainsMono',
                 fontSize: 10,
@@ -402,7 +402,7 @@ class _InputAreaState extends State<_InputArea> {
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
-                'OFFLINE — メッセージは送信できません',
+                AppLocalizations.of(context).ai_chat_offline_banner,
                 style: TextStyle(
                   fontFamily: 'JetBrainsMono',
                   fontSize: 9,
@@ -449,8 +449,8 @@ class _InputAreaState extends State<_InputArea> {
                   ),
                   decoration: InputDecoration(
                     hintText: widget.canUseAi
-                        ? 'うちの子のことを聞く...'
-                        : 'オフライン中',
+                        ? AppLocalizations.of(context).ai_chat_input_hint
+                        : AppLocalizations.of(context).ai_chat_input_hint_offline,
                     hintStyle: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 14,

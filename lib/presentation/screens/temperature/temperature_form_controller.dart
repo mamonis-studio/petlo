@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/database_provider.dart';
 import '../../providers/pets_providers.dart';
 import '../../providers/scope_providers.dart';
@@ -105,8 +106,8 @@ class TemperatureFormController
   void updateNotes(String v) => state = state.copyWith(notes: v);
 
   // Save
-  Future<TemperatureFormSaveOutcome> save() async {
-    final validated = state.validate();
+  Future<TemperatureFormSaveOutcome> save(AppLocalizations l10n) async {
+    final validated = state.validate(l10n);
     if (validated.errors.hasAny) {
       state = validated;
       return TemperatureFormSaveOutcome.validationFailed;

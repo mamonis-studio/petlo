@@ -246,7 +246,7 @@ class _DiaryRecordScreenState extends ConsumerState<DiaryRecordScreen> {
   }
 
   Future<void> _onSave(DiaryFormController controller) async {
-    final r = await controller.save();
+    final r = await controller.save(AppLocalizations.of(context));
     switch (r) {
       case DiaryFormSaveOutcome.success:
         if (mounted) {

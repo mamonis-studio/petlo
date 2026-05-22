@@ -18,6 +18,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/section_label.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/display_name_provider.dart';
 import '../../widgets/forms/editorial_text_field.dart';
 
@@ -55,16 +56,17 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
     super.dispose();
   }
 
-  String? _validate(String v) {
+  String? _validate(String v, AppLocalizations l10n) {
     final String trimmed = v.trim();
-    if (trimmed.isEmpty) return '表示名を入力してください';
-    if (trimmed.length > 20) return '20文字以内で入力してください';
+    if (trimmed.isEmpty) return l10n.display_name_validation_required;
+    if (trimmed.length > 20) return l10n.display_name_validation_max;
     return null;
   }
 
   Future<void> _onSave() async {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final String trimmed = _nameC.text.trim();
-    final String? err = _validate(trimmed);
+    final String? err = _validate(trimmed, l10n);
     if (err != null) {
       setState(() => _error = err);
       return;
@@ -78,7 +80,9 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
     if (!mounted) return;
     setState(() => _isSaving = false);
     final SnackBar snack = SnackBar(
-      content: Text(ok ? '表示名を保存しました' : 'ローカルに保存しました(後で同期されます)'),
+      content: Text(ok
+          ? l10n.display_name_saved_snackbar
+          : l10n.display_name_saved_local_snackbar),
       behavior: SnackBarBehavior.floating,
     );
     ScaffoldMessenger.of(context).showSnackBar(snack);
@@ -128,8 +132,7 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
                 padding: EdgeInsets.fromLTRB(0, 0, 0, 16),
               ),
               Text(
-                '家族共有グループのメンバーに表示される名前です。\n'
-                '本名でなく愛称・続柄 (お父さん、ママ、など) でも OK。',
+                AppLocalizations.of(context).display_name_body,
                 style: typo.bodyMedium
                     .copyWith(color: colors.fgMuted, height: 1.7),
               ),
@@ -138,7 +141,7 @@ class _DisplayNameScreenState extends ConsumerState<DisplayNameScreen> {
               EditorialTextField(
                 label: 'Your display name',
                 controller: _nameC,
-                hint: '例: お父さん, ママ',
+                hint: AppLocalizations.of(context).display_name_hint,
                 required: true,
                 maxLength: 20,
                 textCapitalization: TextCapitalization.words,

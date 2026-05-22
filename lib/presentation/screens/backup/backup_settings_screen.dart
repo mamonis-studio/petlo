@@ -90,7 +90,7 @@ class BackupSettingsScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
               ),
               Text(
-                _heroDescription(settings, _platformProvider),
+                _heroDescription(settings, _platformProvider, l10n),
                 style: typo.bodyMedium.copyWith(
                   color: colors.fgMuted,
                   height: 1.7,
@@ -106,7 +106,7 @@ class BackupSettingsScreen extends ConsumerWidget {
               if (settings.state == BackupState.off)
                 _PrimaryAction(
                   label:
-                      'Enable backup with ${_platformProvider.displayLabel}',
+                      'Enable backup with ${_platformProvider.displayLabel(l10n)}',
                   enabled: true,
                   onTap: () => _onEnable(
                       context, notifier, _platformProvider),
@@ -158,7 +158,7 @@ class BackupSettingsScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               _DetailRow(
                 label: 'PROVIDER',
-                value: settings.provider.displayLabel,
+                value: settings.provider.displayLabel(l10n),
                 colors: colors,
               ),
               if (settings.lastSuccessAt != null)
@@ -186,7 +186,7 @@ class BackupSettingsScreen extends ConsumerWidget {
                   border: Border.all(color: colors.line, width: 1),
                 ),
                 child: Text(
-                  'NOTE\n記録は暗号化されてクラウドに保存されます。\n端末を買い替えた時はサインインで復元可能。\n\nv1.0 はバックアップ機能のプレビュー版です。\nクラウド連携の本実装は次回アップデート予定です。',
+                  AppLocalizations.of(context).backup_settings_disclaimer,
                   style: TextStyle(
                     fontFamily: 'JetBrainsMono',
                     fontSize: 10,
@@ -207,16 +207,17 @@ class BackupSettingsScreen extends ConsumerWidget {
   // Helpers
   // ==========================================================================
 
-  String _heroDescription(BackupSettings s, BackupProvider provider) {
+  String _heroDescription(
+      BackupSettings s, BackupProvider provider, AppLocalizations l10n) {
     switch (s.state) {
       case BackupState.on:
-        return 'うちの子の記録を ${provider.displayLabel} に\n自動でバックアップしています。';
+        return l10n.backup_status_on_message(provider.displayLabel(l10n));
       case BackupState.setupInProgress:
-        return 'バックアップを設定しています...';
+        return l10n.backup_status_setup_in_progress;
       case BackupState.error:
-        return 'バックアップに失敗しました。\n下のボタンから再試行できます。';
+        return l10n.backup_status_error_message;
       case BackupState.off:
-        return '記録のバックアップが無効です。\n端末を紛失した時のために、\nクラウドへの自動バックアップを有効にしましょう。';
+        return l10n.backup_status_off_message;
     }
   }
 
@@ -229,13 +230,14 @@ class BackupSettingsScreen extends ConsumerWidget {
     BackupSettingsNotifier notifier,
     BackupProvider provider,
   ) async {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final bool ok = await notifier.enableBackup(provider);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(ok
-            ? 'バックアップが有効になりました'
-            : 'バックアップの有効化に失敗しました'),
+            ? l10n.backup_enable_success_snackbar
+            : l10n.backup_enable_failed_snackbar),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -245,20 +247,20 @@ class BackupSettingsScreen extends ConsumerWidget {
     BuildContext context,
     BackupSettingsNotifier notifier,
   ) async {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('バックアップを停止'),
-        content: const Text(
-            'バックアップを停止すると、記録がクラウドに保存されなくなります。'),
+        title: Text(l10n.backup_disable_dialog_title),
+        content: Text(l10n.backup_disable_dialog_body),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('キャンセル'),
+            child: Text(l10n.common_cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('停止'),
+            child: Text(l10n.backup_disable_dialog_action),
           ),
         ],
       ),
@@ -278,13 +280,14 @@ class BackupSettingsScreen extends ConsumerWidget {
     BuildContext context,
     BackupSettingsNotifier notifier,
   ) async {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final bool ok = await notifier.backupNow();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(ok
-            ? 'バックアップが完了しました'
-            : 'バックアップに失敗しました'),
+            ? l10n.backup_now_success_snackbar
+            : l10n.backup_now_failed_snackbar),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -307,31 +310,33 @@ class _StatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final ({String label, Color color, String body}) status = switch (
         settings.state) {
       BackupState.on => (
           label: 'ACTIVE',
           color: colors.fg,
           body: settings.daysSinceLastSuccess == null
-              ? 'バックアップ準備中'
+              ? l10n.backup_banner_setup_in_progress
               : settings.daysSinceLastSuccess == 0
-                  ? '今日バックアップ済み'
-                  : '${settings.daysSinceLastSuccess} 日前にバックアップ',
+                  ? l10n.backup_banner_today
+                  : l10n.backup_banner_days_ago(
+                      settings.daysSinceLastSuccess!),
         ),
       BackupState.off => (
           label: 'INACTIVE',
           color: colors.fgMuted,
-          body: 'バックアップは無効です',
+          body: l10n.backup_banner_off,
         ),
       BackupState.setupInProgress => (
           label: 'SETTING UP',
           color: colors.fg,
-          body: 'プロバイダに接続中...',
+          body: l10n.backup_banner_connecting,
         ),
       BackupState.error => (
           label: 'ERROR',
           color: colors.accentDanger,
-          body: settings.lastErrorMessage ?? 'バックアップに失敗しました',
+          body: settings.lastErrorMessage ?? l10n.backup_banner_failed,
         ),
     };
 
