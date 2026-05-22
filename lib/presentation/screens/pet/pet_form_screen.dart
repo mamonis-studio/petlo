@@ -761,11 +761,14 @@ class _ScopeMoverSectionState extends ConsumerState<_ScopeMoverSection> {
       loading: () => const SizedBox(height: 48),
       error: (Object e, _) => Padding(
         padding: const EdgeInsets.only(top: 8),
-        child: Text('ペットの取得に失敗しました\n$e',
-            style: typo.bodySmall.copyWith(color: colors.accentDanger)),
+        child: Text(
+          AppLocalizations.of(context).pet_form_scope_load_error(e.toString()),
+          style: typo.bodySmall.copyWith(color: colors.accentDanger),
+        ),
       ),
       data: (PetEntity? pet) {
         if (pet == null) return const SizedBox.shrink();
+        final AppLocalizations l10n = AppLocalizations.of(context);
         final String currentGid = pet.groupId;
         final List<GroupEntity> groupList = groups.maybeWhen(
           data: (List<GroupEntity> v) => v,
@@ -777,8 +780,9 @@ class _ScopeMoverSectionState extends ConsumerState<_ScopeMoverSection> {
             const SizedBox(height: 8),
             Text(
               currentGid == kPersonalGroupId
-                  ? '現在のスコープ: Personal (あなただけ)'
-                  : '現在のスコープ: ${_groupName(groupList, currentGid)}',
+                  ? l10n.pet_form_scope_current_personal
+                  : l10n.pet_form_scope_current_group(
+                      _groupName(groupList, currentGid)),
               style: typo.bodySmall
                   .copyWith(color: colors.fgMuted, height: 1.5),
             ),
@@ -786,7 +790,7 @@ class _ScopeMoverSectionState extends ConsumerState<_ScopeMoverSection> {
             // Personal 行
             _ScopeRow(
               label: 'Personal',
-              note: 'あなただけが閲覧・編集可能',
+              note: l10n.pet_form_scope_personal_note,
               isCurrent: currentGid == kPersonalGroupId,
               enabled: !_isMoving && currentGid != kPersonalGroupId,
               onTap: () => _moveTo(context, pet, kPersonalGroupId, 'Personal'),
@@ -796,7 +800,7 @@ class _ScopeMoverSectionState extends ConsumerState<_ScopeMoverSection> {
             for (final GroupEntity g in groupList)
               _ScopeRow(
                 label: g.name,
-                note: 'メンバー全員が閲覧、編集権限のある人は編集可能',
+                note: l10n.pet_form_scope_group_note,
                 isCurrent: currentGid == g.remoteId,
                 enabled: !_isMoving && currentGid != g.remoteId,
                 onTap: () => _moveTo(context, pet, g.remoteId, g.name),
@@ -816,8 +820,7 @@ class _ScopeMoverSectionState extends ConsumerState<_ScopeMoverSection> {
               ),
             const SizedBox(height: 4),
             Text(
-              '移動先を選ぶと、このペットと記録 (食事・排泄・体重ほか) '
-              'がまとめて移動します。',
+              l10n.pet_form_scope_move_note,
               style: typo.bodySmall.copyWith(color: colors.fgFaint, height: 1.5),
             ),
           ],
@@ -839,14 +842,14 @@ class _ScopeMoverSectionState extends ConsumerState<_ScopeMoverSection> {
     String targetGid,
     String label,
   ) async {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final bool isToPersonal = targetGid == kPersonalGroupId;
-    final String title = isToPersonal ? 'Personal へ戻す' : '$label へ共有';
+    final String title = isToPersonal
+        ? l10n.pet_form_scope_move_to_personal_title
+        : l10n.pet_form_scope_move_to_group_title(label);
     final String body = isToPersonal
-        ? '${pet.name} をグループから外して Personal に戻しますか?\n'
-            'このペットと記録は他のメンバーから見えなくなります。'
-        : '${pet.name} を「$label」に共有しますか?\n'
-            '記録(食事/排泄/体重ほか)もまとめて移動し、'
-            'メンバーから閲覧できるようになります。';
+        ? l10n.pet_form_scope_move_to_personal_body(pet.name)
+        : l10n.pet_form_scope_move_to_group_body(pet.name, label);
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -855,11 +858,13 @@ class _ScopeMoverSectionState extends ConsumerState<_ScopeMoverSection> {
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('キャンセル'),
+            child: Text(l10n.common_cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(isToPersonal ? '外す' : '共有する'),
+            child: Text(isToPersonal
+                ? l10n.pet_form_scope_action_unshare
+                : l10n.pet_form_scope_action_share),
           ),
         ],
       ),
@@ -876,8 +881,8 @@ class _ScopeMoverSectionState extends ConsumerState<_ScopeMoverSection> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(isToPersonal
-              ? '${pet.name} を Personal に戻しました ($n 件のレコードを移動)'
-              : '${pet.name} を「$label」に共有しました ($n 件のレコードを移動)'),
+              ? l10n.pet_form_scope_move_to_personal_success(pet.name, n)
+              : l10n.pet_form_scope_move_to_group_success(pet.name, label, n)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -885,7 +890,8 @@ class _ScopeMoverSectionState extends ConsumerState<_ScopeMoverSection> {
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(
-          content: Text('移動に失敗しました: $e'),
+          content:
+              Text(l10n.pet_form_scope_move_failed(e.toString())),
           behavior: SnackBarBehavior.floating,
         ),
       );

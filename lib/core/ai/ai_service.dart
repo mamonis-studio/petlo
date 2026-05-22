@@ -13,11 +13,14 @@
 // ============================================================================
 
 import 'package:dio/dio.dart';
+import 'package:flutter/widgets.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../auth/api_dio.dart';
 import '../utils/logger.dart';
 import 'ai_pet_context.dart';
 import 'ai_service_exceptions.dart';
+import 'prompt_validation_messages.dart';
 import 'prompt_validator.dart';
 
 class AiChatResult {
@@ -52,9 +55,14 @@ class AiService {
     String? imageMediaType,
   }) async {
     // 入力バリデーション(2重防御)
+    // build 37: ここに到達するのは UI 側バリデートをすり抜けた異常系のみ。
+    // context が無いので platform locale 経由で l10n を解決する
+    // (notification_scheduler と同じパターン)。
     final PromptValidationResult result = PromptValidator.validate(message);
     if (result is PromptValidationError) {
-      throw AiBadRequestException(result.message);
+      throw AiBadRequestException(
+        promptValidationErrorMessage(result.reason, _platformL10n()),
+      );
     }
     final String sanitized = (result as PromptValidationOk).sanitized;
 
@@ -166,5 +174,18 @@ class AiService {
 
     // Cancel など
     return AiUnknownException(e.message ?? e.type.toString());
+  }
+
+  /// build 37: context が無い 2重防御 throw 用に platform locale で l10n を解決。
+  /// supportedLocales に含まれていれば一致、そうでなければ template (ja) に
+  /// フォールバックする (notification_scheduler と同じパターン)。
+  AppLocalizations _platformL10n() {
+    final Locale platform =
+        WidgetsBinding.instance.platformDispatcher.locale;
+    final Locale chosen = AppLocalizations.supportedLocales.firstWhere(
+      (Locale l) => l.languageCode == platform.languageCode,
+      orElse: () => const Locale('ja'),
+    );
+    return lookupAppLocalizations(chosen);
   }
 }

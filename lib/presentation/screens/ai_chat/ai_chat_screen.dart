@@ -108,7 +108,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final File? toSend = _attachedImage;
     final bool ok = await ref
         .read(aiChatControllerProvider.notifier)
-        .sendMessage(text, image: toSend);
+        .sendMessage(text, AppLocalizations.of(context), image: toSend);
     if (ok) {
       _inputC.clear();
       setState(() => _attachedImage = null);

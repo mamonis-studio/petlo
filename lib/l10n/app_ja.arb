@@ -1190,6 +1190,100 @@
   "purchase_error_receiptRejectedUnknown": "レシート検証に失敗しました",
   "purchase_error_receiptInvalidTierOrExpiry": "課金情報の取得に失敗しました",
   "purchase_error_unknown": "不明なエラーが発生しました",
+  "pet_form_scope_load_error": "ペットの取得に失敗しました\n{error}",
+  "@pet_form_scope_load_error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_form_scope_current_personal": "現在のスコープ: Personal (あなただけ)",
+  "pet_form_scope_current_group": "現在のスコープ: {groupName}",
+  "@pet_form_scope_current_group": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_form_scope_personal_note": "あなただけが閲覧・編集可能",
+  "pet_form_scope_group_note": "メンバー全員が閲覧、編集権限のある人は編集可能",
+  "pet_form_scope_move_note": "移動先を選ぶと、このペットと記録 (食事・排泄・体重ほか) がまとめて移動します。",
+  "pet_form_scope_move_to_personal_title": "Personal へ戻す",
+  "pet_form_scope_move_to_group_title": "{label} へ共有",
+  "@pet_form_scope_move_to_group_title": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_form_scope_move_to_personal_body": "{petName} をグループから外して Personal に戻しますか?\nこのペットと記録は他のメンバーから見えなくなります。",
+  "@pet_form_scope_move_to_personal_body": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_form_scope_move_to_group_body": "{petName} を「{label}」に共有しますか?\n記録(食事/排泄/体重ほか)もまとめて移動し、メンバーから閲覧できるようになります。",
+  "@pet_form_scope_move_to_group_body": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      },
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_form_scope_action_unshare": "外す",
+  "pet_form_scope_action_share": "共有する",
+  "pet_form_scope_move_to_personal_success": "{petName} を Personal に戻しました ({count} 件のレコードを移動)",
+  "@pet_form_scope_move_to_personal_success": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pet_form_scope_move_to_group_success": "{petName} を「{label}」に共有しました ({count} 件のレコードを移動)",
+  "@pet_form_scope_move_to_group_success": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      },
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pet_form_scope_move_failed": "移動に失敗しました: {error}",
+  "@pet_form_scope_move_failed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "prompt_validation_empty": "質問を入力してください",
+  "prompt_validation_too_long": "{maxLength} 文字以内で入力してください",
+  "@prompt_validation_too_long": {
+    "placeholders": {
+      "maxLength": {
+        "type": "int"
+      }
+    }
+  },
+  "prompt_validation_dangerous_keyword": "この質問はAIに送信できません。表現を変えてみてください",
+  "prompt_validation_xml_injection": "タグ形式の文字列は使えません",
   "@_PLACEHOLDERS": {
     "description": "後続Chunkで画面ごとの文言を追加していく"
   }

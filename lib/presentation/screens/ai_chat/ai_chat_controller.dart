@@ -27,11 +27,13 @@ import '../../../core/ai/ai_image_preprocessor.dart';
 import '../../../core/ai/ai_pet_context.dart';
 import '../../../core/ai/ai_service.dart';
 import '../../../core/ai/ai_service_exceptions.dart';
+import '../../../core/ai/prompt_validation_messages.dart';
 import '../../../core/ai/prompt_validator.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/ai_chat_providers.dart';
 import '../../providers/ai_service_provider.dart';
 import '../../providers/connectivity_provider.dart';
@@ -136,7 +138,12 @@ class AiChatController extends Notifier<AiChatState> {
 
   /// メッセージ送信メイン
   /// build 15: optional [image] を受け取り、リサイズ + Base64 + ローカル保存して送信。
-  Future<bool> sendMessage(String input, {File? image}) async {
+  /// build 37: バリデータの拒否文言を l10n 化したので [l10n] を受け取る。
+  Future<bool> sendMessage(
+    String input,
+    AppLocalizations l10n, {
+    File? image,
+  }) async {
     if (state.isSending) return false;
 
     // ===== 1. オフラインチェック =====
@@ -191,7 +198,7 @@ class AiChatController extends Notifier<AiChatState> {
     final PromptValidationResult vr = PromptValidator.validate(input);
     if (vr is PromptValidationError) {
       state = state.copyWith(
-        errorMessage: vr.message,
+        errorMessage: promptValidationErrorMessage(vr.reason, l10n),
         lastErrorReason: AiChatErrorReason.validation,
       );
       return false;

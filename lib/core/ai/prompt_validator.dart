@@ -12,6 +12,11 @@
 //
 // 検出時はサーバーには送らず、クライアント側で「再入力してください」を表示。
 //
+// build 37 (M4): 拒否文言の l10n 化。`PromptValidationError` は `reason` のみ
+// 保持し、UI 側は `promptValidationErrorMessage(reason, l10n)` で訳す。
+// 危険キーワード検出パターン (`_dangerousKeywords`) は文言ではなく検出ロジック
+// なので英日リテラルのまま保持。
+//
 // ============================================================================
 
 /// 入力の許容文字数 (rev5.5 ハードリミット)
@@ -66,10 +71,9 @@ class PromptValidationOk extends PromptValidationResult {
 }
 
 class PromptValidationError extends PromptValidationResult {
-  const PromptValidationError(this.reason, this.message);
+  const PromptValidationError(this.reason);
 
   final PromptValidationErrorReason reason;
-  final String message;
 }
 
 enum PromptValidationErrorReason {
@@ -86,17 +90,11 @@ abstract final class PromptValidator {
     final String trimmed = input.trim();
 
     if (trimmed.isEmpty) {
-      return const PromptValidationError(
-        PromptValidationErrorReason.empty,
-        '質問を入力してください',
-      );
+      return const PromptValidationError(PromptValidationErrorReason.empty);
     }
 
     if (trimmed.length > kMaxPromptLength) {
-      return const PromptValidationError(
-        PromptValidationErrorReason.tooLong,
-        '$kMaxPromptLength 文字以内で入力してください',
-      );
+      return const PromptValidationError(PromptValidationErrorReason.tooLong);
     }
 
     // 危険キーワード(大文字小文字無視)
@@ -105,7 +103,6 @@ abstract final class PromptValidator {
       if (lower.contains(kw.toLowerCase())) {
         return const PromptValidationError(
           PromptValidationErrorReason.dangerousKeyword,
-          'この質問はAIに送信できません。表現を変えてみてください',
         );
       }
     }
@@ -114,7 +111,6 @@ abstract final class PromptValidator {
     if (_xmlTagPattern.hasMatch(trimmed)) {
       return const PromptValidationError(
         PromptValidationErrorReason.xmlInjection,
-        'タグ形式の文字列は使えません',
       );
     }
 
