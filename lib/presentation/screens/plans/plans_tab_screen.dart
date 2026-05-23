@@ -610,6 +610,10 @@ class _ScheduleListView extends ConsumerStatefulWidget {
 class _ScheduleListViewState extends ConsumerState<_ScheduleListView> {
   ScheduleCategory? _filter; // null = すべて
 
+  /// build 42: 過去の予定は默以折りたたみ。ephemeral state なので画面遷移後は
+  /// 自動的に false にリセットされる(永続化しない方針)。
+  bool _showPast = false;
+
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
@@ -721,16 +725,98 @@ class _ScheduleListViewState extends ConsumerState<_ScheduleListView> {
             for (final ScheduleEntity s in upcoming) _ScheduleListRow(s: s),
             const SizedBox(height: 24),
           ],
-          if (past.isNotEmpty) ...<Widget>[
-            SectionLabel(
-              l10n.schedule_list_section_past,
-              size: EyebrowSize.medium,
-            ),
-            const SizedBox(height: 8),
-            for (final ScheduleEntity s in past) _ScheduleListRow(s: s),
-          ],
+          // build 42: 過去予定は折りたたみ式トグルで表示切替
+          _PastSectionToggle(
+            expanded: _showPast,
+            onTap: () => setState(() => _showPast = !_showPast),
+            colors: colors,
+            typo: typo,
+            l10n: l10n,
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: !_showPast
+                ? const SizedBox(width: double.infinity)
+                : Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        SectionLabel(
+                          l10n.schedule_list_section_past,
+                          size: EyebrowSize.medium,
+                        ),
+                        const SizedBox(height: 8),
+                        if (past.isEmpty)
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                            child: Text(
+                              l10n.plans_no_past_events,
+                              style: typo.bodyMedium
+                                  .copyWith(color: colors.fgMuted),
+                            ),
+                          )
+                        else
+                          for (final ScheduleEntity s in past)
+                            _ScheduleListRow(s: s),
+                      ],
+                    ),
+                  ),
+          ),
         ],
       ],
+    );
+  }
+}
+
+/// build 42: 過去予定トグル行。アイコン + ラベルで「表示/隠す」を切り替える。
+class _PastSectionToggle extends StatelessWidget {
+  const _PastSectionToggle({
+    required this.expanded,
+    required this.onTap,
+    required this.colors,
+    required this.typo,
+    required this.l10n,
+  });
+
+  final bool expanded;
+  final VoidCallback onTap;
+  final AppColors colors;
+  final AppTypography typo;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(
+              expanded
+                  ? Icons.keyboard_arrow_up
+                  : Icons.keyboard_arrow_down,
+              size: 18,
+              color: colors.fgMuted,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              expanded
+                  ? l10n.plans_hide_past_action
+                  : l10n.plans_show_past_action,
+              style: typo.bodySmall.copyWith(
+                color: colors.fgMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

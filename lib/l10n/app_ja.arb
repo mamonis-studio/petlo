@@ -1440,6 +1440,9 @@
   "image_cropper_done": "確定",
   "image_cropper_cancel": "キャンセル",
   "backup_provider_unset": "未設定",
+  "plans_show_past_action": "過去の予定を表示",
+  "plans_hide_past_action": "過去の予定を隠す",
+  "plans_no_past_events": "過去の予定はありません",
   "@_PLACEHOLDERS": {
     "description": "後続Chunkで画面ごとの文言を追加していく"
   }

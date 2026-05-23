@@ -1298,5 +1298,8 @@
   "image_cropper_title": "Crop",
   "image_cropper_done": "Done",
   "image_cropper_cancel": "Cancel",
-  "backup_provider_unset": "Not set"
+  "backup_provider_unset": "Not set",
+  "plans_show_past_action": "Show past events",
+  "plans_hide_past_action": "Hide past events",
+  "plans_no_past_events": "No past events"
 }

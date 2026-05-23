@@ -1298,5 +1298,8 @@
   "image_cropper_title": "裁剪",
   "image_cropper_done": "完成",
   "image_cropper_cancel": "取消",
-  "backup_provider_unset": "未设置"
+  "backup_provider_unset": "未设置",
+  "plans_show_past_action": "显示过往事件",
+  "plans_hide_past_action": "隐藏过往事件",
+  "plans_no_past_events": "暂无过往事件"
 }
