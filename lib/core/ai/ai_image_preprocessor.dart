@@ -5,8 +5,13 @@
 // 画像添付時の前処理パイプライン:
 //   1. 長辺 2048px に縮小
 //   2. JPEG q80 で圧縮
-//   3. 端末内 app_documents/chat_images/<id>.jpg に保存
+//   3. PhotoStorage.saveChatImage 経由で端末内に保存
 //   4. Base64 文字列を返す(送信用)
+//
+// build 40: 保存パス組み立てを PhotoStorage に集約。本ファイルは画像処理
+// (decode / resize / encode) のみ担当し、ディスク I/O はストレージ層へ委譲。
+// 旧 resolveLocal() は未参照だったため削除。表示側 (message_bubble.dart 等) は
+// 既に独自に getApplicationDocumentsDirectory を解決している。
 //
 // ============================================================================
 
@@ -15,9 +20,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
+import '../../data/storage/photo_storage.dart';
 import '../utils/logger.dart';
 
 class AiImagePreprocessor {
@@ -56,19 +60,11 @@ class AiImagePreprocessor {
       final List<int> jpegBytes =
           img.encodeJpg(resized, quality: _jpegQuality);
 
-      // 保存
-      final Directory docs = await getApplicationDocumentsDirectory();
-      final Directory dir =
-          Directory(p.join(docs.path, 'chat_images'));
-      if (!await dir.exists()) {
-        await dir.create(recursive: true);
-      }
-      final String filename = '$storageId.jpg';
-      final File outFile = File(p.join(dir.path, filename));
-      await outFile.writeAsBytes(jpegBytes, flush: true);
-
-      // 相対パス(端末識別子に依存せず、ドキュメント基準で再現可能)
-      final String relativePath = 'chat_images/$filename';
+      // 保存 (PhotoStorage に集約、build 40)
+      final String relativePath = await PhotoStorage().saveChatImage(
+        remoteId: storageId,
+        jpegBytes: jpegBytes,
+      );
 
       return (
         base64: base64Encode(jpegBytes),
@@ -78,16 +74,6 @@ class AiImagePreprocessor {
     } catch (e, st) {
       PetloLogger.instance
           .w('AiImagePreprocessor.processForChat failed', error: e, stackTrace: st);
-      return null;
-    }
-  }
-
-  /// 相対パス → 絶対パス
-  static Future<File?> resolveLocal(String relativePath) async {
-    try {
-      final Directory docs = await getApplicationDocumentsDirectory();
-      return File(p.join(docs.path, relativePath));
-    } catch (_) {
       return null;
     }
   }

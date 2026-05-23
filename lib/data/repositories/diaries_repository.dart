@@ -20,6 +20,7 @@ import 'package:drift/drift.dart';
 
 import '../local/app_database.dart';
 import '../local/database_enums.dart';
+import '../storage/photo_storage.dart';
 import 'base_repository.dart';
 
 class DiariesRepository extends BaseRepository {
@@ -126,6 +127,7 @@ class DiariesRepository extends BaseRepository {
     if (body.trim().isEmpty) {
       throw ArgumentError('body cannot be empty');
     }
+    assertRelativePhotoPaths(photoPaths);
     final meta = buildCreateMetadata(groupId: groupId);
 
     final int newId = await db.into(db.diaries).insert(
@@ -171,6 +173,7 @@ class DiariesRepository extends BaseRepository {
     bool clearPhotos = false,
     int? eventAtMsec,
   }) async {
+    assertRelativePhotoPaths(photoPaths);
     final DiaryEntity? existing = await getById(diaryId);
     if (existing == null) throw StateError('Diary not found: id=$diaryId');
 

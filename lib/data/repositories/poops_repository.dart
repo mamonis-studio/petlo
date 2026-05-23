@@ -14,6 +14,7 @@ import 'package:drift/drift.dart';
 
 import '../local/app_database.dart';
 import '../local/database_enums.dart';
+import '../storage/photo_storage.dart';
 import 'base_repository.dart';
 
 class PoopsRepository extends BaseRepository {
@@ -75,6 +76,7 @@ class PoopsRepository extends BaseRepository {
     int? aiDiagnosisId,
     String? createdBy,
   }) async {
+    assertRelativePhotoPath(photoPath);
     final meta = buildCreateMetadata(groupId: groupId);
 
     final int newId = await db.into(db.poops).insert(
@@ -122,6 +124,7 @@ class PoopsRepository extends BaseRepository {
     String? photoPath,
     bool clearPhoto = false,
   }) async {
+    assertRelativePhotoPath(photoPath);
     final PoopEntity? existing = await getById(poopId);
     if (existing == null) throw StateError('Poop not found: id=$poopId');
 

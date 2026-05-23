@@ -18,6 +18,7 @@ import 'package:drift/drift.dart';
 
 import '../local/app_database.dart';
 import '../local/database_enums.dart';
+import '../storage/photo_storage.dart';
 import 'base_repository.dart';
 
 class AiChatRepository extends BaseRepository {
@@ -132,6 +133,7 @@ class AiChatRepository extends BaseRepository {
     SyncStatus syncStatus = SyncStatus.synced,
     String? imagePath,
   }) async {
+    assertRelativePhotoPath(imagePath);
     final int now = DateTime.now().millisecondsSinceEpoch;
     return db.into(db.aiChatMessages).insert(
           AiChatMessagesCompanion.insert(

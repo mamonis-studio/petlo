@@ -69,25 +69,34 @@
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
 
-    <!-- ===== Permissions / Privacy ===== -->
-    <!-- 写真ライブラリ (記録時の写真添付) -->
+    <!-- ===== Permissions / Privacy =====
+         build 41: 実機能と整合するキーのみ残す方針に整理。
+         - 削除: NSPhotoLibraryAddUsageDescription (petloはPhotosに書き戻さない、
+                 Documents配下のみ保存)
+         - 削除: NSMicrophoneUsageDescription (image_picker は静止画専用なので
+                 mic は不要。ダミー記述は Apple 審査で reject 対象)
+         - 追加: NSCalendarsWriteOnlyAccessUsageDescription (iOS 17+ 書き込み専用)
+                 device_calendar / add_2_calendar での予定追加用。読み取りはしない
+                 ため NSCalendarsFullAccessUsageDescription は追加しない。
+    -->
+
+    <!-- 写真ライブラリ (image_picker でアルバムから記録写真を選ぶ) -->
     <key>NSPhotoLibraryUsageDescription</key>
     <string>記録に写真を添付するためアクセスを求めます。</string>
 
-    <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>記録した写真を保存するためアクセスを求めます。</string>
-
-    <!-- カメラ (記録時の撮影) -->
+    <!-- カメラ (image_picker で記録写真を撮影) -->
     <key>NSCameraUsageDescription</key>
     <string>うんちや日記の写真撮影のためカメラを使用します。</string>
 
-    <!-- マイク不要だが、ImagePickerなどでリンクされるためダミー記述 -->
-    <key>NSMicrophoneUsageDescription</key>
-    <string>petloはマイクを使用しません。</string>
-
-    <!-- カレンダー (rev5.2: OSカレンダー連携) -->
+    <!-- カレンダー (rev5.2: OSカレンダー連携、書き込みのみ)
+         iOS 16以前: NSCalendarsUsageDescription
+         iOS 17以降: NSCalendarsWriteOnlyAccessUsageDescription
+         両方記載しないと旧iOSで起動できない/新iOSで権限取得できないため両方必須。 -->
     <key>NSCalendarsUsageDescription</key>
-    <string>ペットの予定をあなたのカレンダーアプリに書き出すためアクセスを求めます。</string>
+    <string>ワクチン接種日や通院予定をカレンダーに追加するために使用します。</string>
+
+    <key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+    <string>ワクチン接種日や通院予定をカレンダーに追加するために使用します。</string>
 
     <!-- 位置情報は不要 (mamonisの local-first 哲学) -->
     <!-- NSLocationWhenInUseUsageDescription は記載しない -->

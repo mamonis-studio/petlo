@@ -21,6 +21,7 @@ import 'package:drift/drift.dart';
 import '../../core/sync/sync_service.dart';
 import '../local/app_database.dart';
 import '../local/database_enums.dart';
+import '../storage/photo_storage.dart';
 import 'base_repository.dart';
 
 class PetsRepository extends BaseRepository {
@@ -127,6 +128,8 @@ class PetsRepository extends BaseRepository {
     if (name.trim().isEmpty || name.length > 50) {
       throw ArgumentError('Pet name must be 1-50 characters');
     }
+    // build 40: 絶対パス紛れ込みの debug-only 防御
+    assertRelativePhotoPath(photoPath);
 
     final meta = buildCreateMetadata(groupId: groupId);
     final int nextSortOrder = await _getNextSortOrder(groupId);
@@ -214,6 +217,7 @@ class PetsRepository extends BaseRepository {
     String? emergencyVetPhone,
     String? emergencyVetAddress,
   }) async {
+    assertRelativePhotoPath(photoPath);
     final PetEntity? pet = await getPet(petId);
     if (pet == null) {
       throw StateError('Pet not found: id=$petId');

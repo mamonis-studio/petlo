@@ -30,6 +30,37 @@ import 'package:path_provider/path_provider.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/logger.dart';
 
+// ============================================================================
+// 防御ヘルパー (build 40)
+// ============================================================================
+//
+// リポジトリ層が DB に photoPath / imagePath / photoPaths を書き込む直前に呼ぶ。
+// 絶対パスを保存しようとする回帰を debug でのみ即座に検出する。
+// Release ビルドでは assert が消えるためノーオペになり、レイテンシ影響無し。
+// (調査レポート build 39 §5「副次的に気になる点 #4」対応)
+//
+// ============================================================================
+
+/// 単一の相対パスを検証。null はスキップ。
+void assertRelativePhotoPath(String? value) {
+  assert(
+    value == null || !p.isAbsolute(value),
+    'PhotoPath must be Documents-relative (got absolute path): $value',
+  );
+}
+
+/// List 全要素を検証。null はスキップ。
+void assertRelativePhotoPaths(List<String>? values) {
+  if (values == null) return;
+  for (final String v in values) {
+    assert(
+      !p.isAbsolute(v),
+      'PhotoPaths element must be Documents-relative '
+      '(got absolute path): $v in $values',
+    );
+  }
+}
+
 class PhotoStorage {
   PhotoStorage();
 
@@ -109,6 +140,29 @@ class PhotoStorage {
   }) async {
     final String relPath = p.join('visits', '$visitId', '$index.jpg');
     return _compressAndSave(source: source, relativePath: relPath);
+  }
+
+  /// AI 相談の添付画像。
+  /// build 40: 旧 AiImagePreprocessor 単独実装からここに集約。
+  ///
+  /// 既に圧縮済みの JPEG バイト列をそのまま書き込む (AI 送信用 Base64 と同一
+  /// バイト列をディスクに保存する都合で、flutter_image_compress 経由の
+  /// _compressAndSave を通せない)。パス規則は `chat_images/{remoteId}.jpg` で
+  /// 既存保存ファイルと後方互換。
+  Future<String> saveChatImage({
+    required String remoteId,
+    required List<int> jpegBytes,
+  }) async {
+    final String relPath = p.join('chat_images', '$remoteId.jpg');
+    final File destFile = await resolveFile(relPath);
+    final Directory parent = destFile.parent;
+    if (!await parent.exists()) {
+      await parent.create(recursive: true);
+    }
+    await destFile.writeAsBytes(jpegBytes, flush: true);
+    PetloLogger.instance
+        .i('Saved chat image: $relPath (${jpegBytes.length ~/ 1024}KB)');
+    return relPath;
   }
 
   // ============================================================================

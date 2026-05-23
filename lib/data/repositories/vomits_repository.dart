@@ -23,6 +23,7 @@ import 'package:drift/drift.dart';
 
 import '../local/app_database.dart';
 import '../local/database_enums.dart';
+import '../storage/photo_storage.dart';
 import 'base_repository.dart';
 
 class VomitsRepository extends BaseRepository {
@@ -77,6 +78,7 @@ class VomitsRepository extends BaseRepository {
         (colorOtherText == null || colorOtherText.trim().isEmpty)) {
       throw ArgumentError('colorOtherText required when color is "other"');
     }
+    assertRelativePhotoPath(photoPath);
 
     final meta = buildCreateMetadata(groupId: groupId);
 
@@ -134,6 +136,7 @@ class VomitsRepository extends BaseRepository {
     String? photoPath,
     bool clearPhoto = false,
   }) async {
+    assertRelativePhotoPath(photoPath);
     final VomitEntity? existing = await getById(vomitId);
     if (existing == null) throw StateError('Vomit not found: id=$vomitId');
 

@@ -19,6 +19,7 @@ import 'package:drift/drift.dart';
 
 import '../local/app_database.dart';
 import '../local/database_enums.dart';
+import '../storage/photo_storage.dart';
 import 'base_repository.dart';
 
 class VisitsRepository extends BaseRepository {
@@ -99,6 +100,7 @@ class VisitsRepository extends BaseRepository {
     if (costJpy != null && costJpy < 0) {
       throw ArgumentError('costJpy cannot be negative');
     }
+    assertRelativePhotoPaths(photoPaths);
     final meta = buildCreateMetadata(groupId: groupId);
 
     final int newId = await db.into(db.visits).insert(
@@ -150,6 +152,7 @@ class VisitsRepository extends BaseRepository {
     bool clearPhotos = false,
     String? notes,
   }) async {
+    assertRelativePhotoPaths(photoPaths);
     final VisitEntity? existing = await getById(visitId);
     if (existing == null) throw StateError('Visit not found: id=$visitId');
 

@@ -14,6 +14,7 @@ import 'package:drift/drift.dart';
 
 import '../local/app_database.dart';
 import '../local/database_enums.dart';
+import '../storage/photo_storage.dart';
 import 'base_repository.dart';
 
 class VaccinationsRepository extends BaseRepository {
@@ -116,6 +117,7 @@ class VaccinationsRepository extends BaseRepository {
         'nextDueAtMsec must be after administeredAtMsec',
       );
     }
+    assertRelativePhotoPath(photoPath);
     final meta = buildCreateMetadata(groupId: groupId);
 
     final int newId = await db.into(db.vaccinations).insert(
@@ -162,6 +164,7 @@ class VaccinationsRepository extends BaseRepository {
     bool clearPhoto = false,
     String? notes,
   }) async {
+    assertRelativePhotoPath(photoPath);
     final VaccinationEntity? existing = await getById(vaccinationId);
     if (existing == null) {
       throw StateError('Vaccination not found: id=$vaccinationId');

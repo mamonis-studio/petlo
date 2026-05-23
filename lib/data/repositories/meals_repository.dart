@@ -17,6 +17,7 @@ import 'package:drift/drift.dart';
 
 import '../local/app_database.dart';
 import '../local/database_enums.dart';
+import '../storage/photo_storage.dart';
 import 'base_repository.dart';
 
 class MealsRepository extends BaseRepository {
@@ -105,6 +106,7 @@ class MealsRepository extends BaseRepository {
         (foodNameFreeText == null || foodNameFreeText.trim().isEmpty)) {
       throw ArgumentError('foodId または foodNameFreeText のどちらかが必要');
     }
+    assertRelativePhotoPath(photoPath);
 
     final meta = buildCreateMetadata(groupId: groupId);
 
@@ -162,6 +164,7 @@ class MealsRepository extends BaseRepository {
     String? photoPath,
     bool clearPhoto = false,
   }) async {
+    assertRelativePhotoPath(photoPath);
     final MealEntity? existing = await getById(mealId);
     if (existing == null) {
       throw StateError('Meal not found: id=$mealId');
