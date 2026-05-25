@@ -24,7 +24,8 @@ abstract final class AppDatabaseMigrations {
   /// v3: ai_chat_messages.image_path カラム追加 (build 15)
   /// v4: sync_queue 拡張 (op_id / group_id / client_timestamp) (build 19)
   /// v5: pets.sex を nullable 化 (build 22)
-  static const int currentVersion = 5;
+  /// v6: pet_scopes テーブル追加 + 既存 pets を 1:1 backfill (build 43, Phase G1)
+  static const int currentVersion = 6;
 
   /// 新規インストール時の onCreate
   static Future<void> onCreate(Migrator m) async {

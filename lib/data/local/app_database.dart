@@ -57,6 +57,7 @@ import 'tables/medication_reminders.dart';
 import 'tables/medications.dart';
 import 'tables/pees.dart';
 import 'tables/pending_transfers.dart';
+import 'tables/pet_scopes.dart';
 import 'tables/pets.dart';
 import 'tables/poops.dart';
 import 'tables/schedules.dart';
@@ -94,6 +95,7 @@ export 'tables/medication_reminders.dart';
 export 'tables/medications.dart';
 export 'tables/pees.dart';
 export 'tables/pending_transfers.dart';
+export 'tables/pet_scopes.dart';
 export 'tables/pets.dart';
 export 'tables/poops.dart';
 export 'tables/schedules.dart';
@@ -142,6 +144,7 @@ part 'app_database.g.dart';
     InviteCodes,
     PendingTransfers,
     CancelFeedback,
+    PetScopes,
 
     // AI
     AiChatMessages,
@@ -190,13 +193,53 @@ class AppDatabase extends _$AppDatabase {
           if (from < 5) {
             await m.alterTable(TableMigration(pets));
           }
+          // build 43 / Phase G1: pet_scopes テーブル追加 + 既存 pets を 1:1 backfill。
+          // Decision Log #1/#2: primary scope に既存 group_id を採用し、ユーザー
+          // 視点で「1 ペット = 1 scope」の挙動を維持する。
+          if (from < 6) {
+            await m.createTable(petScopes);
+            await backfillPetScopesFromPets();
+          }
           await AppDatabaseMigrations.onUpgrade(m, from, to);
         },
         beforeOpen: (OpeningDetails details) async {
           await customStatement('PRAGMA foreign_keys = ON;');
           await customStatement('PRAGMA journal_mode = WAL;');
+          // build 43 セーフティネット: 万一 v6 migration の backfill が
+          // 一部失敗・スキップしていても、pet_scopes が空の pets を見つけたら
+          // 起動時に補完する。permission=owner / is_primary=true で確定。
+          if (details.wasCreated || details.hadUpgrade) {
+            await backfillPetScopesFromPets();
+          }
         },
       );
+
+  /// 既存 pets を 1:1 で pet_scopes に backfill する。
+  /// 既に pet_scopes に行がある pet はスキップする (UNIQUE(pet_id, group_id) で
+  /// 二重挿入は防がれるが、明示的にスキップして noise を減らす)。
+  ///
+  /// Decision Log #1/#2: 既存 `pets.group_id` を primary scope として採用。
+  /// permission は owner 固定 (既存 pets は皆「自分が owner」だった)。
+  ///
+  /// 通常は migration v5→v6 と beforeOpen フックから自動呼び出される。
+  /// build 43 (Phase G1) のテストから明示的に呼べるように public 化している。
+  Future<void> backfillPetScopesFromPets() async {
+    final int t = DateTime.now().toUtc().millisecondsSinceEpoch;
+    await customStatement(
+      "INSERT OR IGNORE INTO pet_scopes "
+      "(pet_id, group_id, permission, is_primary, shared_at, "
+      "shared_by_user_id, sync_status, deleted_at, created_at, updated_at, "
+      "last_modified_at_client) "
+      "SELECT p.id, p.group_id, 'owner', 1, p.created_at, NULL, 'synced', "
+      "NULL, ?, ?, NULL "
+      "FROM pets p "
+      "WHERE NOT EXISTS ("
+      "  SELECT 1 FROM pet_scopes s "
+      "  WHERE s.pet_id = p.id AND s.group_id = p.group_id"
+      ")",
+      <Object?>[t, t],
+    );
+  }
 }
 
 // ============================================================================
