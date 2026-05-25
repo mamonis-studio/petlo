@@ -225,6 +225,14 @@ sync_queue (追記カラム)
 
 ## 3. Backend (petlo-api) API 設計
 
+> **2026-05-26 訂正**: Phase G3-A〜G3-D 完了に伴い、本セクションを実装結果に整合させた。
+> 当初の `pet_scopes` 単独テーブル案 → 実装では既存 `shared_pets` テーブルを拡張する形に変更。
+> 旧案からの主な差分:
+> - **テーブル名**: `pet_scopes` (Flutter ローカル名のまま) → サーバ側は `shared_pets` (既存名活用)
+> - **pet 識別**: server 側は `client_pet_id` (= Flutter の pet ローカル int PK) を保持し、`shared_pets` 経由で server uuid に解決する非対称 ID マッピング採用
+> - **クエリ設計**: 主スコープ (Owner 視点) と subscriber スコープで CTE 構造を**非対称**にする (`deleted_at` フィルタの位置を変える)
+> - **認可**: AND 条件案 → 「shared_pets.permission が group_members.permission を上書き」方式に確定
+
 ### 3.1 既存エンドポイントの変更
 
 #### `/sync/pull` レスポンス形式拡張
@@ -237,21 +245,22 @@ sync_queue (追記カラム)
   "nextSince": 1234567890
 }
 
-// 新 (v1.1+)
+// 新 (build 44+ / G3-B 実装済)
 {
-  "pets": [...],          // 互換維持
-  "records": [...],       // 互換維持
-  "petScopes": [          // 新規: このグループに共有された pet_scopes イベント
+  "pets": [...],          // 互換維持。primary scope の pets を返す
+  "records": [...],       // 互換維持。primary scope の records を返す
+  "petScopes": [          // 新規: このグループに共有された shared_pets イベント
     {
-      "clientScopeId": 12,
-      "petServerId": "uuid",
+      "clientScopeId": 12,            // Flutter 側 pet_scopes.id (ローカル int PK)
+      "clientPetId": 42,              // Flutter 側 pets.id (ローカル int PK)
+      "petServerId": "uuid",          // サーバ pets.id (TEXT UUID)
       "groupId": "<このリクエストのグループ>",
       "permission": "editor",
       "sharedAt": 1700000000000,
       "sharedByUserId": "user-uuid",
       "isPrimary": false,
       "deletedAt": null,
-      "payload": {...}    // pets.payload と同じ生 column dump
+      "payload": {...}                // shared_pets 行の column dump (snake_case)
     }
   ],
   "nextSince": 1234567890
@@ -260,76 +269,144 @@ sync_queue (追記カラム)
 
 #### `/sync/push` op 形式拡張
 
-新規 entity type を追加:
+新規 entity type を追加 (G3-B 実装済、build 44 クライアントが送出する形式):
 ```jsonc
 {
-  "opId": "uuid",
-  "type": "create" | "update" | "delete",
-  "entityType": "pet_scope",        // 新規
-  "groupId": "<chan>",
-  "clientEntityId": 12,             // pet_scopes.id (ローカル PK)
-  "payload": { "pet_id": ..., "group_id": ..., "permission": ... }
+  "opId": "uuid-v4",
+  "type": "update" | "delete",        // 現状 create は使わず update に統一
+  "entityType": "pet_scope",
+  "groupId": "<chan = scope の group_id>",
+  "clientEntityId": 12,               // Flutter 側 pet_scopes.id (ローカル int PK)
+  "petClientId": 42,                  // Flutter 側 pets.id (ローカル int PK)
+  "payload": {                        // create/update のみ。snake_case
+    "id": 12,
+    "pet_id": 42,
+    "group_id": "<chan>",
+    "permission": "editor",           // lowercase enum name
+    "is_primary": 0,                  // integer 0/1
+    "shared_at": 1748168400000,
+    "shared_by_user_id": "user-uuid",
+    "sync_status": "pending",
+    "deleted_at": null,
+    "created_at": 1748168400000,
+    "updated_at": 1748168400500,
+    "last_modified_at_client": 1748168400500
+  },
+  "clientTimestamp": 1748168400500
 }
 ```
 
-サーバ側 fanout: `pet_scope` op を受け取ったら、該当 pet の他 subscriber 全員に同イベントを配信 (`fanout queue`)。
+**サーバ側 fanout**: `pet_scope` op を受け取ったら、該当 pet の他 subscriber 全員に同イベントを配信 (`fanout queue`)。G3-B で実装済。
 
-### 3.2 新規エンドポイント
+#### client int → server uuid 解決ロジック
 
-| Method | Path | 用途 |
-|---|---|---|
-| `POST` | `/pets/{petId}/shares` | ペットを別グループに共有 (新 pet_scope を作成) |
-| `DELETE` | `/pets/{petId}/shares/{groupId}` | 共有解除 |
-| `PATCH` | `/pets/{petId}/shares/{groupId}` | per-pet 権限変更 (editor → viewer 等) |
-| `GET` | `/pets/{petId}/shares` | このペットの共有状況一覧 (UI で表示) |
+クライアントは Flutter ローカルの `int` PK (drift autoIncrement) で pet を識別する。サーバは UUID。両者をつなぐのが `shared_pets` テーブル:
 
-これらは `/sync/push` 経由でもできるが、UI からは「即時応答」が欲しいので専用 REST も用意する (2 経路で実装、結果は同じ DB 行が作られる)。
-
-### 3.3 認可ロジック
-
-**現在**: `group_members.permission` でグループ単位の権限を見る (`owner` > `editor` > `viewer`)
-
-**追加**: per-(pet, group) の細粒度権限を `pet_scopes.permission` で表現する場合、認可は **AND 条件**:
-- グループ内 `editor` 以上 (`group_members.permission`)
-- かつ pet 単位で `editor` 以上 (`pet_scopes.permission`)
-
-両方を満たさないと書き込めない。簡略化版として **「pet_scope.permission がグループ権限を上書き、無ければグループ権限を継承」** という解釈もあり。
-
-**推奨**: 上書き方式 (シンプル、UX 明快)。
-
-### 3.4 D1 schema 変更案
-
-```sql
--- 新規テーブル
-CREATE TABLE IF NOT EXISTS pet_scopes (
-  id              TEXT PRIMARY KEY,        -- server-generated UUID
-  pet_server_id   TEXT NOT NULL,           -- pets.id (server)
-  group_id        TEXT NOT NULL,           -- groups.id
-  permission      TEXT NOT NULL CHECK (permission IN ('owner','editor','viewer')),
-  shared_at       INTEGER NOT NULL,
-  shared_by       TEXT,                    -- users.id
-  is_primary      INTEGER NOT NULL DEFAULT 0,
-  created_at      INTEGER NOT NULL,
-  updated_at      INTEGER NOT NULL,
-  deleted_at      INTEGER,
-  UNIQUE (pet_server_id, group_id),
-  FOREIGN KEY (pet_server_id) REFERENCES pets(id),
-  FOREIGN KEY (group_id) REFERENCES groups(id)
-);
-
-CREATE INDEX idx_pet_scopes_group ON pet_scopes (group_id, deleted_at);
-CREATE INDEX idx_pet_scopes_pet ON pet_scopes (pet_server_id, deleted_at);
+```
+shared_pets
+─────────────────────────────────────
+  id              TEXT PK            -- server-generated UUID
+  pet_server_id   TEXT NOT NULL      -- pets(id), サーバ UUID
+  client_pet_id   INTEGER NOT NULL   -- ★ Flutter 側の pet ローカル PK
+  client_user_id  TEXT NOT NULL      -- アップロードしたユーザー (誰の client_pet_id か)
+  group_id        TEXT NOT NULL
+  permission      TEXT NOT NULL
+  is_primary      INTEGER NOT NULL DEFAULT 0
+  shared_at       INTEGER NOT NULL
+  shared_by       TEXT
+  deleted_at      INTEGER
+  created_at      INTEGER NOT NULL
+  updated_at      INTEGER NOT NULL
+  UNIQUE (client_user_id, client_pet_id, group_id)   -- ユーザー毎に client_pet_id がユニーク
 ```
 
-**backfill**: 既存 pets を全て scan して、`pet_scopes (pet_server_id, group_id=pets.group_id, permission='owner', is_primary=1)` を挿入する D1 migration script。
+push 受信時の解決手順 (G3-B 実装):
+1. op の `petClientId` + 認証ユーザー ID で `shared_pets WHERE client_user_id=? AND client_pet_id=?` を検索
+2. 既存があれば `pet_server_id` を取得
+3. なければ「未知の pet → reject `pet_not_found`」(既存ハンドラ通り `_bumpAttempts` で retry 待機)
+
+### 3.2 新規エンドポイント (G3-D 実装済)
+
+| Method | Path | 用途 | 備考 |
+|---|---|---|---|
+| `POST` | `/pets/{petServerId}/shares` | ペットを別グループに共有 (新 shared_pets 行作成) | body に target group_id + permission |
+| `DELETE` | `/pets/{petServerId}/shares/{groupId}` | 共有解除 (deleted_at セット) | primary scope の削除は 409 |
+| `PATCH` | `/pets/{petServerId}/shares/{groupId}` | per-pet 権限変更 | body: `{"permission":"viewer"}` |
+| `GET` | `/pets/{petServerId}/shares` | 共有状況一覧 (UI 表示用) | 認証ユーザーが scope に含まれる場合のみ 200 |
+
+`/sync/push` 経由の `pet_scope` op と REST endpoint は最終的に**同じ shared_pets 行**を作成する。UI 側は「即時応答が欲しいフロー」(共有先選択モーダル等) で REST を使う。
+
+### 3.3 認可ロジック (G3-D 実装済)
+
+**確定**: per-(pet, group) の細粒度権限を `shared_pets.permission` で表現し、`group_members.permission` を**上書き**する (Decision Log #4)。
+
+評価順序:
+1. ユーザーが対象 group のメンバーか? (`group_members` に行がある)
+2. yes なら `shared_pets WHERE pet_server_id=? AND group_id=? AND deleted_at IS NULL` を引く
+3. shared_pets 行があれば `shared_pets.permission` を採用 (上書き)
+4. shared_pets 行がなければ → そもそも pet がこの group から見えない → 403 / 404
+
+「Pro チェック」は **自然な gate** で実現: 無料ユーザーは group 作成自体ができない (既存 `/groups POST` で Pro チェック) ため、`/pets/{id}/shares` を叩こうにも target group がそもそも存在しない (= 自然に共有不可)。専用 Pro check を追加せず、既存ゲートを再利用する。Decision Log #5 の "1 グループまで無料" は **クライアント側 UI で表示制御**するのみ。
+
+### 3.4 D1 schema (G3-A 実装済)
+
+新規テーブル**を追加せず、既存 `shared_pets` を拡張**した:
+
+```sql
+-- 既存 shared_pets に追加されたカラム (G3-A migration)
+ALTER TABLE shared_pets ADD COLUMN permission TEXT NOT NULL DEFAULT 'owner'
+  CHECK (permission IN ('owner','editor','viewer'));
+ALTER TABLE shared_pets ADD COLUMN is_primary INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE shared_pets ADD COLUMN shared_at INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE shared_pets ADD COLUMN shared_by TEXT;
+ALTER TABLE shared_pets ADD COLUMN deleted_at INTEGER;
+
+-- インデックス (subscriber view + fanout 用)
+CREATE INDEX idx_shared_pets_group_deleted ON shared_pets (group_id, deleted_at);
+CREATE INDEX idx_shared_pets_pet_deleted   ON shared_pets (pet_server_id, deleted_at);
+CREATE INDEX idx_shared_pets_client        ON shared_pets (client_user_id, client_pet_id);
+```
+
+**backfill**: 既存 `shared_pets` 行 (rev5.3 時代から存在する旧形式) には `permission='owner', is_primary=1, shared_at=created_at` を流し込む。これで旧来の「1 ペット = 1 group」運用を Owner-only として表現できる。
+
+#### 主スコープ / subscriber スコープの CTE 非対称設計
+
+`/sync/pull` の records 抽出 SQL は **主スコープ (Owner) と subscriber で構造が違う**。これは spec 段階の「全 group 同じ CTE」想定から G3-C で意図的に乖離した部分:
+
+```sql
+-- (G3-C 実装) 主スコープ向け records 取得
+WITH visible_pets AS (
+  SELECT id FROM pets
+  WHERE group_id = ?              -- 主スコープのペット
+  -- ★ deleted_at フィルタなし。Owner には削除済みも見せて undo を許す
+)
+SELECT * FROM meals
+WHERE pet_id IN (SELECT id FROM visible_pets)
+  AND updated_at > ?
+  AND deleted_at IS NULL;         -- record 自体の deleted は除外
+
+-- (G3-C 実装) subscriber スコープ向け records 取得 (非対称)
+WITH visible_pets AS (
+  SELECT pet_server_id AS id FROM shared_pets
+  WHERE group_id = ?
+    AND deleted_at IS NULL         -- ★ subscriber は削除済み scope を見ない
+)
+SELECT * FROM meals
+WHERE pet_id IN (SELECT id FROM visible_pets)
+  AND updated_at > ?
+  AND deleted_at IS NULL;
+```
+
+**乖離の意図**: Owner は「うっかり削除した pet を発見して復活させる」UX を後で実装可能にしておくため、deleted_at フィルタを CTE から外す。subscriber は「Owner が共有解除した」という決定を即座に反映するため、deleted scope を厳密に除外する。Decision Log にも追記 (§Decision Log #8)。
 
 ### 3.5 後方互換性
 
-ユーザー spec: 「build 42 より前は出荷してないので原則不要、ただし dev TestFlight ユーザーがいる場合は注意」
+**確定**: `/v1` ルートを別途切らず、既存パスを **拡張する**形で対応 (G3 全体方針)。理由:
+- 現状 production user 0、TestFlight テスター ~10 名のみ
+- 旧形式の op (build 42 以前) は `entityType` が `pet`/`record` のみで、新しい backend でも従来通り処理される (後方互換性が自動的に保たれる)
+- `/v2` 並走の実装コストを払う割に得るものがない
 
-**判断**: TestFlight に内部テスター (作者 + 家族) がいるが**永続的な production user は 0**。新スキーマで `client_version >= 1.1.0` を要求し、古いクライアントは強制アップデートダイアログを出す方針が現実的。
-
-ただし安全側に倒すなら、**`/sync/pull` v2 を新しいパスに置く** (`/v2/sync/pull` 等) と移行が無傷で済む。実装コスト微増だがロールバックが楽。
+**version gating の取扱**: クライアントの強制アップデート機構は **v1.0 段階では入れず、v1.1 公開リリース時に再検討** (Phase G3-F として spec 段階に書いた予定を v1.1 に送り)。理由: TestFlight 内では運用 (Slack で「アップデートしてね」と告知) で吸収可能。
 
 ---
 
@@ -477,52 +554,84 @@ CREATE INDEX idx_pet_scopes_pet ON pet_scopes (pet_server_id, deleted_at);
 - **完了基準**: pet が pet_scopes 経由で表示される。read 経路の動作が build 42 と等価
 - **並行可**: G3 と並行可能
 
-### Phase G3: sync engine 拡張 (5 日)
-- [G3-1] `sync_queue.fanout_group_ids` カラム or `pet_scopes` 専用 entity_type (1.5 日)
-- [G3-2] push 経路: pet_scopes 行を独立 op として送れるようにする (1.5 日)
-- [G3-3] pull 経路: `petScopes` フィールドを受け取って upsert (1.5 日)
-- [G3-4] エッジケース handling (権限変更 race, fanout 失敗 retry) (0.5 日)
-- **完了基準**: クライアント単独で pet_scope op が `sync_queue` に積まれ、mock server に到達する
-- **直列必須**: G1 完了後
+> **2026-05-26 訂正**: Phase G1〜G3 完了に伴い実績ベースで全面更新。当初の G3 (Flutter sync 拡張) / G4 (Backend) を ✅ 完了扱いに、G3-E (schedules) / G3-F (version gating) を v1.1 へ移送、UI 改修 (旧 G6) を **Phase G4 として次フェーズに昇格**。
 
-### Phase G4: Backend API 改修 (5 日)
-- [G4-1] D1 schema v2 + migration script (1.5 日)
-- [G4-2] `/sync/push` `pet_scope` op 受信 + fanout (1.5 日)
-- [G4-3] `/sync/pull` `petScopes` フィールド emit (1 日)
-- [G4-4] 新規 REST endpoint (`POST /pets/{id}/shares` 等) (1 日)
-- **完了基準**: backend test で multi-scope shared pet が複数 group に pull で見える
-- **並行可**: G3 と並行可能 (mock 結合で個別開発)
+### ✅ Phase G1: ローカル DB 拡張 + backfill (build 43, 完了)
+- [G1-1] `pet_scopes` drift table 追加, migrations v5→v6 backfill ✅
+- [G1-2] `pet_scopes_repository.dart` 新設 + read/watch メソッド ✅
+- [G1-3] developer_settings に「DB エクスポート」メニュー追加 (テスター用安全網) ⏸ 据え置き (build 43 では未着手、必要なら build 47+ で追加)
+- **完了基準**: 起動して既存 pets が pet_scopes に backfill されていること。既存画面の動作が変化していないこと → ✅
 
-### Phase G5: 結合テスト + 競合解決検証 (3 日)
+### ✅ Phase G2: クライアント sync engine 拡張 + read 経路 multi-scope 化 (build 44, 完了)
+当初の G2 (read 経路書換) と G3 (sync engine 拡張) を **build 44 で同時に完了**した。
+- [G2-1] `watchActivePetsInScope(groupId)` を `pet_scopes` subquery JOIN に書き換え ✅
+- [G2-2] `hasPetWithName` も pet_scopes 経由で multi-scope 対応 ✅
+- [G2-3] `medication_reminders_repository.watchEnabledForGroup` を Hybrid 化 ✅
+- [G2-4] `createPet` / `movePetToGroup` が primary `pet_scopes` 行を同期維持 ✅
+- [G2-5] `sync_queue` の `entityType='pet_scope'` op 送出 ✅
+- [G2-6] pull `petScopes` フィールド受信 + `_applyPetScopeEvent` ✅
+- [G2-7] LWW 競合解決 (`_isPayloadFresher`) ✅
+- **完了基準**: pet が pet_scopes 経由で表示され、subscriber view が動く → ✅ (15/15 tests pass)
+
+### ✅ Phase G3-A〜G3-D: Backend API 改修 (petlo-api セッション, 完了)
+別リポジトリ (`petlo-api`) で並走実装。Worker Version ID は本リポジトリでは追跡せず、petlo-api 側の commit log を参照する (本 doc では実装事実のみ記録)。
+- [G3-A] D1 schema 拡張: 既存 `shared_pets` テーブルに `permission` / `is_primary` / `shared_at` / `shared_by` / `deleted_at` カラムを追加 + 3 インデックス ✅
+- [G3-B] `/sync/push` `pet_scope` op 受信 + client int → server uuid 解決 + server-side fanout ✅
+- [G3-C] `/sync/pull` `petScopes` フィールド emit + **主スコープ/subscriber 非対称 CTE 設計** (§3.4 参照) ✅
+- [G3-D] 新規 REST endpoint 4 本 (`POST/DELETE/PATCH/GET /pets/{petServerId}/shares`) + 認可ロジック (`shared_pets.permission` が `group_members.permission` を上書き) ✅
+- **完了基準**: backend test で multi-scope shared pet が複数 group の `/sync/pull` で見える → ✅
+
+### ⏸ Phase G3-E: schedules の Hybrid 対応 → **v1.1 送り**
+- 当初: schedules.watchForGroup を `pet_id IN (SELECT pet_id FROM pet_scopes …)` 相当へ
+- **送り理由**: backend D1 に `schedules` テーブルが現在存在せず、新規設計が必要。client 側の `relatedPetIds` が JSON list である件と合わせて、3〜5 日の独立タスクになる
+- **再評価タイミング**: schedules 機能の backend 化を進める時 (= cloud sync 本実装フェーズ)。L1 (クラウドバックアップ) とまとめて扱う候補
+
+### ⏸ Phase G3-F: client version gating → **v1.1 送り**
+- 当初: `/v1` 廃止 + 強制アップデートダイアログ
+- **送り理由**: backend には `/v1` 専用ルートが存在せず、既存パスの拡張で後方互換が保たれている (旧形式 op も問題なく処理される)。TestFlight ~10 名は Slack 等の運用告知で吸収できる
+- **再評価タイミング**: v1.1 公開リリース時 (App Store 配信開始 = 古いクライアントが残るリスクが顕在化する瞬間)
+
+### 🔜 Phase G4: UI 改修 (multi-scope 表面化) — 次フェーズ
+旧 spec の G6 に相当。Phase G1〜G3 で **データ層・同期層は揃った**ため、ユーザー体験として multi-scope を表に出すフェーズ。
+- [G4-1] `pet_share_picker.dart` を multi-select + per-pet permission ドロップダウン UI に改修
+  - 「現在の共有先」「未共有グループ」「primary バッジ」「Owner/Editor/Viewer 選択」表示
+  - `GET /pets/{petServerId}/shares` で初期表示、トグル変更で REST endpoint 即時呼び出し
+- [G4-2] `group_switcher_modal.dart:203` のハードコード `'1 pet · only on this device'` バグを修正
+  - 各行で `petsInScopeProvider(groupId)` を `ConsumerWidget` 化して実数表示
+  - メンバー数 (`group_members` 件数) も同様に実数化
+- [G4-3] ARB / l10n 改修
+  - 既存 `pet_form_scope_move_*` / `pet_share_picker_move_*` 系の「移動 (move)」表現を「共有 (share)」概念に統一
+  - 新規キー (3 言語): 「共有中のグループ」「プライマリに設定」「共有を解除」等
+  - 詳細は §4.5 参照
+- [G4-4] Phase G4 の UI 変更を前提に、`movePetToGroup` の callers を **`PetScopesRepository.addPetScope` / `removePetScope`** に置き換える (旧 movePetToGroup は backward compat のため残存)
+- **完了基準**: UI から複数共有・共有解除・per-pet 権限変更が完結する。Switch group モーダルが実数表示する
+- **見積もり**: 4-5 日 (G4-1 = 1.5 日, G4-2 = 1 日, G4-3 = 1.5 日, G4-4 = 1 日)
+
+### 🔜 Phase G5: 結合テスト + 競合解決検証 (G4 完了後)
 - [G5-1] 2 端末 (シミュレータ + 実機) で同時編集テスト (1 日)
 - [G5-2] 権限変更直後の race condition 検証 (1 日)
 - [G5-3] グループ脱退時の orphan handling 検証 (1 日)
 - **完了基準**: 競合シナリオ 5 種 (権限降格 / 同時編集 / 脱退 / 共有解除 / primary 変更) が定義通り動作
-- **直列必須**: G3 + G4 完了後
 
-### Phase G6: UI + l10n (4 日)
-- [G6-1] `pet_share_picker` を multi-select + permission UI に改修 (1.5 日)
-- [G6-2] `group_switcher_modal` の N pet/member 実数化 + バグ修正 (1 日)
-- [G6-3] ARB 追加 (3 言語) + 既存「move」表現の「share」化 (1.5 日)
-- **完了基準**: UI から複数共有・共有解除・権限変更が完結
-- **並行可**: G3 と部分並行可能 (UI は mock data でも進められる)
+### 🔜 Phase G6: Pro 境界 UI + ロールアウト (G5 完了後)
+- [G6-1] Pro 機能境界の UI 反映 (無料ユーザーは 2 つ目以降のグループ共有時にアップセル) (1 日)
+  - server 側は既に「無料 = group 作成不可」で自然 gate されているため、UI 表示制御のみ
+- [G6-2] TestFlight 配信、テスター運用 (1 日)
+- **完了基準**: Pro 課金状態で multi-scope が解除される。無料で 2 つ目共有時にアップセル UI が出る
 
-### Phase G7: Pro 境界 + ロールアウト (2 日)
-- [G7-1] Pro 境界線実装 (例: 無料は 1 グループまで、Pro で制限解除) (1 日)
-- [G7-2] TestFlight 配信、テスター運用 (1 日)
-- **完了基準**: Pro 課金状態で multi-scope が解除される。無料で上限到達時のアップセル UI が出る
-- **直列必須**: G6 完了後
+### 残り見積もり (build 44 以降): **8〜10 営業日**
+- G4 (UI 改修): 4-5 日
+- G5 (結合テスト): 3 日
+- G6 (Pro 境界 + ロールアウト): 2 日
 
-### 総工数: **25 営業日 (約 1 ヶ月)**
-並行作業を最大限活用すると **20 営業日** まで圧縮可能。
-
-### 依存関係グラフ
+### 完了済 / 残作業の依存関係グラフ
 
 ```
-G1 → G2 ─┐
-        ├─ G5 → G7
-G1 → G3 ─┤
-G4 ──────┤    G6 (G3/G4 mock と並行可)
+✅ G1 → ✅ G2 ──┐
+                ├─ 🔜 G5 → 🔜 G6
+✅ G3-A〜D ─────┤    🔜 G4 (G5 と部分並行可)
+⏸ G3-E (v1.1)
+⏸ G3-F (v1.1)
 ```
 
 ---
@@ -552,6 +661,10 @@ G4 ──────┤    G6 (G3/G4 mock と並行可)
 - L2: Sign in with Apple
 - L3: Push 通知 + background fetch
 - L4: 課金検証の Android 対応
+
+### v1.1 へ送った multi-scope 関連項目 (2026-05-26 追記)
+- **G3-E** schedules の Hybrid 化 — backend に `schedules` テーブル無し、新規設計必要。L1 (クラウドバックアップ本実装) とセットで再評価
+- **G3-F** クライアント version gating (`/v1` 廃止 + 強制アップデート) — TestFlight 段階では運用告知で吸収可能、App Store 公開時に再評価
 
 ### v1.2 以降 (multi-scope の発展)
 - `/sync/pull?groupIds=A,B,C` 一括 pull API
@@ -608,4 +721,19 @@ petlo の現状コードは pet × group の N:M 化を想定して書かれて�
 | 5 | 2026-05-25 | 複数共有の Pro 機能境界線 | **複数共有は Pro 限定** | 既存「グループ機能 = Pro」の自然な拡張。3 グループ × 5 人の上限内で複数共有可、無料は「最初に共有した 1 グループ」までという段階アップセル UX |
 | 6 | 2026-05-25 | Backend `/v1` 廃止 vs `/v2` 並走 | **`/v1` 廃止 + 強制アップデート** | TestFlight 内部テスター ~10 名のみで production user 0。並走を維持する実装コストの方が高い |
 | 7 | 2026-05-25 | 共有解除時の subscriber 側 records 物理削除 | **やらない (orphan として残置)** | 容量影響は軽微。再共有時にローカル row 再利用できる利点が削除の煩雑さを上回る。掃除メニューは developer settings 案件で別途検討 |
+| 8 | 2026-05-26 | サーバ side `/sync/pull` records 抽出 CTE は主スコープ / subscriber で対称か非対称か | **非対称: 主スコープは `deleted_at` フィルタ無し、subscriber は `deleted_at IS NULL` を必須** | Owner は「うっかり削除を後で復元する UX」を将来実装可能にするため deleted も含めて見せる。subscriber は Owner の共有解除を即座に反映するため厳密フィルタ。G3-C 実装時に確定 (spec 段階の "全 group 同じ CTE" 想定から意図的に乖離) |
+| 9 | 2026-05-26 | Pro チェックを multi-scope 専用に追加するか、既存の「group 作成 = Pro」ゲートで足りるか | **既存ゲート (= natural gate) で十分** | 無料ユーザーは group 自体を作れないので、`/pets/{id}/shares` を叩こうにも target group が存在しない。専用 check を増やさず実装シンプル化。クライアント側 UI で「2 つ目以降の共有時にアップセル」を表示するのみ。G3-D 実装時に確定 |
 
+### G1〜G3 実装結果サマリ (2026-05-26 追記)
+
+| Phase | 完了 build / セッション | 主要成果物 | 備考 |
+|---|---|---|---|
+| G1 | build 43 (Flutter) | drift `pet_scopes` テーブル + migration v5→v6 + backfill + `PetScopesRepository` + 13 tests | 既存ユーザー視点で挙動変化なし |
+| G2 | build 44 (Flutter) | read 経路 multi-scope JOIN 化 + sync engine 'pet_scope' op + LWW + 15 new tests | UI 表面化はまだ |
+| G3-A | petlo-api セッション | D1 `shared_pets` カラム追加 + インデックス + backfill | Worker Version ID は petlo-api 側 commit log |
+| G3-B | petlo-api セッション | `/sync/push` `pet_scope` 受信 + client int → server uuid 解決 + fanout | 同上 |
+| G3-C | petlo-api セッション | `/sync/pull` `petScopes` emit + **非対称 CTE 設計** (Decision Log #8) | 同上 |
+| G3-D | petlo-api セッション | 新規 REST 4 本 (`POST/DELETE/PATCH/GET /pets/{id}/shares`) + 認可 (Decision Log #4 を確定実装) | 同上 |
+| G3-E | **v1.1 送り** | schedules の Hybrid 化 | backend に schedules テーブル無し、新規設計必要 |
+| G3-F | **v1.1 送り** | クライアント version gating | TestFlight 段階は運用吸収可、App Store 公開時に再評価 |
+| G4 | **次フェーズ** | UI 改修 (PetSharePicker multi-select / Switch group バグ修正 / ARB 移動→共有 / GET shares 経由の scope 一覧) | 見積もり 4-5 日 |
