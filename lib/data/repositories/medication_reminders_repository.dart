@@ -58,11 +58,20 @@ class MedicationRemindersRepository extends BaseRepository {
     return query.watch();
   }
 
-  /// グループ全体の有効リマインダー(全ペット横断、ホーム/Plansタブで使う)
+  /// グループ全体の有効リマインダー(全ペット横断、ホーム/Plansタブで使う)。
+  ///
+  /// build 44 (Phase G2): Hybrid モデルに従い「このグループから可視な
+  /// ペット」(pet_scopes 経由) のリマインダーを返す。共有元 (primary scope)
+  /// で作成されたリマインダーも、subscriber 側でちゃんと拾える。
   Stream<List<MedicationReminderEntity>> watchEnabledForGroup(String groupId) {
+    final JoinedSelectStatement<PetScopes, PetScopeEntity> scopeIdsQuery =
+        db.selectOnly(db.petScopes)
+          ..addColumns(<Expression<Object>>[db.petScopes.petId])
+          ..where(db.petScopes.groupId.equals(groupId) &
+              db.petScopes.deletedAt.isNull());
     final query = db.select(db.medicationReminders)
       ..where((MedicationReminders t) =>
-          t.groupId.equals(groupId) &
+          t.petId.isInQuery(scopeIdsQuery) &
           t.deletedAt.isNull() &
           t.enabled.equals(true))
       ..orderBy(<OrderClauseGenerator<MedicationReminders>>[

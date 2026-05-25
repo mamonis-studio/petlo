@@ -33,33 +33,62 @@ class PetsRepository extends BaseRepository {
 
   /// 指定スコープ内の生存ペット一覧 (お別れ済み除く、削除済み除く)。
   /// sortOrderの昇順。
+  ///
+  /// build 44 (Phase G2): 旧 `pets.group_id == ?` フィルタを廃止し
+  /// `pet_scopes` 経由の JOIN に切替。subscriber 視点 (= 他人のペットが
+  /// このグループに共有されている) でも該当ペットが返るようになる。
+  /// Single-scope な既存データは `_backfillPetScopesFromPets` で 1:1 行が
+  /// 存在するため挙動は同一。
   Stream<List<PetEntity>> watchActivePetsInScope(String groupId) {
-    return (db.select(db.pets)
-          ..where((Pets t) =>
-              t.groupId.equals(groupId) &
-              t.deletedAt.isNull() &
-              t.partedAt.isNull())
-          ..orderBy(<OrderClauseGenerator<Pets>>[
-            (Pets t) => OrderingTerm(expression: t.sortOrder),
-            (Pets t) => OrderingTerm(expression: t.id),
-          ]))
-        .watch();
+    return _selectPetsInScope(
+      groupId: groupId,
+      includeParted: false,
+      partedOnly: false,
+    ).watch();
   }
 
   /// 指定スコープ内のお別れ済みペット (メモリアル)。
   Stream<List<PetEntity>> watchPartedPetsInScope(String groupId) {
-    return (db.select(db.pets)
-          ..where((Pets t) =>
-              t.groupId.equals(groupId) &
-              t.deletedAt.isNull() &
-              t.partedAt.isNotNull())
-          ..orderBy(<OrderClauseGenerator<Pets>>[
-            (Pets t) => OrderingTerm(
-                  expression: t.partedAt,
-                  mode: OrderingMode.desc,
-                ),
-          ]))
-        .watch();
+    return _selectPetsInScope(
+      groupId: groupId,
+      includeParted: true,
+      partedOnly: true,
+    ).watch();
+  }
+
+  /// pets を pet_scopes 経由で抽出する共通ヘルパ。
+  /// drift の subquery API (`isInQuery`) を使い、`pets.id IN
+  /// (SELECT pet_id FROM pet_scopes WHERE group_id=? AND deleted_at IS NULL)`
+  /// 相当のクエリを構築する。
+  Selectable<PetEntity> _selectPetsInScope({
+    required String groupId,
+    required bool includeParted,
+    required bool partedOnly,
+  }) {
+    final JoinedSelectStatement<PetScopes, PetScopeEntity> scopeIdsQuery =
+        db.selectOnly(db.petScopes)
+          ..addColumns(<Expression<Object>>[db.petScopes.petId])
+          ..where(db.petScopes.groupId.equals(groupId) &
+              db.petScopes.deletedAt.isNull());
+    final SimpleSelectStatement<Pets, PetEntity> q = db.select(db.pets)
+      ..where((Pets t) =>
+          t.id.isInQuery(scopeIdsQuery) &
+          t.deletedAt.isNull() &
+          (partedOnly ? t.partedAt.isNotNull() : t.partedAt.isNull()));
+    if (partedOnly) {
+      q.orderBy(<OrderClauseGenerator<Pets>>[
+        (Pets t) => OrderingTerm(
+              expression: t.partedAt,
+              mode: OrderingMode.desc,
+            ),
+      ]);
+    } else {
+      q.orderBy(<OrderClauseGenerator<Pets>>[
+        (Pets t) => OrderingTerm(expression: t.sortOrder),
+        (Pets t) => OrderingTerm(expression: t.id),
+      ]);
+    }
+    return q;
   }
 
   /// 単一ペット取得 (Stream)
@@ -78,15 +107,23 @@ class PetsRepository extends BaseRepository {
         .getSingleOrNull();
   }
 
-  /// 指定グループの中で同名ペットが既に存在するか (rev5.5 同名警告用)
+  /// 指定グループの中で同名ペットが既に存在するか (rev5.5 同名警告用)。
+  ///
+  /// build 44 (Phase G2): 共有された他人のペットも判定対象に含めるため
+  /// pet_scopes 経由でスコープを解決する。
   Future<bool> hasPetWithName({
     required String groupId,
     required String name,
     int? excludePetId,
   }) async {
+    final JoinedSelectStatement<PetScopes, PetScopeEntity> scopeIdsQuery =
+        db.selectOnly(db.petScopes)
+          ..addColumns(<Expression<Object>>[db.petScopes.petId])
+          ..where(db.petScopes.groupId.equals(groupId) &
+              db.petScopes.deletedAt.isNull());
     final query = db.select(db.pets)
       ..where((Pets t) =>
-          t.groupId.equals(groupId) &
+          t.id.isInQuery(scopeIdsQuery) &
           t.name.equals(name) &
           t.deletedAt.isNull());
     if (excludePetId != null) {
@@ -162,6 +199,23 @@ class PetsRepository extends BaseRepository {
             lastModifiedAtClient: Value(meta.lastModifiedAtClient),
           ),
         );
+
+    // build 44 (Phase G2): 新規ペットには primary pet_scope を自動作成する。
+    // pet_scopes 経由の JOIN 読み取り (watchActivePetsInScope) で新規ペットが
+    // 即座に可視化されるための必須ステップ。Phase G1 の backfill と完全に
+    // 同じ形 (permission=owner, isPrimary=true) で挿入する。
+    await db.into(db.petScopes).insert(PetScopesCompanion.insert(
+          petId: newId,
+          groupId: groupId,
+          permission: MemberPermission.owner,
+          isPrimary: const Value(true),
+          sharedAt: meta.createdAt,
+          sharedByUserId: Value(createdBy),
+          syncStatus: Value(meta.initialSyncStatus),
+          createdAt: meta.createdAt,
+          updatedAt: meta.updatedAt,
+          lastModifiedAtClient: Value(meta.lastModifiedAtClient),
+        ));
 
     await enqueueSyncIfShared(
       groupId: groupId,
@@ -388,11 +442,22 @@ class PetsRepository extends BaseRepository {
         'last_modified_at_client = ? WHERE id = ?',
         <Object?>[newGroupId, newStatus, t, t, petId],
       );
+      // build 44 (Phase G2): 既存 movePetToGroup は「1 ペット = 1 scope」を
+      // 維持する転送なので、primary pet_scope の group_id も同じ値に更新する。
+      // Phase G4 で sharePet (= addPetScope) に置換予定、本処理はその移行
+      // までの繋ぎ。
+      await db.customStatement(
+        'UPDATE pet_scopes SET group_id = ?, sync_status = ?, '
+        'updated_at = ?, last_modified_at_client = ? '
+        'WHERE pet_id = ? AND is_primary = 1 AND deleted_at IS NULL',
+        <Object?>[newGroupId, newStatus, t, t, petId],
+      );
     });
 
     // drift watchers を発火 (StreamProvider 再評価)
     db.notifyUpdates(<TableUpdate>{
       const TableUpdate('pets'),
+      const TableUpdate('pet_scopes'),
       for (final String t in petBoundTables) TableUpdate(t),
     });
 

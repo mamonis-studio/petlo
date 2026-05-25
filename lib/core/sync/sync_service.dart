@@ -313,6 +313,11 @@ class SyncService {
 
   /// (targetTable, recordId) からローカル行を読み出して backend 用の
   /// operation map を組み立てる。行が見つからなければ null。
+  ///
+  /// build 44 (Phase G2): entityType に 'pet_scope' を追加。
+  /// `pet_scopes` 行に対する変更を server に伝達するために使う。
+  /// server-side fanout (Phase G3) を想定: client は primary scope への 1 経路
+  /// だけ push し、subscriber 群への配信はサーバ側が行う。
   Future<Map<String, dynamic>?> _buildOperation(
     AppDatabase db,
     SyncQueueItemEntity row,
@@ -322,9 +327,12 @@ class SyncService {
     if (data == null) return null;
 
     final bool isPet = row.targetTable == 'pets';
-    final String entityType = isPet ? 'pet' : 'record';
+    final bool isPetScope = row.targetTable == 'pet_scopes';
+    final String entityType = isPet
+        ? 'pet'
+        : (isPetScope ? 'pet_scope' : 'record');
 
-    // record の場合は pet_id を抜き出して petClientId に詰める
+    // record / pet_scope の場合は pet_id を抜き出して petClientId に詰める
     int? petClientId;
     if (!isPet) {
       final dynamic raw = data['pet_id'];
@@ -344,7 +352,7 @@ class SyncService {
       'opId': row.opId,
       'type': typeStr,
       'entityType': entityType,
-      if (!isPet) 'tableName': row.targetTable,
+      if (!isPet && !isPetScope) 'tableName': row.targetTable,
       'groupId': row.groupId,
       'clientEntityId': row.recordId,
       if (petClientId != null) 'petClientId': petClientId,
@@ -414,6 +422,10 @@ class SyncService {
     final List<dynamic> pets = (body['pets'] as List<dynamic>?) ?? const [];
     final List<dynamic> records =
         (body['records'] as List<dynamic>?) ?? const [];
+    // build 44 (Phase G2): server-side fanout で配信される pet_scopes イベント。
+    // backend (Phase G3) で実装予定、それまでは empty list が来る想定。
+    final List<dynamic> petScopes =
+        (body['petScopes'] as List<dynamic>?) ?? const [];
 
     // upsert を 1 トランザクションで実行
     final Set<String> touchedTables = <String>{};
@@ -430,6 +442,12 @@ class SyncService {
         if (table == null) continue;
         if (await _applyRecordEvent(db, r, groupId, table)) {
           touchedTables.add(table);
+        }
+      }
+      for (final dynamic s in petScopes) {
+        if (s is! Map<String, dynamic>) continue;
+        if (await _applyPetScopeEvent(db, s, groupId)) {
+          touchedTables.add('pet_scopes');
         }
       }
     });
@@ -454,6 +472,11 @@ class SyncService {
   /// payload は backend の不透明 JSON。中身は `_readRow` で送ったときと
   /// 同じカラム名キーを期待する (蓄積された shared_pets.payload は
   /// その形で保管される設計)。
+  ///
+  /// build 44 (Phase G2): LWW を pull 側で実装。ローカル行の
+  /// `last_modified_at_client` と payload の同名フィールドを比較し、ローカルが
+  /// 新しければ apply をスキップする。ローカル変更が server pull で上書きされる
+  /// 事故を防ぐ。
   Future<bool> _applyPetEvent(
     AppDatabase db,
     Map<String, dynamic> event,
@@ -473,6 +496,10 @@ class SyncService {
     payload['id'] = clientId;
     final num? deletedAt = event['deletedAt'] as num?;
     if (deletedAt != null) payload['deleted_at'] = deletedAt.toInt();
+
+    if (!await _isPayloadFresher(db, 'pets', clientId, payload)) {
+      return false; // ローカルが新しい → スキップ
+    }
 
     await _upsertByPk(db, 'pets', payload);
     return true;
@@ -501,8 +528,74 @@ class SyncService {
     final num? deletedAt = event['deletedAt'] as num?;
     if (deletedAt != null) payload['deleted_at'] = deletedAt.toInt();
 
+    if (!await _isPayloadFresher(db, tableName, clientId, payload)) {
+      return false; // ローカルが新しい → スキップ
+    }
+
     await _upsertByPk(db, tableName, payload);
     return true;
+  }
+
+  /// build 44 (Phase G2): pet_scope イベントの apply。
+  /// payload 形式は `_buildOperation` で送ったときと同じ snake_case 列キー。
+  /// LWW: permission の race だけは server-side rule (owner 優先) に委ねる
+  /// 想定なので、client 側は受信値をそのまま信じて upsert する
+  /// (Decision Log #3)。
+  Future<bool> _applyPetScopeEvent(
+    AppDatabase db,
+    Map<String, dynamic> event,
+    String groupId,
+  ) async {
+    final int? clientId = (event['clientScopeId'] as num?)?.toInt();
+    if (clientId == null) return false;
+    final dynamic rawPayload = event['payload'];
+    final Map<String, dynamic>? payload = rawPayload is String
+        ? jsonDecode(rawPayload) as Map<String, dynamic>?
+        : (rawPayload is Map<String, dynamic> ? rawPayload : null);
+    if (payload == null) return false;
+
+    // group_id は event 側 (= サーバが配信する scope) を尊重して上書き
+    payload['group_id'] = groupId;
+    payload['id'] = clientId;
+    final num? deletedAt = event['deletedAt'] as num?;
+    if (deletedAt != null) payload['deleted_at'] = deletedAt.toInt();
+
+    if (!await _isPayloadFresher(db, 'pet_scopes', clientId, payload)) {
+      return false;
+    }
+
+    await _upsertByPk(db, 'pet_scopes', payload);
+    return true;
+  }
+
+  /// LWW 判定: 該当行の `last_modified_at_client` を読み、payload より古ければ
+  /// true (上書きしてよい) を返す。ローカルにまだ行がなければ常に true。
+  /// 比較対象カラムが無いテーブル / payload にも無い場合は安全側で true を返す。
+  Future<bool> _isPayloadFresher(
+    AppDatabase db,
+    String table,
+    int recordId,
+    Map<String, dynamic> payload,
+  ) async {
+    final dynamic remoteRaw = payload['last_modified_at_client'];
+    if (remoteRaw is! num) {
+      return true; // payload に時計情報なし → 比較不能、上書き許可
+    }
+    try {
+      final QueryRow? row = await db.customSelect(
+        'SELECT last_modified_at_client FROM $table WHERE id = ?',
+        variables: <Variable<Object>>[Variable<int>(recordId)],
+      ).getSingleOrNull();
+      if (row == null) return true; // ローカル行なし → 上書き許可
+      final dynamic localRaw = row.data['last_modified_at_client'];
+      if (localRaw is! num) return true; // ローカル時計なし → 上書き許可
+      // payload の時計の方が新しいかちょうど同じなら上書き許可。
+      // ローカルの方が厳密に新しい時のみスキップする。
+      return remoteRaw.toInt() >= localRaw.toInt();
+    } catch (_) {
+      // 列が存在しない等の例外時は安全側で上書き
+      return true;
+    }
   }
 
   /// INSERT OR REPLACE で payload を行に焼く。

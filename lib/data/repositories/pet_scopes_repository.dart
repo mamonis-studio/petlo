@@ -13,8 +13,11 @@
 //
 // Phase G2 以降で `currentGroupPetsProvider` 等がこの repository 経由に
 // 移行し、`movePetToGroup` も Phase G4 で `sharePet` API に置換される予定。
-// 現段階では既存の挙動を一切壊さない (sync_queue への push は実施しない、
-// すなわち本 repository の書き込みはまだサーバに送られない)。
+//
+// build 44 (Phase G2) 更新: shared scope への書き込みは `sync_queue` に
+// entityType='pet_scope' op を積むようにした。Backend (Phase G3) が受信
+// 対応するまでは reject 'invalid_operation' を食らって queue から落ちる
+// 想定だが、ローカル状態は正常に保たれる。
 //
 // ============================================================================
 
@@ -113,6 +116,7 @@ class PetScopesRepository extends BaseRepository {
               t.deletedAt.isNotNull())
           ..limit(1))
         .getSingleOrNull();
+    final int scopeId;
     if (soft != null) {
       await (db.update(db.petScopes)
             ..where(($PetScopesTable t) => t.id.equals(soft.id)))
@@ -126,21 +130,32 @@ class PetScopesRepository extends BaseRepository {
         lastModifiedAtClient: Value(t),
         syncStatus: const Value(SyncStatus.pending),
       ));
-      return soft.id;
+      scopeId = soft.id;
+    } else {
+      scopeId = await db.into(db.petScopes).insert(PetScopesCompanion.insert(
+            petId: petId,
+            groupId: groupId,
+            permission: permission,
+            isPrimary: Value(isPrimary),
+            sharedAt: sharedAtMsec ?? t,
+            sharedByUserId: Value(sharedByUserId),
+            syncStatus: const Value(SyncStatus.pending),
+            createdAt: t,
+            updatedAt: t,
+            lastModifiedAtClient: Value(t),
+          ));
     }
-    // 新規挿入
-    return db.into(db.petScopes).insert(PetScopesCompanion.insert(
-          petId: petId,
-          groupId: groupId,
-          permission: permission,
-          isPrimary: Value(isPrimary),
-          sharedAt: sharedAtMsec ?? t,
-          sharedByUserId: Value(sharedByUserId),
-          syncStatus: const Value(SyncStatus.pending),
-          createdAt: t,
-          updatedAt: t,
-          lastModifiedAtClient: Value(t),
-        ));
+    // build 44 (Phase G2): shared scope への書き込みは sync_queue に積む。
+    // personal は同期不要なので enqueueSyncIfShared 側でスキップされる。
+    await enqueueSyncIfShared(
+      groupId: groupId,
+      operation: SyncOperation.update,
+      targetTable: 'pet_scopes',
+      recordId: scopeId,
+      payloadJson: '{}',
+      clientTimestamp: t,
+    );
+    return scopeId;
   }
 
   /// 共有解除 (論理削除)。primary scope の解除は本 repository では禁止せず、
@@ -162,6 +177,16 @@ class PetScopesRepository extends BaseRepository {
       lastModifiedAtClient: Value(t),
       syncStatus: const Value(SyncStatus.pending),
     ));
+    if (rows > 0) {
+      await enqueueSyncIfShared(
+        groupId: groupId,
+        operation: SyncOperation.delete,
+        targetTable: 'pet_scopes',
+        recordId: existing.id,
+        payloadJson: '{}',
+        clientTimestamp: t,
+      );
+    }
     return rows > 0;
   }
 
@@ -183,6 +208,16 @@ class PetScopesRepository extends BaseRepository {
       lastModifiedAtClient: Value(t),
       syncStatus: const Value(SyncStatus.pending),
     ));
+    if (rows > 0) {
+      await enqueueSyncIfShared(
+        groupId: groupId,
+        operation: SyncOperation.update,
+        targetTable: 'pet_scopes',
+        recordId: existing.id,
+        payloadJson: '{}',
+        clientTimestamp: t,
+      );
+    }
     return rows > 0;
   }
 }
