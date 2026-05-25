@@ -225,13 +225,17 @@ sync_queue (追記カラム)
 
 ## 3. Backend (petlo-api) API 設計
 
-> **2026-05-26 訂正**: Phase G3-A〜G3-D 完了に伴い、本セクションを実装結果に整合させた。
-> 当初の `pet_scopes` 単独テーブル案 → 実装では既存 `shared_pets` テーブルを拡張する形に変更。
-> 旧案からの主な差分:
-> - **テーブル名**: `pet_scopes` (Flutter ローカル名のまま) → サーバ側は `shared_pets` (既存名活用)
-> - **pet 識別**: server 側は `client_pet_id` (= Flutter の pet ローカル int PK) を保持し、`shared_pets` 経由で server uuid に解決する非対称 ID マッピング採用
+> **2026-05-26 訂正 (改訂 2)**: Phase G3-A〜G3-D 完了に伴い、本セクションを実装結果に整合させた。
+> 実装は**仕様レポート §1 の中間テーブル設計通り**で、`pet_scopes` テーブルをサーバ側に新規 CREATE し、既存 `shared_pets` には DDL 変更を加えない構成 (migration `0004_pet_scopes.sql`)。
+>
+> サーバ側における 2 テーブルの役割分担:
+> - **`shared_pets`** (pre-G3 から存在): `client_pet_id` ↔ `pet_server_id` のマッピング保持。DDL 変更ゼロ
+> - **`pet_scopes`** (G3-A 新設): 仕様 §1 通りの中間テーブル。scope / permission / primary 識別の source of truth
+>
+> 旧 spec 草案からの実装差分:
+> - **pet 識別**: server 側は `client_pet_id` (= Flutter の pet ローカル int PK) を保持し、既存 `shared_pets` 経由で `pet_server_id` に解決する非対称 ID マッピングを採用 (`pet_scopes` 側は `pet_id = pet_server_id` のみ参照)
 > - **クエリ設計**: 主スコープ (Owner 視点) と subscriber スコープで CTE 構造を**非対称**にする (`deleted_at` フィルタの位置を変える)
-> - **認可**: AND 条件案 → 「shared_pets.permission が group_members.permission を上書き」方式に確定
+> - **認可**: AND 条件案 → 「`pet_scopes.permission` が `group_members.permission` を上書き」方式に確定
 
 ### 3.1 既存エンドポイントの変更
 
@@ -249,7 +253,7 @@ sync_queue (追記カラム)
 {
   "pets": [...],          // 互換維持。primary scope の pets を返す
   "records": [...],       // 互換維持。primary scope の records を返す
-  "petScopes": [          // 新規: このグループに共有された shared_pets イベント
+  "petScopes": [          // 新規: このグループに共有された pet_scopes イベント
     {
       "clientScopeId": 12,            // Flutter 側 pet_scopes.id (ローカル int PK)
       "clientPetId": 42,              // Flutter 側 pets.id (ローカル int PK)
@@ -260,7 +264,7 @@ sync_queue (追記カラム)
       "sharedByUserId": "user-uuid",
       "isPrimary": false,
       "deletedAt": null,
-      "payload": {...}                // shared_pets 行の column dump (snake_case)
+      "payload": {...}                // pet_scopes 行の column dump (snake_case)
     }
   ],
   "nextSince": 1234567890
@@ -300,23 +304,17 @@ sync_queue (追記カラム)
 
 #### client int → server uuid 解決ロジック
 
-クライアントは Flutter ローカルの `int` PK (drift autoIncrement) で pet を識別する。サーバは UUID。両者をつなぐのが `shared_pets` テーブル:
+クライアントは Flutter ローカルの `int` PK (drift autoIncrement) で pet を識別する。サーバは UUID。両者をつなぐのは **pre-G3 から既存の `shared_pets` テーブル** (G3 で DDL 変更なし、本来の用途で引き続き使用):
 
 ```
-shared_pets
+shared_pets  (pre-G3 から存在、G3-A で DDL 変更なし)
 ─────────────────────────────────────
   id              TEXT PK            -- server-generated UUID
   pet_server_id   TEXT NOT NULL      -- pets(id), サーバ UUID
   client_pet_id   INTEGER NOT NULL   -- ★ Flutter 側の pet ローカル PK
   client_user_id  TEXT NOT NULL      -- アップロードしたユーザー (誰の client_pet_id か)
-  group_id        TEXT NOT NULL
-  permission      TEXT NOT NULL
-  is_primary      INTEGER NOT NULL DEFAULT 0
-  shared_at       INTEGER NOT NULL
-  shared_by       TEXT
-  deleted_at      INTEGER
-  created_at      INTEGER NOT NULL
-  updated_at      INTEGER NOT NULL
+  group_id        TEXT NOT NULL      -- アップロード時の所属 group (rev5.3 時代の意味)
+  created_at, updated_at, ...
   UNIQUE (client_user_id, client_pet_id, group_id)   -- ユーザー毎に client_pet_id がユニーク
 ```
 
@@ -325,49 +323,77 @@ push 受信時の解決手順 (G3-B 実装):
 2. 既存があれば `pet_server_id` を取得
 3. なければ「未知の pet → reject `pet_not_found`」(既存ハンドラ通り `_bumpAttempts` で retry 待機)
 
+> **重要**: scope / permission の semantics は `shared_pets` ではなく **新設の `pet_scopes` テーブル** (§3.4) が持つ。`shared_pets` は引き続き client_pet_id ↔ pet_server_id の橋渡しに専念する役割分担。
+
 ### 3.2 新規エンドポイント (G3-D 実装済)
 
 | Method | Path | 用途 | 備考 |
 |---|---|---|---|
-| `POST` | `/pets/{petServerId}/shares` | ペットを別グループに共有 (新 shared_pets 行作成) | body に target group_id + permission |
-| `DELETE` | `/pets/{petServerId}/shares/{groupId}` | 共有解除 (deleted_at セット) | primary scope の削除は 409 |
+| `POST` | `/pets/{petServerId}/shares` | ペットを別グループに共有 (新 pet_scopes 行作成) | body に target group_id + permission |
+| `DELETE` | `/pets/{petServerId}/shares/{groupId}` | 共有解除 (pet_scopes.deleted_at セット) | primary scope の削除は 409 |
 | `PATCH` | `/pets/{petServerId}/shares/{groupId}` | per-pet 権限変更 | body: `{"permission":"viewer"}` |
 | `GET` | `/pets/{petServerId}/shares` | 共有状況一覧 (UI 表示用) | 認証ユーザーが scope に含まれる場合のみ 200 |
 
-`/sync/push` 経由の `pet_scope` op と REST endpoint は最終的に**同じ shared_pets 行**を作成する。UI 側は「即時応答が欲しいフロー」(共有先選択モーダル等) で REST を使う。
+`/sync/push` 経由の `pet_scope` op と REST endpoint は最終的に**同じ pet_scopes 行**を作成する。UI 側は「即時応答が欲しいフロー」(共有先選択モーダル等) で REST を使う。
 
 ### 3.3 認可ロジック (G3-D 実装済)
 
-**確定**: per-(pet, group) の細粒度権限を `shared_pets.permission` で表現し、`group_members.permission` を**上書き**する (Decision Log #4)。
+**確定**: per-(pet, group) の細粒度権限を `pet_scopes.permission` で表現し、`group_members.permission` を**上書き**する (Decision Log #4)。
 
 評価順序:
 1. ユーザーが対象 group のメンバーか? (`group_members` に行がある)
-2. yes なら `shared_pets WHERE pet_server_id=? AND group_id=? AND deleted_at IS NULL` を引く
-3. shared_pets 行があれば `shared_pets.permission` を採用 (上書き)
-4. shared_pets 行がなければ → そもそも pet がこの group から見えない → 403 / 404
+2. yes なら `pet_scopes WHERE pet_id=? AND group_id=? AND deleted_at IS NULL` を引く
+3. pet_scopes 行があれば `pet_scopes.permission` を採用 (上書き)
+4. pet_scopes 行がなければ → そもそも pet がこの group から見えない → 403 / 404
 
 「Pro チェック」は **自然な gate** で実現: 無料ユーザーは group 作成自体ができない (既存 `/groups POST` で Pro チェック) ため、`/pets/{id}/shares` を叩こうにも target group がそもそも存在しない (= 自然に共有不可)。専用 Pro check を追加せず、既存ゲートを再利用する。Decision Log #5 の "1 グループまで無料" は **クライアント側 UI で表示制御**するのみ。
 
 ### 3.4 D1 schema (G3-A 実装済)
 
-新規テーブル**を追加せず、既存 `shared_pets` を拡張**した:
+**仕様レポート §1 の中間テーブル設計通り、新規 `pet_scopes` テーブルを CREATE** した (migration `0004_pet_scopes.sql`)。既存 `shared_pets` テーブルには**DDL 変更を加えていない** (client_pet_id ↔ pet_server_id マッピングの本来の用途で引き続き使用)。
 
 ```sql
--- 既存 shared_pets に追加されたカラム (G3-A migration)
-ALTER TABLE shared_pets ADD COLUMN permission TEXT NOT NULL DEFAULT 'owner'
-  CHECK (permission IN ('owner','editor','viewer'));
-ALTER TABLE shared_pets ADD COLUMN is_primary INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE shared_pets ADD COLUMN shared_at INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE shared_pets ADD COLUMN shared_by TEXT;
-ALTER TABLE shared_pets ADD COLUMN deleted_at INTEGER;
+-- migrations/0004_pet_scopes.sql (G3-A)
+CREATE TABLE IF NOT EXISTS pet_scopes (
+  id              TEXT PRIMARY KEY,        -- server-generated UUID
+  pet_id          TEXT NOT NULL,           -- = pets.id (server UUID)
+  group_id        TEXT NOT NULL,           -- = groups.id
+  permission      TEXT NOT NULL CHECK (permission IN ('owner','editor','viewer')),
+  is_primary      INTEGER NOT NULL DEFAULT 0,
+  shared_at       INTEGER NOT NULL,
+  shared_by_user_id TEXT,                  -- = users.id (誰が共有したか)
+  deleted_at      INTEGER,
+  created_at      INTEGER NOT NULL,
+  updated_at      INTEGER NOT NULL,
+  UNIQUE (pet_id, group_id),               -- 同 (pet, group) の二重共有禁止
+  FOREIGN KEY (pet_id)   REFERENCES pets(id),
+  FOREIGN KEY (group_id) REFERENCES groups(id)
+);
 
--- インデックス (subscriber view + fanout 用)
-CREATE INDEX idx_shared_pets_group_deleted ON shared_pets (group_id, deleted_at);
-CREATE INDEX idx_shared_pets_pet_deleted   ON shared_pets (pet_server_id, deleted_at);
-CREATE INDEX idx_shared_pets_client        ON shared_pets (client_user_id, client_pet_id);
+CREATE INDEX idx_pet_scopes_group   ON pet_scopes (group_id, deleted_at);
+CREATE INDEX idx_pet_scopes_pet     ON pet_scopes (pet_id, deleted_at);
+CREATE INDEX idx_pet_scopes_primary ON pet_scopes (pet_id, is_primary);
 ```
 
-**backfill**: 既存 `shared_pets` 行 (rev5.3 時代から存在する旧形式) には `permission='owner', is_primary=1, shared_at=created_at` を流し込む。これで旧来の「1 ペット = 1 group」運用を Owner-only として表現できる。
+**backfill** (同 migration 内):
+既存 `shared_pets` 行 (rev5.3 時代の「1 ペット = 1 group」運用の名残) を 1:1 で `pet_scopes` へ流し込む:
+```sql
+INSERT INTO pet_scopes
+  (id, pet_id, group_id, permission, is_primary, shared_at,
+   shared_by_user_id, created_at, updated_at)
+SELECT
+  hex(randomblob(16)),   -- 新 UUID
+  sp.pet_server_id,
+  sp.group_id,
+  'owner',               -- 既存共有はみな Owner だった
+  1,                     -- 全て primary 扱い (multi-scope 化以前)
+  sp.created_at,         -- shared_at = 元の作成時刻
+  sp.client_user_id,     -- 共有者 = upload した本人
+  sp.created_at,
+  sp.updated_at
+FROM shared_pets sp;
+```
+backfill 後、Owner-only / single-scope の旧来挙動が `pet_scopes` 1 行ずつで表現される (= クライアント側 G1 backfill と完全に対称)。
 
 #### 主スコープ / subscriber スコープの CTE 非対称設計
 
@@ -387,7 +413,7 @@ WHERE pet_id IN (SELECT id FROM visible_pets)
 
 -- (G3-C 実装) subscriber スコープ向け records 取得 (非対称)
 WITH visible_pets AS (
-  SELECT pet_server_id AS id FROM shared_pets
+  SELECT pet_id AS id FROM pet_scopes
   WHERE group_id = ?
     AND deleted_at IS NULL         -- ★ subscriber は削除済み scope を見ない
 )
@@ -575,10 +601,10 @@ WHERE pet_id IN (SELECT id FROM visible_pets)
 
 ### ✅ Phase G3-A〜G3-D: Backend API 改修 (petlo-api セッション, 完了)
 別リポジトリ (`petlo-api`) で並走実装。Worker Version ID は本リポジトリでは追跡せず、petlo-api 側の commit log を参照する (本 doc では実装事実のみ記録)。
-- [G3-A] D1 schema 拡張: 既存 `shared_pets` テーブルに `permission` / `is_primary` / `shared_at` / `shared_by` / `deleted_at` カラムを追加 + 3 インデックス ✅
-- [G3-B] `/sync/push` `pet_scope` op 受信 + client int → server uuid 解決 + server-side fanout ✅
+- [G3-A] D1 schema: 仕様 §1 通り `pet_scopes` テーブルを新規 CREATE (`migrations/0004_pet_scopes.sql`) + インデックス 3 本 (`idx_pet_scopes_group` / `_pet` / `_primary`) + `UNIQUE(pet_id, group_id)` + 既存 `shared_pets` を 1:1 で primary scope として backfill。既存 `shared_pets` には DDL 変更ゼロ ✅
+- [G3-B] `/sync/push` `pet_scope` op 受信 + client int → server uuid 解決 (既存 `shared_pets` 経由) + server-side fanout ✅
 - [G3-C] `/sync/pull` `petScopes` フィールド emit + **主スコープ/subscriber 非対称 CTE 設計** (§3.4 参照) ✅
-- [G3-D] 新規 REST endpoint 4 本 (`POST/DELETE/PATCH/GET /pets/{petServerId}/shares`) + 認可ロジック (`shared_pets.permission` が `group_members.permission` を上書き) ✅
+- [G3-D] 新規 REST endpoint 4 本 (`POST/DELETE/PATCH/GET /pets/{petServerId}/shares`) + 認可ロジック (`pet_scopes.permission` が `group_members.permission` を上書き) ✅
 - **完了基準**: backend test で multi-scope shared pet が複数 group の `/sync/pull` で見える → ✅
 
 ### ⏸ Phase G3-E: schedules の Hybrid 対応 → **v1.1 送り**
@@ -730,7 +756,7 @@ petlo の現状コードは pet × group の N:M 化を想定して書かれて�
 |---|---|---|---|
 | G1 | build 43 (Flutter) | drift `pet_scopes` テーブル + migration v5→v6 + backfill + `PetScopesRepository` + 13 tests | 既存ユーザー視点で挙動変化なし |
 | G2 | build 44 (Flutter) | read 経路 multi-scope JOIN 化 + sync engine 'pet_scope' op + LWW + 15 new tests | UI 表面化はまだ |
-| G3-A | petlo-api セッション | D1 `shared_pets` カラム追加 + インデックス + backfill | Worker Version ID は petlo-api 側 commit log |
+| G3-A | petlo-api セッション (Worker `e28cee6b...`) | D1 `pet_scopes` テーブル新規 CREATE (仕様 §1 通り) + インデックス 3 本 + UNIQUE + 既存 `shared_pets` から 1:1 primary scope backfill。`shared_pets` 自体は DDL 変更なし | `migrations/0004_pet_scopes.sql` |
 | G3-B | petlo-api セッション | `/sync/push` `pet_scope` 受信 + client int → server uuid 解決 + fanout | 同上 |
 | G3-C | petlo-api セッション | `/sync/pull` `petScopes` emit + **非対称 CTE 設計** (Decision Log #8) | 同上 |
 | G3-D | petlo-api セッション | 新規 REST 4 本 (`POST/DELETE/PATCH/GET /pets/{id}/shares`) + 認可 (Decision Log #4 を確定実装) | 同上 |
