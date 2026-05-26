@@ -10,7 +10,7 @@
 @Tags(<String>['needs_codegen'])
 library;
 
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show QueryRow, Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:petlo/data/local/app_database.dart';
@@ -71,7 +71,7 @@ void main() {
         final List<SyncQueueItemEntity> queue =
             await db.select(db.syncQueue).get();
         expect(queue.length, 1);
-        expect(queue.first.tableName, 'pets');
+        expect(queue.first.targetTable, 'pets');
         expect(queue.first.recordId, petId);
         expect(queue.first.operation, SyncOperation.insert);
       });
@@ -258,6 +258,195 @@ void main() {
         final List<PetEntity> active =
             await repo.watchActivePetsInScope('personal').first;
         expect(active.where((PetEntity p) => p.id == petId), isEmpty);
+      });
+
+      // build 47 (Scope A2): pet を softDelete すると紐づく子レコードも
+      // まとめて論理削除されること。13 テーブルすべてを毎回検査するのは
+      // 重いので、各タイプの代表 (meals=ジャーナル系、weights=計測系、
+      // medication_reminders=リマインダー系) で確認する。
+      test('cascade soft delete: child rows in petBoundTables get deletedAt',
+          () async {
+        final int petId = await repo.createPet(
+          groupId: 'personal',
+          name: 'Doomed2',
+          type: PetType.dog,
+          breed: 'b',
+          sex: PetSex.male,
+        );
+
+        final int t = DateTime.now().toUtc().millisecondsSinceEpoch;
+        // meals (notes ありで識別しやすく)
+        await db.customStatement(
+          'INSERT INTO meals (pet_id, group_id, appetite, eaten_at, '
+          'sync_status, created_at, updated_at) '
+          'VALUES (?, ?, ?, ?, ?, ?, ?)',
+          <Object?>[petId, 'personal', 'good', t, 'synced', t, t],
+        );
+        // weights
+        await db.customStatement(
+          'INSERT INTO weights (pet_id, group_id, weight_g, measured_at, '
+          'sync_status, created_at, updated_at) '
+          'VALUES (?, ?, ?, ?, ?, ?, ?)',
+          <Object?>[petId, 'personal', 5000, t, 'synced', t, t],
+        );
+        // medication_reminders
+        await db.customStatement(
+          'INSERT INTO medication_reminders '
+          '(pet_id, group_id, medicine_name, times, weekdays_bits, '
+          'enabled, sync_status, created_at, updated_at) '
+          'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          <Object?>[petId, 'personal', 'Antibiotics', '["08:00"]', 0, 1,
+              'synced', t, t],
+        );
+
+        await repo.softDeletePet(petId);
+
+        for (final String table in <String>[
+          'meals',
+          'weights',
+          'medication_reminders'
+        ]) {
+          final List<QueryRow> rows = await db
+              .customSelect(
+                'SELECT deleted_at FROM $table WHERE pet_id = ?',
+                variables: <Variable<Object>>[Variable<int>(petId)],
+              )
+              .get();
+          expect(rows.length, 1, reason: 'expected one row in $table');
+          expect(
+            rows.first.read<int?>('deleted_at'),
+            isNotNull,
+            reason: 'cascade should set deleted_at on $table',
+          );
+        }
+      });
+
+      test('cascade respects already-deleted children (no double-set)',
+          () async {
+        final int petId = await repo.createPet(
+          groupId: 'personal',
+          name: 'Doomed3',
+          type: PetType.dog,
+          breed: 'b',
+          sex: PetSex.male,
+        );
+        final int t = DateTime.now().toUtc().millisecondsSinceEpoch;
+        // 既に deleted_at が立っている meal
+        const int existingDeletedAt = 12345;
+        await db.customStatement(
+          'INSERT INTO meals (pet_id, group_id, appetite, eaten_at, '
+          'sync_status, created_at, updated_at, deleted_at) '
+          'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          <Object?>[petId, 'personal', 'good', t, 'synced', t, t,
+              existingDeletedAt],
+        );
+
+        await repo.softDeletePet(petId);
+
+        final List<QueryRow> rows = await db
+            .customSelect(
+              'SELECT deleted_at FROM meals WHERE pet_id = ?',
+              variables: <Variable<Object>>[Variable<int>(petId)],
+            )
+            .get();
+        expect(rows.first.read<int>('deleted_at'), existingDeletedAt,
+            reason: 'pre-existing deleted_at should not be overwritten');
+      });
+
+      test('shared scope: enqueues delete ops for pet + each affected child',
+          () async {
+        const String groupId = 'group-uuid-cascade';
+        final int petId = await repo.createPet(
+          groupId: groupId,
+          name: 'Doomed4',
+          type: PetType.dog,
+          breed: 'b',
+          sex: PetSex.male,
+        );
+        final int t = DateTime.now().toUtc().millisecondsSinceEpoch;
+        // 子: meals 2件 + weights 1件 = pet (1) + children (3) = 4 件
+        for (int i = 0; i < 2; i++) {
+          await db.customStatement(
+            'INSERT INTO meals (pet_id, group_id, appetite, eaten_at, '
+            'sync_status, created_at, updated_at) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?)',
+            <Object?>[petId, groupId, 'good', t, 'synced', t, t],
+          );
+        }
+        await db.customStatement(
+          'INSERT INTO weights (pet_id, group_id, weight_g, measured_at, '
+          'sync_status, created_at, updated_at) '
+          'VALUES (?, ?, ?, ?, ?, ?, ?)',
+          <Object?>[petId, groupId, 5000, t, 'synced', t, t],
+        );
+
+        // create の insert を除いて削除前の sync_queue を空に
+        await db.customStatement('DELETE FROM sync_queue');
+
+        await repo.softDeletePet(petId);
+
+        final List<SyncQueueItemEntity> queue =
+            await db.select(db.syncQueue).get();
+
+        // 1 (pet) + 2 (meals) + 1 (weights) = 4 件
+        expect(queue.length, 4);
+        expect(
+          queue.where((SyncQueueItemEntity q) =>
+              q.operation == SyncOperation.delete).length,
+          4,
+        );
+        expect(
+          queue.where((SyncQueueItemEntity q) =>
+              q.targetTable == 'pets').length,
+          1,
+        );
+        expect(
+          queue.where((SyncQueueItemEntity q) =>
+              q.targetTable == 'meals').length,
+          2,
+        );
+        expect(
+          queue.where((SyncQueueItemEntity q) =>
+              q.targetTable == 'weights').length,
+          1,
+        );
+      });
+
+      test('markAsParted does NOT touch child rows', () async {
+        final int petId = await repo.createPet(
+          groupId: 'personal',
+          name: 'Memorial',
+          type: PetType.dog,
+          breed: 'b',
+          sex: PetSex.male,
+        );
+        final int t = DateTime.now().toUtc().millisecondsSinceEpoch;
+        await db.customStatement(
+          'INSERT INTO meals (pet_id, group_id, appetite, eaten_at, '
+          'sync_status, created_at, updated_at) '
+          'VALUES (?, ?, ?, ?, ?, ?, ?)',
+          <Object?>[petId, 'personal', 'good', t, 'synced', t, t],
+        );
+
+        await repo.markAsParted(
+          petId: petId,
+          partedAtMsec: t,
+          notify: MemorialNotifyFrequency.yearly,
+        );
+
+        // 子レコードはそのまま (お別れは記録を宝物として残す哲学)
+        final List<QueryRow> rows = await db
+            .customSelect(
+              'SELECT deleted_at FROM meals WHERE pet_id = ?',
+              variables: <Variable<Object>>[Variable<int>(petId)],
+            )
+            .get();
+        expect(rows.first.read<int?>('deleted_at'), isNull);
+
+        // pet 本体は parted_at + memorial_notify が立つ
+        final PetEntity? pet = await repo.getPet(petId);
+        expect(pet!.partedAt, t);
+        expect(pet.memorialNotify, MemorialNotifyFrequency.yearly);
       });
     });
 

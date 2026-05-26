@@ -37,6 +37,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/logger.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_label.dart';
@@ -44,9 +45,11 @@ import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
 import '../../../data/repositories/pets_repository.dart';
 import '../../providers/groups_providers.dart';
+import '../../providers/pet_scopes_providers.dart';
 import '../../providers/pets_providers.dart';
 import '../../providers/scope_providers.dart';
 import '../../widgets/dialogs/duplicate_name_dialog.dart';
+import '../groups/pet_share_picker.dart';
 import '../../widgets/forms/date_field.dart';
 import '../../widgets/forms/editorial_text_field.dart';
 import '../../widgets/forms/pet_photo_picker.dart';
@@ -223,11 +226,14 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
                   emergencyPhoneC: _emergencyPhoneC,
                   emergencyAddressC: _emergencyAddressC,
                 ),
-                // build 20: 編集時のみスコープ移動 UI を出す。
+                // build 20: 編集時のみスコープ管理 UI を出す。
+                // build 46 (Phase G4b): 「移動」モデルから「共有先一覧」モデルに転換。
+                // 旧 _ScopeMoverSection の代わりに _PetScopesSection を表示する。
                 if (s.isEditing && widget.editingPetId != null) ...<Widget>[
                   const SizedBox(height: AppDimensions.paddingSection),
-                  const SectionLabel('Sharing scope'),
-                  _ScopeMoverSection(petId: widget.editingPetId!),
+                  SectionLabel(
+                      AppLocalizations.of(context).pet_share_section_title),
+                  _PetScopesSection(petId: widget.editingPetId!),
                 ],
               ] else
                 _DetailsExpandHint(
@@ -243,6 +249,13 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
                     : (s.isEditing ? l10n.common_update : l10n.common_save),
                 onPressed: s.isSubmitting ? null : () => _onSave(controller),
               ),
+
+              // build 47 (Scope A1): 編集時のみ「お別れ」「完全削除」を表示。
+              // 新規ペット作成画面では出さない (まだ保存していないので意味がない)。
+              if (s.isEditing && widget.editingPetId != null) ...<Widget>[
+                const SizedBox(height: AppDimensions.paddingSection * 2),
+                _PetLifecycleSection(petId: widget.editingPetId!),
+              ],
             ],
           ),
         ),
@@ -734,256 +747,556 @@ int? _kgStringToG(String s) {
 }
 
 // ============================================================================
-// _ScopeMoverSection (build 20) — ペットを personal / 任意グループ間で移動
+// _PetScopesSection (Phase G4b, build 46)
 // ============================================================================
-class _ScopeMoverSection extends ConsumerStatefulWidget {
-  const _ScopeMoverSection({required this.petId});
+//
+// 旧 _ScopeMoverSection (build 20-45) を multi-scope 共有先一覧に転換。
+// pet の現在の共有先 (pet_scopes 経由) を縦リストで表示し、
+//   - primary scope は `Primary` バッジ + 操作不可
+//   - 非 primary scope は permission ラベル + 「共有を解除」アクション
+//   - 0 件なら hint テキスト
+// その下に「共有を追加 / 編集」ボタン → PetSharePicker.showForPet を開く。
+//
+// ============================================================================
+class _PetScopesSection extends ConsumerWidget {
+  const _PetScopesSection({required this.petId});
 
   final int petId;
 
-  @override
-  ConsumerState<_ScopeMoverSection> createState() => _ScopeMoverSectionState();
-}
+  String _permissionLabel(MemberPermission p, AppLocalizations l10n) {
+    switch (p) {
+      case MemberPermission.owner:
+        return l10n.pet_share_permission_owner;
+      case MemberPermission.editor:
+        return l10n.pet_share_permission_editor;
+      case MemberPermission.viewer:
+        return l10n.pet_share_permission_viewer;
+    }
+  }
 
-class _ScopeMoverSectionState extends ConsumerState<_ScopeMoverSection> {
-  bool _isMoving = false;
+  String _groupLabel(
+    PetScopeEntity scope,
+    List<GroupEntity> groups,
+  ) {
+    if (scope.groupId == kPersonalGroupId) return 'Personal';
+    for (final GroupEntity g in groups) {
+      if (g.remoteId == scope.groupId) return g.name;
+    }
+    return scope.groupId;
+  }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final AsyncValue<List<PetScopeEntity>> scopesAsync =
+        ref.watch(petScopesForPetProvider(petId));
+    final AsyncValue<List<GroupEntity>> groupsAsync =
+        ref.watch(userGroupsProvider);
 
-    final AsyncValue<PetEntity?> petAsync = ref.watch(
-      _scopedPetProvider(widget.petId),
-    );
-    final AsyncValue<List<GroupEntity>> groups = ref.watch(userGroupsProvider);
-
-    return petAsync.when(
+    return scopesAsync.when(
       loading: () => const SizedBox(height: 48),
       error: (Object e, _) => Padding(
         padding: const EdgeInsets.only(top: 8),
         child: Text(
-          AppLocalizations.of(context).pet_form_scope_load_error(e.toString()),
+          l10n.pet_form_scope_load_error(e.toString()),
           style: typo.bodySmall.copyWith(color: colors.accentDanger),
         ),
       ),
-      data: (PetEntity? pet) {
-        if (pet == null) return const SizedBox.shrink();
-        final AppLocalizations l10n = AppLocalizations.of(context);
-        final String currentGid = pet.groupId;
-        final List<GroupEntity> groupList = groups.maybeWhen(
-          data: (List<GroupEntity> v) => v,
+      data: (List<PetScopeEntity> scopes) {
+        final List<GroupEntity> groups = groupsAsync.maybeWhen(
+          data: (List<GroupEntity> g) => g,
           orElse: () => const <GroupEntity>[],
         );
+        final List<PetScopeEntity> live = scopes
+            .where((PetScopeEntity s) => s.deletedAt == null)
+            .toList();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             const SizedBox(height: 8),
-            Text(
-              currentGid == kPersonalGroupId
-                  ? l10n.pet_form_scope_current_personal
-                  : l10n.pet_form_scope_current_group(
-                      _groupName(groupList, currentGid)),
-              style: typo.bodySmall
-                  .copyWith(color: colors.fgMuted, height: 1.5),
-            ),
-            const SizedBox(height: 12),
-            // Personal 行
-            _ScopeRow(
-              label: 'Personal',
-              note: l10n.pet_form_scope_personal_note,
-              isCurrent: currentGid == kPersonalGroupId,
-              enabled: !_isMoving && currentGid != kPersonalGroupId,
-              onTap: () => _moveTo(context, pet, kPersonalGroupId, 'Personal'),
-              colors: colors,
-              typo: typo,
-            ),
-            for (final GroupEntity g in groupList)
-              _ScopeRow(
-                label: g.name,
-                note: l10n.pet_form_scope_group_note,
-                isCurrent: currentGid == g.remoteId,
-                enabled: !_isMoving && currentGid != g.remoteId,
-                onTap: () => _moveTo(context, pet, g.remoteId, g.name),
-                colors: colors,
-                typo: typo,
-              ),
-            if (_isMoving)
-              const Padding(
-                padding: EdgeInsets.only(top: 16),
-                child: Center(
-                  child: SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 1.5),
-                  ),
+            if (live.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  l10n.pet_share_section_hint_empty,
+                  style: typo.bodySmall
+                      .copyWith(color: colors.fgMuted, height: 1.5),
                 ),
-              ),
-            const SizedBox(height: 4),
-            Text(
-              l10n.pet_form_scope_move_note,
-              style: typo.bodySmall.copyWith(color: colors.fgFaint, height: 1.5),
+              )
+            else
+              for (final PetScopeEntity s in live)
+                _ScopeListRow(
+                  petId: petId,
+                  scope: s,
+                  groupLabel: _groupLabel(s, groups),
+                  permissionLabel: _permissionLabel(s.permission, l10n),
+                  colors: colors,
+                  typo: typo,
+                  l10n: l10n,
+                ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () => PetSharePicker.showForPet(context, petId),
+              child: Text(l10n.pet_share_add_action),
             ),
           ],
         );
       },
     );
   }
+}
 
-  String _groupName(List<GroupEntity> list, String gid) {
-    for (final GroupEntity g in list) {
-      if (g.remoteId == gid) return g.name;
-    }
-    return gid; // fallback
-  }
+class _ScopeListRow extends ConsumerStatefulWidget {
+  const _ScopeListRow({
+    required this.petId,
+    required this.scope,
+    required this.groupLabel,
+    required this.permissionLabel,
+    required this.colors,
+    required this.typo,
+    required this.l10n,
+  });
 
-  Future<void> _moveTo(
-    BuildContext context,
-    PetEntity pet,
-    String targetGid,
-    String label,
-  ) async {
-    final AppLocalizations l10n = AppLocalizations.of(context);
-    final bool isToPersonal = targetGid == kPersonalGroupId;
-    final String title = isToPersonal
-        ? l10n.pet_form_scope_move_to_personal_title
-        : l10n.pet_form_scope_move_to_group_title(label);
-    final String body = isToPersonal
-        ? l10n.pet_form_scope_move_to_personal_body(pet.name)
-        : l10n.pet_form_scope_move_to_group_body(pet.name, label);
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(title),
-        content: Text(body),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l10n.common_cancel),
+  final int petId;
+  final PetScopeEntity scope;
+  final String groupLabel;
+  final String permissionLabel;
+  final AppColors colors;
+  final AppTypography typo;
+  final AppLocalizations l10n;
+
+  @override
+  ConsumerState<_ScopeListRow> createState() => _ScopeListRowState();
+}
+
+class _ScopeListRowState extends ConsumerState<_ScopeListRow> {
+  bool _busy = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isPrimary = widget.scope.isPrimary;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: widget.colors.line)),
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Flexible(
+                      child: Text(
+                        widget.groupLabel,
+                        style: widget.typo.bodyLarge
+                            .copyWith(color: widget.colors.fg),
+                      ),
+                    ),
+                    if (isPrimary) ...<Widget>[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                              color: widget.colors.fgMuted, width: 1),
+                        ),
+                        child: Text(
+                          widget.l10n.pet_share_primary_badge.toUpperCase(),
+                          style: TextStyle(
+                            fontFamily: 'JetBrainsMono',
+                            fontSize: 8,
+                            letterSpacing: 8 * 0.18,
+                            color: widget.colors.fgMuted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  widget.permissionLabel,
+                  style: widget.typo.bodySmall.copyWith(
+                      color: widget.colors.fgMuted, height: 1.5),
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(isToPersonal
-                ? l10n.pet_form_scope_action_unshare
-                : l10n.pet_form_scope_action_share),
-          ),
+          if (!isPrimary)
+            TextButton(
+              onPressed: _busy ? null : _confirmUnshare,
+              child: Text(widget.l10n.pet_share_unshare_action),
+            ),
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
+  }
 
-    setState(() => _isMoving = true);
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+  Future<void> _confirmUnshare() async {
+    final PetEntity? pet =
+        await ref.read(petsRepositoryProvider).getPet(widget.petId);
+    if (!mounted) return;
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        final AppLocalizations dl10n = AppLocalizations.of(dialogContext);
+        return AlertDialog(
+          title: Text(dl10n.pet_share_unshare_confirm_title),
+          content: Text(
+            dl10n.pet_share_unshare_confirm_body(
+              pet?.name ?? '',
+              widget.groupLabel,
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(dl10n.common_cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(dl10n.pet_share_unshare_action),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _busy = true);
     try {
-      // ignore: deprecated_member_use_from_same_package
-      // build 45: G4b で _ScopeMoverSection を「共有先一覧」セクションに転換
-      // する際、本呼び出しは addPetScope / removePetScope に置換予定。
-      final int n = await ref
-          .read(petsRepositoryProvider)
-          .movePetToGroup(pet.id, targetGid);
-      if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(isToPersonal
-              ? l10n.pet_form_scope_move_to_personal_success(pet.name, n)
-              : l10n.pet_form_scope_move_to_group_success(pet.name, label, n)),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content:
-              Text(l10n.pet_form_scope_move_failed(e.toString())),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      await ref.read(petScopesRepositoryProvider).removePetScope(
+            petId: widget.petId,
+            groupId: widget.scope.groupId,
+          );
+    } catch (e, st) {
+      PetloLogger.instance
+          .w('removePetScope failed', error: e, stackTrace: st);
     } finally {
-      if (mounted) setState(() => _isMoving = false);
+      if (mounted) setState(() => _busy = false);
     }
   }
 }
 
-/// このペットの最新状態だけを watch する provider。
-/// (currentPetProvider は「現在選択中のペット」を返すので、編集対象が
-///  current でない場合や、移動直後の自動切替などを起こさないよう専用に分ける)
-final StreamProviderFamily<PetEntity?, int> _scopedPetProvider =
-    StreamProvider.family<PetEntity?, int>(
-  (Ref ref, int petId) {
-    final PetsRepository repo = ref.watch(petsRepositoryProvider);
-    return repo.watchPet(petId);
-  },
-);
+// ============================================================================
+// _PetLifecycleSection (build 47, Scope A1)
+// ============================================================================
+//
+// 編集モードのフォーム末尾に表示する「お別れ」「完全削除」アクションエリア。
+// build 47 まで UI から到達できなかった markAsParted / softDeletePet を
+// ユーザに開放する。
+//
+// お別れ (markAsParted): 記録はそのまま残し、命日通知を設定する。
+// 完全削除 (softDeletePet): ペット + 紐づく全子レコードを論理削除。
+//   30 日以内なら復元可能 (復元 UI は v1.1+ で実装予定)。
+//
+// ============================================================================
+class _PetLifecycleSection extends ConsumerWidget {
+  const _PetLifecycleSection({required this.petId});
 
-class _ScopeRow extends StatelessWidget {
-  const _ScopeRow({
+  final int petId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final AppColors colors = AppColors.of(context);
+    final AppTypography typo = AppTypography.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SectionLabel(l10n.pet_form_lifecycle_section),
+        const SizedBox(height: 16),
+
+        // お別れ
+        _LifecycleButton(
+          label: l10n.pet_action_part,
+          hint: l10n.pet_action_part_hint,
+          onPressed: () => _openPartDialog(context, ref),
+          colors: colors,
+          typo: typo,
+          destructive: false,
+        ),
+        const SizedBox(height: 16),
+
+        // 完全削除
+        _LifecycleButton(
+          label: l10n.pet_action_delete,
+          hint: l10n.pet_action_delete_hint,
+          onPressed: () => _openDeleteDialog(context, ref),
+          colors: colors,
+          typo: typo,
+          destructive: true,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _openPartDialog(BuildContext context, WidgetRef ref) async {
+    final PetEntity? pet =
+        await ref.read(petsRepositoryProvider).getPet(petId);
+    if (!context.mounted) return;
+    if (pet == null) return;
+
+    final ({int partedAtMsec, MemorialNotifyFrequency notify})? result =
+        await showDialog<({int partedAtMsec, MemorialNotifyFrequency notify})>(
+      context: context,
+      builder: (BuildContext dialogContext) =>
+          _PartDialog(petName: pet.name),
+    );
+    if (result == null || !context.mounted) return;
+
+    try {
+      await ref.read(petsRepositoryProvider).markAsParted(
+            petId: petId,
+            partedAtMsec: result.partedAtMsec,
+            notify: result.notify,
+          );
+      if (!context.mounted) return;
+      final AppLocalizations l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.pet_part_success_snack(pet.name)),
+        ),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e, st) {
+      PetloLogger.instance
+          .w('markAsParted failed', error: e, stackTrace: st);
+      if (!context.mounted) return;
+      final AppLocalizations l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.pet_part_failed(e.toString()))),
+      );
+    }
+  }
+
+  Future<void> _openDeleteDialog(BuildContext context, WidgetRef ref) async {
+    final PetEntity? pet =
+        await ref.read(petsRepositoryProvider).getPet(petId);
+    if (!context.mounted) return;
+    if (pet == null) return;
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        final AppLocalizations dl10n = AppLocalizations.of(dialogContext);
+        final AppColors colors = AppColors.of(dialogContext);
+        return AlertDialog(
+          title: Text(dl10n.pet_delete_confirm_title),
+          content: Text(dl10n.pet_delete_confirm_body(pet.name)),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(dl10n.common_cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: TextButton.styleFrom(foregroundColor: colors.accentDanger),
+              child: Text(dl10n.pet_delete_action_confirm),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await ref.read(petsRepositoryProvider).softDeletePet(petId);
+      if (!context.mounted) return;
+      final AppLocalizations l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.pet_delete_success_snack(pet.name))),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e, st) {
+      PetloLogger.instance
+          .w('softDeletePet failed', error: e, stackTrace: st);
+      if (!context.mounted) return;
+      final AppLocalizations l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.pet_delete_failed(e.toString()))),
+      );
+    }
+  }
+}
+
+class _LifecycleButton extends StatelessWidget {
+  const _LifecycleButton({
     required this.label,
-    required this.note,
-    required this.isCurrent,
-    required this.enabled,
-    required this.onTap,
+    required this.hint,
+    required this.onPressed,
     required this.colors,
     required this.typo,
+    required this.destructive,
   });
 
   final String label;
-  final String note;
-  final bool isCurrent;
-  final bool enabled;
-  final VoidCallback onTap;
+  final String hint;
+  final VoidCallback onPressed;
   final AppColors colors;
   final AppTypography typo;
+  final bool destructive;
 
   @override
   Widget build(BuildContext context) {
-    final Color titleColor = enabled ? colors.fg : colors.fgFaint;
+    final Color fg = destructive ? colors.accentDanger : colors.fg;
     return InkWell(
-      onTap: enabled ? onTap : null,
+      onTap: onPressed,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: colors.line)),
+          border: Border.all(color: fg, width: 1),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        label,
-                        style: typo.bodyLarge.copyWith(color: titleColor),
-                      ),
-                      if (isCurrent) ...<Widget>[
-                        const SizedBox(width: 8),
-                        Text(
-                          'CURRENT',
-                          style: TextStyle(
-                            fontFamily: 'JetBrainsMono',
-                            fontSize: 9,
-                            letterSpacing: 9 * 0.18,
-                            color: colors.fgMuted,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    note,
-                    style:
-                        typo.bodySmall.copyWith(color: colors.fgMuted, height: 1.5),
-                  ),
-                ],
+            Text(
+              label,
+              style: typo.bodyMedium.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            if (enabled) Icon(Icons.chevron_right, size: 18, color: colors.fgMuted),
+            const SizedBox(height: 4),
+            Text(
+              hint,
+              style: typo.bodySmall.copyWith(
+                color: colors.fgMuted,
+                height: 1.4,
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PartDialog extends StatefulWidget {
+  const _PartDialog({required this.petName});
+
+  final String petName;
+
+  @override
+  State<_PartDialog> createState() => _PartDialogState();
+}
+
+class _PartDialogState extends State<_PartDialog> {
+  late DateTime _date;
+  MemorialNotifyFrequency _notify = MemorialNotifyFrequency.monthly;
+
+  @override
+  void initState() {
+    super.initState();
+    final DateTime now = DateTime.now();
+    _date = DateTime(now.year, now.month, now.day);
+  }
+
+  String _notifyLabel(MemorialNotifyFrequency f, AppLocalizations l10n) {
+    switch (f) {
+      case MemorialNotifyFrequency.monthly:
+        return l10n.pet_memorial_notify_monthly;
+      case MemorialNotifyFrequency.yearly:
+        return l10n.pet_memorial_notify_yearly;
+      case MemorialNotifyFrequency.off:
+        return l10n.pet_memorial_notify_none;
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2000),
+      lastDate: today,
+    );
+    if (picked != null) {
+      setState(() => _date = picked);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final AppColors colors = AppColors.of(context);
+    final AppTypography typo = AppTypography.of(context);
+
+    return AlertDialog(
+      title: Text(l10n.pet_part_confirm_title),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(l10n.pet_part_confirm_body(widget.petName)),
+            const SizedBox(height: 16),
+
+            // 日付
+            Text(
+              l10n.pet_part_field_date,
+              style: typo.bodySmall.copyWith(color: colors.fgMuted),
+            ),
+            const SizedBox(height: 4),
+            InkWell(
+              onTap: _pickDate,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: colors.line),
+                ),
+                child: Text(
+                  '${_date.year}-${_date.month.toString().padLeft(2, '0')}-'
+                  '${_date.day.toString().padLeft(2, '0')}',
+                  style: typo.bodyMedium,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 通知頻度
+            Text(
+              l10n.pet_part_field_notify,
+              style: typo.bodySmall.copyWith(color: colors.fgMuted),
+            ),
+            for (final MemorialNotifyFrequency f
+                in MemorialNotifyFrequency.values)
+              RadioListTile<MemorialNotifyFrequency>(
+                title: Text(_notifyLabel(f, l10n)),
+                value: f,
+                groupValue: _notify,
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                onChanged: (MemorialNotifyFrequency? v) {
+                  if (v != null) setState(() => _notify = v);
+                },
+              ),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.common_cancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(
+            (
+              partedAtMsec: _date.millisecondsSinceEpoch,
+              notify: _notify,
+            ),
+          ),
+          child: Text(l10n.pet_part_action_confirm),
+        ),
+      ],
     );
   }
 }

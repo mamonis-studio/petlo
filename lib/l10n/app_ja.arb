@@ -1064,7 +1064,8 @@
       "petName": {
         "type": "String"
       }
-    }
+    },
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
   },
   "pet_share_picker_confirm_action": "共有する",
   "pet_share_picker_success": "{petName} を共有しました ({count} 件のレコードを移動)",
@@ -1076,7 +1077,8 @@
       "count": {
         "type": "int"
       }
-    }
+    },
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
   },
   "pet_share_picker_failure": "共有に失敗しました: {error}",
   "@pet_share_picker_failure": {
@@ -1084,7 +1086,8 @@
       "error": {
         "type": "String"
       }
-    }
+    },
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
   },
   "pet_species_dog_short": "犬",
   "pet_species_cat_short": "猫",
@@ -1205,7 +1208,8 @@
       "groupName": {
         "type": "String"
       }
-    }
+    },
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
   },
   "pet_form_scope_personal_note": "あなただけが閲覧・編集可能",
   "pet_form_scope_group_note": "メンバー全員が閲覧、編集権限のある人は編集可能",
@@ -1217,7 +1221,8 @@
       "label": {
         "type": "String"
       }
-    }
+    },
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
   },
   "pet_form_scope_move_to_personal_body": "{petName} をグループから外して Personal に戻しますか?\nこのペットと記録は他のメンバーから見えなくなります。",
   "@pet_form_scope_move_to_personal_body": {
@@ -1225,7 +1230,8 @@
       "petName": {
         "type": "String"
       }
-    }
+    },
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
   },
   "pet_form_scope_move_to_group_body": "{petName} を「{label}」に共有しますか?\n記録(食事/排泄/体重ほか)もまとめて移動し、メンバーから閲覧できるようになります。",
   "@pet_form_scope_move_to_group_body": {
@@ -1236,7 +1242,8 @@
       "label": {
         "type": "String"
       }
-    }
+    },
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
   },
   "pet_form_scope_action_unshare": "外す",
   "pet_form_scope_action_share": "共有する",
@@ -1249,7 +1256,8 @@
       "count": {
         "type": "int"
       }
-    }
+    },
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
   },
   "pet_form_scope_move_to_group_success": "{petName} を「{label}」に共有しました ({count} 件のレコードを移動)",
   "@pet_form_scope_move_to_group_success": {
@@ -1263,7 +1271,8 @@
       "count": {
         "type": "int"
       }
-    }
+    },
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
   },
   "pet_form_scope_move_failed": "移動に失敗しました: {error}",
   "@pet_form_scope_move_failed": {
@@ -1271,7 +1280,8 @@
       "error": {
         "type": "String"
       }
-    }
+    },
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
   },
   "prompt_validation_empty": "質問を入力してください",
   "prompt_validation_too_long": "{maxLength} 文字以内で入力してください",
@@ -1483,6 +1493,105 @@
   "pet_share_permission_editor": "編集可",
   "pet_share_permission_viewer": "閲覧のみ",
   "pet_share_pro_required_hint": "複数のグループに共有するには Pro プランが必要です。",
+  "@pet_form_scope_move_note": {
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
+  },
+  "@pet_form_scope_move_to_personal_title": {
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
+  },
+  "@pet_form_scope_action_unshare": {
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
+  },
+  "@pet_form_scope_action_share": {
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
+  },
+  "@pet_form_scope_current_personal": {
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
+  },
+  "@pet_form_scope_personal_note": {
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
+  },
+  "@pet_form_scope_group_note": {
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
+  },
+  "@pet_share_picker_confirm_title": {
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
+  },
+  "@pet_share_picker_confirm_action": {
+    "description": "DEPRECATED in build 46 (Phase G4b). UI replaced by pet_share_* / pet_share_section_* keys. Removal targeted for build 48+. Keep here for one build cycle for back-compat audit trail."
+  },
+  "group_switcher_last_active_today": "今日アクティブ",
+  "group_switcher_last_active_days": "{days}日前にアクティブ",
+  "@group_switcher_last_active_days": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "pet_form_lifecycle_section": "お別れ・削除",
+  "pet_action_part": "お別れする",
+  "pet_action_part_hint": "亡くなった子の記録は宝物として残ります。",
+  "pet_part_confirm_title": "お別れを記録しますか?",
+  "pet_part_confirm_body": "{petName} のお別れを記録します。\n記録はそのまま残り、命日に思い出を通知します。",
+  "@pet_part_confirm_body": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_part_field_date": "お別れした日",
+  "pet_part_field_notify": "思い出通知",
+  "pet_memorial_notify_monthly": "月命日",
+  "pet_memorial_notify_yearly": "年命日",
+  "pet_memorial_notify_none": "通知しない",
+  "pet_part_action_confirm": "お別れを記録",
+  "pet_part_date_future_error": "お別れの日は今日以前を選んでください。",
+  "pet_action_delete": "完全削除",
+  "pet_action_delete_hint": "記録もすべて削除されます。30 日以内なら復元できます。",
+  "pet_delete_confirm_title": "このペットを削除しますか?",
+  "pet_delete_confirm_body": "{petName} とすべての記録を削除します。\nこの操作は 30 日以内であれば設定画面から復元できます。",
+  "@pet_delete_confirm_body": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_delete_action_confirm": "削除する",
+  "pet_delete_failed": "削除に失敗しました: {error}",
+  "@pet_delete_failed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_part_failed": "お別れの記録に失敗しました: {error}",
+  "@pet_part_failed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_part_success_snack": "{petName} のお別れを記録しました",
+  "@pet_part_success_snack": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_delete_success_snack": "{petName} を削除しました",
+  "@pet_delete_success_snack": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
   "@_PLACEHOLDERS": {
     "description": "後続Chunkで画面ごとの文言を追加していく"
   }

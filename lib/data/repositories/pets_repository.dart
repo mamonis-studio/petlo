@@ -530,30 +530,96 @@ class PetsRepository extends BaseRepository {
 
   /// ペットを論理削除 (deletedAtセット)。
   /// 30日後にCronで物理削除される想定。
+  ///
+  /// build 47 (Scope A2): pet 単体だけでなく紐づく子レコード
+  /// (meals/poops/pees/vomits/weights/temperatures/bcs_checks/diaries/
+  /// visits/vaccinations/medications/medication_reminders/expiration_items)
+  /// も同じトランザクションで論理削除する。子レコードが孤児として残ると
+  /// クエリで弾けず容量も食うため。お別れ (markAsParted) は記録を
+  /// 宝物として残す哲学なので子は触らない。
+  ///
+  /// 既に deleted_at が立っている子レコードはスキップ
+  /// (同じタイミングを上書きしない、sync_queue も二重に積まない)。
   Future<bool> softDeletePet(int petId) async {
     final PetEntity? pet = await getPet(petId);
     if (pet == null) return false;
+    if (pet.deletedAt != null) return false;
 
     final meta = buildDeleteMetadata(groupId: pet.groupId);
 
-    final int affected =
-        await (db.update(db.pets)..where((Pets t) => t.id.equals(petId)))
-            .write(PetsCompanion(
-      deletedAt: Value(meta.deletedAt),
-      syncStatus: Value(meta.updatedSyncStatus),
-      updatedAt: Value(meta.updatedAt),
-      lastModifiedAtClient: Value(meta.lastModifiedAtClient),
-    ));
+    const List<String> petBoundTables = <String>[
+      'meals', 'poops', 'pees', 'vomits',
+      'weights', 'temperatures', 'bcs_checks',
+      'diaries', 'visits', 'vaccinations',
+      'medications', 'medication_reminders',
+      'expiration_items',
+    ];
 
-    if (affected > 0) {
+    final List<({String table, int id})> affectedChildren =
+        <({String table, int id})>[];
+    int petAffected = 0;
+
+    await db.transaction(() async {
+      // 子レコード: まだ生存しているものだけ id を拾って一括 UPDATE
+      for (final String table in petBoundTables) {
+        final List<QueryRow> ids = await db.customSelect(
+          'SELECT id FROM $table WHERE pet_id = ? AND deleted_at IS NULL',
+          variables: <Variable<Object>>[Variable<int>(petId)],
+        ).get();
+        for (final QueryRow row in ids) {
+          affectedChildren.add((table: table, id: row.read<int>('id')));
+        }
+        await db.customStatement(
+          'UPDATE $table SET deleted_at = ?, sync_status = ?, '
+          'updated_at = ?, last_modified_at_client = ? '
+          'WHERE pet_id = ? AND deleted_at IS NULL',
+          <Object?>[
+            meta.deletedAt,
+            meta.updatedSyncStatus.name,
+            meta.updatedAt,
+            meta.lastModifiedAtClient,
+            petId,
+          ],
+        );
+      }
+
+      // ペット本体
+      petAffected =
+          await (db.update(db.pets)..where((Pets t) => t.id.equals(petId)))
+              .write(PetsCompanion(
+        deletedAt: Value(meta.deletedAt),
+        syncStatus: Value(meta.updatedSyncStatus),
+        updatedAt: Value(meta.updatedAt),
+        lastModifiedAtClient: Value(meta.lastModifiedAtClient),
+      ));
+    });
+
+    if (petAffected == 0) return false;
+
+    // drift watchers を発火 (StreamProvider 再評価)
+    db.notifyUpdates(<TableUpdate>{
+      const TableUpdate('pets'),
+      for (final String t in petBoundTables) TableUpdate(t),
+    });
+
+    // sync_queue: pet + 影響を受けた子レコードそれぞれに delete op を積む。
+    // personal スコープでは enqueueSyncIfShared が no-op。
+    await enqueueSyncIfShared(
+      groupId: pet.groupId,
+      operation: SyncOperation.delete,
+      targetTable: 'pets',
+      recordId: petId,
+      payloadJson: jsonEncode(<String, dynamic>{}),
+    );
+    for (final ({String table, int id}) r in affectedChildren) {
       await enqueueSyncIfShared(
         groupId: pet.groupId,
         operation: SyncOperation.delete,
-        targetTable: 'pets',
-        recordId: petId,
-        payloadJson: jsonEncode(<String, dynamic>{}),
+        targetTable: r.table,
+        recordId: r.id,
+        payloadJson: '{}',
       );
     }
-    return affected > 0;
+    return true;
   }
 }

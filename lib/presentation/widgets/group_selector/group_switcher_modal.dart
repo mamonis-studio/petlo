@@ -254,7 +254,16 @@ class _GroupRow extends ConsumerWidget {
         data: (List<GroupMemberEntity> m) => m.length + 1,
         orElse: () => 1,
       );
-      meta = l10n.group_switcher_group_meta(petCount, memberCount);
+      // build 46 (Phase G4b): lastActive を relative 表示で追加。
+      // group.lastActiveAt は UTC msec。粒度は日単位 (0 日 = 今日)。
+      final int diffMs = DateTime.now().toUtc().millisecondsSinceEpoch -
+          _group!.lastActiveAt;
+      final int diffDays = diffMs ~/ (1000 * 60 * 60 * 24);
+      final String relative = diffDays <= 0
+          ? l10n.group_switcher_last_active_today
+          : l10n.group_switcher_last_active_days(diffDays);
+      meta =
+          '${l10n.group_switcher_group_meta(petCount, memberCount)} · $relative';
     }
 
     return Semantics(
