@@ -51,6 +51,29 @@ class Schedules extends Table {
   TextColumn get relatedPetIds =>
       text().map(const StringListConverter()).withDefault(const Constant('[]'))();
 
+  // ============================================================================
+  // build 47b (Scope B1): 投薬リマインダー統合用カラム
+  // ============================================================================
+  // category=medication 時のみ意味を持つ。他カテゴリでは null。
+  // 旧 medication_reminders.times / weekdays_bits をそのまま吸収する設計。
+  //
+  // times: ["07:00","21:00"] のような時刻 JSON 配列文字列。null = 未設定
+  //   (= 通知なしの単点 schedule)。
+  // weekdaysBits: 月水金 → {1,3,5} の bitset を int として保存。null か 0
+  //   = 毎日。値は WeekdaysBitsetConverter (medication_reminders と同一) を
+  //   使う想定だが、ここでは raw int として保持し、変換は repository/UI 側で
+  //   行う (drift converter は Set<int> ⇔ int の往復で扱う際に存在チェックが
+  //   面倒なので nullable int でフラットに持つ)。
+
+  /// 通知時刻のリスト (HH:mm の JSON 配列、例: ["07:00","21:00"])。
+  /// category=medication 時のみ使用。null なら schedule は通知時刻列を持たず、
+  /// 通常の scheduledAt + notificationTiming で発火する。
+  TextColumn get times => text().nullable()();
+
+  /// 通知曜日 bitset (月水金 → 2 + 8 + 32 = 42 など)。null か 0 = 毎日。
+  /// category=medication 時のみ使用。
+  IntColumn get weekdaysBits => integer().nullable()();
+
   /// 自動生成かどうか
   /// true: ペット誕生日等から生成。手動編集も可能だが、
   /// ソースが変わると(ペット birthday 変更等)更新される。

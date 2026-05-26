@@ -1592,6 +1592,47 @@
       }
     }
   },
+  "schedule_medication_times_label": "通知時刻",
+  "schedule_medication_add_time": "時刻を追加",
+  "schedule_medication_times_hint": "例:朝 8:00 と 夜 9:00 など、1 日に複数回設定できます。",
+  "schedule_medication_weekdays_label": "通知する曜日",
+  "schedule_medication_weekdays_hint": "何も選ばなければ毎日通知します。",
+  "@medication_reminders_app_bar": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@medication_reminders_add": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@medication_reminders_empty": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@medication_reminders_description": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@medication_reminders_section_active": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@medication_reminders_section_paused": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@plans_no_reminders": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@plans_set_reminder": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@plans_more_count": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@plans_every_day": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@more_item_medication_reminders": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@notification_medication_default_body": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
   "@_PLACEHOLDERS": {
     "description": "後続Chunkで画面ごとの文言を追加していく"
   }

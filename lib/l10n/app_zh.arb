@@ -1337,5 +1337,46 @@
   "pet_delete_failed": "删除失败:{error}",
   "pet_part_failed": "记录告别失败:{error}",
   "pet_part_success_snack": "已记录 {petName} 的告别",
-  "pet_delete_success_snack": "已删除 {petName}"
+  "pet_delete_success_snack": "已删除 {petName}",
+  "schedule_medication_times_label": "提醒时刻",
+  "schedule_medication_add_time": "添加时刻",
+  "schedule_medication_times_hint": "可设置每天多个时间(例如 8:00 和 21:00)。",
+  "schedule_medication_weekdays_label": "提醒星期",
+  "schedule_medication_weekdays_hint": "不选则每天提醒。",
+  "@medication_reminders_app_bar": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@medication_reminders_add": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@medication_reminders_empty": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@medication_reminders_description": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@medication_reminders_section_active": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@medication_reminders_section_paused": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@plans_no_reminders": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@plans_set_reminder": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@plans_more_count": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@plans_every_day": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@more_item_medication_reminders": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  },
+  "@notification_medication_default_body": {
+    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
+  }
 }

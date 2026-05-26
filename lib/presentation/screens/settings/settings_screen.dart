@@ -32,7 +32,6 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/display_name_provider.dart';
 import '../../providers/pro_status_provider.dart';
 import '../groups/groups_list_screen.dart';
-import '../medication_reminder/medication_reminders_list_screen.dart';
 import '../paywall/paywall_screen.dart';
 import 'developer_settings_screen.dart';
 import 'display_name_screen.dart';
@@ -121,10 +120,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 title: l10n.more_item_groups,
                 onTap: () => GroupsListScreen.push(context),
               ),
-              _Row(
-                title: l10n.more_item_medication_reminders,
-                onTap: () => MedicationRemindersListScreen.push(context),
-              ),
+              // build 47b (Scope B5): medication_reminders は schedules に
+              // 統合された。投薬の設定は予定 (Plans) タブから行う。
 
               // ===== アプリ =====
               _SectionHeader(label: l10n.settings_section_app),

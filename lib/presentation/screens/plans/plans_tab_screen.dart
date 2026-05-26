@@ -27,7 +27,6 @@ import '../../../data/local/app_database.dart';
 import '../../../data/models/day_summary.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/calendar_provider.dart';
-import '../../providers/medication_reminders_providers.dart';
 import '../../providers/pets_providers.dart';
 import '../../providers/schedules_providers.dart';
 import '../../providers/scope_providers.dart';
@@ -36,7 +35,6 @@ import '../../widgets/calendar/calendar_header.dart';
 import '../../widgets/calendar/day_detail_sheet.dart';
 import '../../widgets/calendar/petlo_calendar_view.dart';
 import '../../widgets/petlo_scaffold.dart';
-import '../medication_reminder/medication_reminders_list_screen.dart';
 import '../pet/pet_form_screen.dart';
 import '../schedule/schedule_record_screen.dart';
 import '../vaccination/vaccination_record_screen.dart';
@@ -153,8 +151,10 @@ class _PlansTabScreenState extends ConsumerState<PlansTabScreen> {
               _Legend(colors: colors),
               const SizedBox(height: 32),
               const _UpcomingVaccinations(),
-              const SizedBox(height: 32),
-              const _ActiveReminders(),
+              // build 47b (Scope B5): _ActiveReminders ブロック削除。
+              // 投薬は schedules (category=medication) に統合され、
+              // 月表示カレンダーの dot + リスト表示の「投薬」フィルタチップで
+              // 確認できる。
             ] else ...<Widget>[
               // ===== リスト表示(schedules ベース) =====
               const _ScheduleListView(),
@@ -455,145 +455,10 @@ class _PlanRow extends StatelessWidget {
 }
 
 // ============================================================================
-// _ActiveReminders - グループ全体の有効リマインダー(最大3件プレビュー)
+// build 47b (Scope B5): _ActiveReminders / _MedRow を削除。
+// 投薬は schedules (category=medication) に統合されたため、月表示の
+// dot とリスト表示の「投薬」フィルタチップで一覧できる。
 // ============================================================================
-class _ActiveReminders extends ConsumerWidget {
-  const _ActiveReminders();
-
-  static List<String> _wdShort(BuildContext context) {
-    final String locale = Localizations.localeOf(context).languageCode;
-    if (locale == 'ja') {
-      return const <String>['日', '月', '火', '水', '木', '金', '土'];
-    }
-    if (locale == 'zh') {
-      return const <String>['日', '一', '二', '三', '四', '五', '六'];
-    }
-    return const <String>['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final AppColors colors = AppColors.of(context);
-    final AppTypography typo = AppTypography.of(context);
-    final AsyncValue<List<MedicationReminderEntity>> remindersAsync =
-        ref.watch(currentGroupEnabledRemindersProvider);
-
-    return remindersAsync.maybeWhen(
-      data: (List<MedicationReminderEntity> list) {
-        if (list.isEmpty) {
-          final AppLocalizations l10n = AppLocalizations.of(context);
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                l10n.plans_no_reminders,
-                style: typo.bodySmall.copyWith(color: colors.fgMuted),
-              ),
-              const SizedBox(height: 12),
-              OutlinedActionButton(
-                label: l10n.plans_set_reminder,
-                onPressed: () =>
-                    MedicationRemindersListScreen.push(context),
-              ),
-            ],
-          );
-        }
-        // 最大3件をプレビュー
-        return Column(
-          children: <Widget>[
-            for (final MedicationReminderEntity r in list.take(3))
-              _MedRow(reminder: r),
-            if (list.length > 3)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: InkWell(
-                  onTap: () =>
-                      MedicationRemindersListScreen.push(context),
-                  child: Text(
-                    AppLocalizations.of(context)
-                        .plans_more_count(list.length - 3),
-                    style: TextStyle(
-                      fontFamily: 'Manrope',
-                      fontSize: 12,
-                      color: colors.fgMuted,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-      orElse: () => const SizedBox.shrink(),
-    );
-  }
-}
-
-class _MedRow extends StatelessWidget {
-  const _MedRow({required this.reminder});
-
-  final MedicationReminderEntity reminder;
-
-  String _formatTimes() {
-    if (reminder.times.length <= 3) return reminder.times.join(' · ');
-    return '${reminder.times.take(2).join(' · ')} +${reminder.times.length - 2}';
-  }
-
-  String _formatWeekdays(BuildContext context) {
-    if (reminder.weekdaysBits.isEmpty) {
-      return AppLocalizations.of(context).plans_every_day;
-    }
-    final List<int> sorted = reminder.weekdaysBits.toList()..sort();
-    final List<String> wd = _ActiveReminders._wdShort(context);
-    return sorted.map((int i) => wd[i]).join(' ');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppColors colors = AppColors.of(context);
-    final AppTypography typo = AppTypography.of(context);
-
-    return InkWell(
-      onTap: () => MedicationRemindersListScreen.push(context),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: colors.line)),
-        ),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    reminder.medicineName,
-                    style: typo.bodyMedium,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${_formatTimes()} · ${_formatWeekdays(context)}',
-                    style: TextStyle(
-                      fontFamily: 'JetBrainsMono',
-                      fontSize: 10,
-                      letterSpacing: 10 * 0.15,
-                      color: colors.fgMuted,
-                      fontFeatures: const <FontFeature>[
-                        FontFeature.tabularFigures(),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // ============================================================================
 // _ScheduleListView - 予定の一覧 (build 5)

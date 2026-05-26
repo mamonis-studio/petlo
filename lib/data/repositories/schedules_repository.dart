@@ -58,6 +58,28 @@ class SchedulesRepository extends BaseRepository {
         .getSingleOrNull();
   }
 
+  /// 起動時の再スケジュール対象を返す。
+  /// - deleted_at IS NULL
+  /// - times が立っている (= 繰り返し通知あり)、または
+  ///   notificationTiming != 'none' かつ scheduledAt が未来
+  ///   のどちらか
+  ///
+  /// scheduledAt 昇順 (近い予定から優先して slot 予算を消費する)。
+  /// build 47b (Scope B3).
+  Future<List<ScheduleEntity>> getAllForRescheduling() async {
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    final query = db.select(db.schedules)
+      ..where((Schedules t) =>
+          t.deletedAt.isNull() &
+          (t.times.isNotNull() |
+              (t.notificationTiming.equals('none').not() &
+                  t.scheduledAt.isBiggerOrEqualValue(now))))
+      ..orderBy(<OrderClauseGenerator<Schedules>>[
+        (Schedules t) => OrderingTerm(expression: t.scheduledAt),
+      ]);
+    return query.get();
+  }
+
   /// ペット birthday の自動 schedule を1件返す(なければ null)
   Future<ScheduleEntity?> getAutoBirthdayForPet(int petId) {
     return (db.select(db.schedules)
@@ -88,12 +110,28 @@ class SchedulesRepository extends BaseRepository {
     ScheduleSourceType sourceType = ScheduleSourceType.manual,
     int? sourcePetId,
     String? createdBy,
+    // build 47b (Scope B1+B4): medication カテゴリ向け繰り返し通知パラメタ。
+    // category != medication なら無視される。
+    List<String>? times,
+    Set<int>? weekdays,
   }) async {
     final String trimmedTitle = title.trim();
     if (trimmedTitle.isEmpty) {
       throw ArgumentError('title cannot be empty');
     }
     final meta = buildCreateMetadata(groupId: groupId);
+
+    final bool isMedication = category == ScheduleCategory.medication;
+    final String? timesEncoded = (isMedication &&
+            times != null &&
+            times.isNotEmpty)
+        ? jsonEncode(times)
+        : null;
+    final int? weekdaysBits = (isMedication &&
+            weekdays != null &&
+            weekdays.isNotEmpty)
+        ? _encodeWeekdays(weekdays)
+        : null;
 
     final int newId = await db.into(db.schedules).insert(
           SchedulesCompanion.insert(
@@ -118,6 +156,8 @@ class SchedulesRepository extends BaseRepository {
             createdAt: meta.createdAt,
             updatedAt: meta.updatedAt,
             lastModifiedAtClient: Value(meta.lastModifiedAtClient),
+            times: Value(timesEncoded),
+            weekdaysBits: Value(weekdaysBits),
           ),
         );
 
@@ -146,6 +186,12 @@ class SchedulesRepository extends BaseRepository {
     String? notes,
     bool clearNotes = false,
     List<int>? relatedPetIds,
+    // build 47b (Scope B1+B4): medication 用パラメタ。
+    // clearMedicationFields=true で明示的に times/weekdays を null に戻す
+    // (category=medication から別カテゴリに切り替えた時など)。
+    List<String>? times,
+    Set<int>? weekdays,
+    bool clearMedicationFields = false,
   }) async {
     final ScheduleEntity? existing = await getById(scheduleId);
     if (existing == null) throw StateError('Schedule not found: id=$scheduleId');
@@ -155,6 +201,22 @@ class SchedulesRepository extends BaseRepository {
     }
 
     final meta = buildUpdateMetadata(groupId: existing.groupId);
+
+    Value<String?> timesValue = const Value.absent();
+    Value<int?> weekdaysValue = const Value.absent();
+    if (clearMedicationFields) {
+      timesValue = const Value<String?>(null);
+      weekdaysValue = const Value<int?>(null);
+    } else {
+      if (times != null) {
+        timesValue =
+            Value<String?>(times.isEmpty ? null : jsonEncode(times));
+      }
+      if (weekdays != null) {
+        weekdaysValue =
+            Value<int?>(weekdays.isEmpty ? null : _encodeWeekdays(weekdays));
+      }
+    }
 
     final companion = SchedulesCompanion(
       title: title == null ? const Value.absent() : Value(title.trim()),
@@ -180,6 +242,8 @@ class SchedulesRepository extends BaseRepository {
       syncStatus: Value(meta.updatedSyncStatus),
       updatedAt: Value(meta.updatedAt),
       lastModifiedAtClient: Value(meta.lastModifiedAtClient),
+      times: timesValue,
+      weekdaysBits: weekdaysValue,
     );
 
     final int affected = await (db.update(db.schedules)
@@ -284,4 +348,13 @@ String? _emptyToNull(String? s) {
   if (s == null) return null;
   final String t = s.trim();
   return t.isEmpty ? null : t;
+}
+
+/// 月水金 → {1,3,5} → 0b0101010 = 42。値域外は無視。
+int _encodeWeekdays(Set<int> weekdays) {
+  int bits = 0;
+  for (final int wd in weekdays) {
+    if (wd >= 0 && wd <= 6) bits |= 1 << wd;
+  }
+  return bits;
 }

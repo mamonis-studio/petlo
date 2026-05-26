@@ -13,8 +13,14 @@
 //
 // Notification ID 採番ルール (32bit signed int 範囲を分割):
 //   - 1_000_000 〜  9_999_999  : ワクチン期限通知 (vaccinationId基準)
-//   - 10_000_000 〜 99_999_999 : 投薬リマインダー (reminderId * 10 + slot)
-//   - 100_000_000〜             : カスタムリマインダー (将来)
+//   - 10_000_000 〜 99_999_999 : 旧 投薬リマインダー (reminderId * 32 + slot)
+//                                 [build 47b で schedule に統合、コードからは
+//                                  参照されないが既存 OS スケジュール ID と
+//                                  衝突しないよう保持]
+//   - 100_000_000〜 199_999_999: schedules 由来通知 (scheduleId * 32 + slot)
+//                                  [build 47b 新設、medication カテゴリの
+//                                   times×weekdays、および notificationTiming
+//                                   1-shot]
 //
 // rev3 §7.5 ローカル通知設計
 //
@@ -291,10 +297,20 @@ class NotificationService {
     return 1000000 + vaccinationId;
   }
 
-  /// 投薬リマインダー ID (slot は 0-7、weekday/time index)
+  /// 投薬リマインダー ID (slot は 0-31、weekday/time index)。
+  /// build 47b 以降は schedules への移行に伴い新規スケジュールに使わない
+  /// が、起動時の cancel 用に残す。
   static int idForMedicationReminder(int reminderId, int timeSlot) {
     // 1リマインダーに最大 32 slots (時刻 × 曜日)
     return 10000000 + reminderId * 32 + timeSlot;
+  }
+
+  /// schedule 由来の通知 ID (build 47b 新設)。
+  /// scheduleId * 32 + slot、slot は 0-31 で時刻×曜日の組み合わせを表す。
+  /// scheduleId が 3_124_999 を越えると衝突する (3_124_999 * 32 = 99_999_968)
+  /// が、現実的に発生し得ない上限なので無視する。
+  static int idForSchedule(int scheduleId, int timeSlot) {
+    return 100000000 + scheduleId * 32 + timeSlot;
   }
 
   // ==========================================================================

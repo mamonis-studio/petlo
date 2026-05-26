@@ -169,7 +169,10 @@ class _PetloAppState extends ConsumerState<PetloApp>
   Future<void> _rescheduleNotifications() async {
     try {
       final scheduler = ref.read(notificationSchedulerProvider);
-      await scheduler.rescheduleAllReminders();
+      // build 47b (Scope B3): schedules ベースに統合。
+      // 旧 rescheduleAllReminders は廃止 — schedules.times を持つ
+      // medication カテゴリは syncSchedule が拾うので等価。
+      await scheduler.rescheduleAllSchedules();
       await scheduler.rescheduleAllVaccinationAlerts();
     } catch (e, st) {
       PetloLogger.instance.w('Failed to reschedule notifications on start',

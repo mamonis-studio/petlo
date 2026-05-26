@@ -7,6 +7,8 @@
 //
 // ============================================================================
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,6 +23,7 @@ import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
 import '../../../data/repositories/schedules_repository.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../providers/notification_scheduler_provider.dart';
 import '../../providers/pets_providers.dart';
 import '../../providers/schedules_providers.dart';
 import '../../providers/scope_providers.dart';
@@ -77,6 +80,12 @@ class _ScheduleRecordScreenState
       ScheduleNotificationTiming.none;
   Set<int> _selectedPetIds = <int>{};
 
+  // build 47b (Scope B4): category=medication 時のみ表示する繰り返し通知
+  // フィールド。HH:mm 文字列のリスト + 曜日 bitset (Set<int>)。
+  // weekdays が空 = 毎日扱い (旧 medication_reminders と同じセマンティクス)。
+  List<String> _times = <String>[];
+  Set<int> _weekdays = <int>{};
+
   String? _titleError;
 
   @override
@@ -123,6 +132,9 @@ class _ScheduleRecordScreenState
             .map((String id) => int.tryParse(id))
             .whereType<int>()
             .toSet();
+        // build 47b: medication 用 times/weekdays を復元
+        _times = _decodeTimesJson(s.times);
+        _weekdays = _decodeWeekdaysBits(s.weekdaysBits);
         _loaded = true;
       });
     } catch (e, st) {
@@ -153,7 +165,9 @@ class _ScheduleRecordScreenState
               _time!.minute);
       final int scheduledMs = scheduled.millisecondsSinceEpoch;
 
+      final bool isMedication = _category == ScheduleCategory.medication;
       final SchedulesRepository repo = ref.read(schedulesRepositoryProvider);
+      int? savedScheduleId;
       if (_isEditing) {
         await repo.update(
           scheduleId: widget.editingScheduleId!,
@@ -165,10 +179,14 @@ class _ScheduleRecordScreenState
           notificationTiming: _notification,
           notes: _notesC.text.trim(),
           relatedPetIds: _selectedPetIds.toList(),
+          times: isMedication ? _times : null,
+          weekdays: isMedication ? _weekdays : null,
+          clearMedicationFields: !isMedication,
         );
+        savedScheduleId = widget.editingScheduleId;
       } else {
         final String groupId = ref.read(currentGroupIdProvider);
-        await repo.create(
+        savedScheduleId = await repo.create(
           groupId: groupId,
           title: title,
           category: _category,
@@ -178,7 +196,16 @@ class _ScheduleRecordScreenState
           notificationTiming: _notification,
           notes: _notesC.text.trim(),
           relatedPetIds: _selectedPetIds.toList(),
+          times: isMedication ? _times : null,
+          weekdays: isMedication ? _weekdays : null,
         );
+      }
+
+      // build 47b (Scope B3): 保存後にローカル通知を再構築する。
+      if (savedScheduleId != null) {
+        await ref
+            .read(notificationSchedulerProvider)
+            .syncSchedule(savedScheduleId);
       }
 
       if (!mounted) return;
@@ -204,6 +231,12 @@ class _ScheduleRecordScreenState
     final bool deleted = await ref
         .read(schedulesRepositoryProvider)
         .softDelete(widget.editingScheduleId!);
+    // build 47b: 削除時に紐づくローカル通知もキャンセル
+    if (deleted) {
+      await ref
+          .read(notificationSchedulerProvider)
+          .cancelSchedule(widget.editingScheduleId!);
+    }
     if (!mounted) return;
     if (deleted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -335,6 +368,20 @@ class _ScheduleRecordScreenState
                     setState(() => _category = c),
               ),
               const SizedBox(height: AppDimensions.paddingSection),
+
+              // build 47b (Scope B4): category=medication 時のみ
+              // times[] + weekdaysBits の入力 UI を出す。
+              if (_category == ScheduleCategory.medication) ...<Widget>[
+                _MedicationScheduleFields(
+                  times: _times,
+                  weekdays: _weekdays,
+                  onTimesChanged: (List<String> t) =>
+                      setState(() => _times = t),
+                  onWeekdaysChanged: (Set<int> w) =>
+                      setState(() => _weekdays = w),
+                ),
+                const SizedBox(height: AppDimensions.paddingSection),
+              ],
 
               // 日付
               DateField(
@@ -700,4 +747,172 @@ Color scheduleCategoryColor(AppColors colors, ScheduleCategory c) {
     case ScheduleCategory.anniversary:
       return colors.accentWarn;
   }
+}
+
+// ============================================================================
+// _MedicationScheduleFields (build 47b, Scope B4)
+// ============================================================================
+//
+// category=medication 時のみ表示される、毎日/曜日繰り返し用フィールド。
+// 旧 medication_reminders フォームの UI を schedules フォームに統合した形。
+//
+//   - times: ["07:00","21:00"] の時刻チップ + 「+ 追加」アクション
+//   - weekdays: 日〜土の bitset (空 = 毎日)
+//
+// ============================================================================
+class _MedicationScheduleFields extends StatelessWidget {
+  const _MedicationScheduleFields({
+    required this.times,
+    required this.weekdays,
+    required this.onTimesChanged,
+    required this.onWeekdaysChanged,
+  });
+
+  final List<String> times;
+  final Set<int> weekdays;
+  final ValueChanged<List<String>> onTimesChanged;
+  final ValueChanged<Set<int>> onWeekdaysChanged;
+
+  static List<String> _weekdayShortLabels(BuildContext context) {
+    final String locale = Localizations.localeOf(context).languageCode;
+    if (locale == 'ja') {
+      return const <String>['日', '月', '火', '水', '木', '金', '土'];
+    }
+    if (locale == 'zh') {
+      return const <String>['日', '一', '二', '三', '四', '五', '六'];
+    }
+    return const <String>['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  }
+
+  Future<void> _addTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 8, minute: 0),
+    );
+    if (picked == null) return;
+    final String hhmm =
+        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+    if (times.contains(hhmm)) return; // 重複は無視
+    final List<String> next = <String>[...times, hhmm]..sort();
+    onTimesChanged(next);
+  }
+
+  void _removeTime(String t) {
+    final List<String> next = <String>[...times]..remove(t);
+    onTimesChanged(next);
+  }
+
+  void _toggleWeekday(int wd) {
+    final Set<int> next = <int>{...weekdays};
+    if (next.contains(wd)) {
+      next.remove(wd);
+    } else {
+      next.add(wd);
+    }
+    onWeekdaysChanged(next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppColors colors = AppColors.of(context);
+    final AppTypography typo = AppTypography.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final List<String> wdLabels = _weekdayShortLabels(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        SectionLabel(l10n.schedule_medication_times_label),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: <Widget>[
+            for (final String t in times)
+              InputChip(
+                label: Text(
+                  t,
+                  style: const TextStyle(
+                    fontFamily: 'JetBrainsMono',
+                    fontFeatures: <FontFeature>[
+                      FontFeature.tabularFigures(),
+                    ],
+                  ),
+                ),
+                onDeleted: () => _removeTime(t),
+                backgroundColor: colors.bgSoft,
+                deleteIconColor: colors.fgMuted,
+                side: BorderSide(color: colors.line),
+              ),
+            ActionChip(
+              label: Text('+ ${l10n.schedule_medication_add_time}'),
+              onPressed: () => _addTime(context),
+              backgroundColor: colors.bg,
+              side: BorderSide(color: colors.fg),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          l10n.schedule_medication_times_hint,
+          style: typo.bodySmall.copyWith(color: colors.fgMuted),
+        ),
+        const SizedBox(height: 16),
+
+        SectionLabel(l10n.schedule_medication_weekdays_label),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: <Widget>[
+            for (int wd = 0; wd < 7; wd++)
+              FilterChip(
+                label: Text(wdLabels[wd]),
+                selected: weekdays.contains(wd),
+                onSelected: (_) => _toggleWeekday(wd),
+                backgroundColor: colors.bg,
+                selectedColor: colors.fg,
+                showCheckmark: false,
+                labelStyle: typo.bodySmall.copyWith(
+                  color: weekdays.contains(wd) ? colors.bg : colors.fg,
+                  fontWeight: FontWeight.w600,
+                ),
+                side: BorderSide(color: colors.line),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          l10n.schedule_medication_weekdays_hint,
+          style: typo.bodySmall.copyWith(color: colors.fgMuted),
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================================
+// build 47b helpers: schedules.times / weekdaysBits の decode (UI 側)
+// ============================================================================
+
+List<String> _decodeTimesJson(String? raw) {
+  if (raw == null || raw.isEmpty) return <String>[];
+  try {
+    final dynamic decoded = jsonDecode(raw);
+    if (decoded is List) {
+      return decoded.whereType<String>().toList();
+    }
+  } catch (_) {
+    // ignore
+  }
+  return <String>[];
+}
+
+Set<int> _decodeWeekdaysBits(int? bits) {
+  if (bits == null || bits == 0) return <int>{};
+  final Set<int> out = <int>{};
+  for (int i = 0; i < 7; i++) {
+    if ((bits & (1 << i)) != 0) out.add(i);
+  }
+  return out;
 }

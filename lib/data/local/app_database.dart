@@ -200,6 +200,14 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(petScopes);
             await backfillPetScopesFromPets();
           }
+          // build 47b / Scope B1+B2: schedules テーブルに times / weekdaysBits
+          // を足し、既存 medication_reminders 行を schedules (category=medication)
+          // に 1:1 移行する。元テーブル DROP は build 48+ で行う (rollback safety)。
+          if (from < 7) {
+            await m.addColumn(schedules, schedules.times);
+            await m.addColumn(schedules, schedules.weekdaysBits);
+            await migrateMedicationRemindersToSchedules();
+          }
           await AppDatabaseMigrations.onUpgrade(m, from, to);
         },
         beforeOpen: (OpeningDetails details) async {
@@ -238,6 +246,141 @@ class AppDatabase extends _$AppDatabase {
       "  WHERE s.pet_id = p.id AND s.group_id = p.group_id"
       ")",
       <Object?>[t, t],
+    );
+  }
+
+  /// build 47b (Scope B2): medication_reminders テーブルの全行を schedules
+  /// (category=medication) に 1:1 で移行する。
+  ///
+  /// マッピング:
+  ///   - title          ← medicine_name
+  ///   - notes          ← notes + (dosage があれば追記)
+  ///   - scheduledAt    ← start_date or 今日 (start_date が null の場合)
+  ///   - hasTime        ← false (時刻は times[] で別途持つので scheduledAt
+  ///                            自体は 00:00 扱い)
+  ///   - times          ← times (JSON 配列文字列、そのまま)
+  ///   - weekdaysBits   ← weekdays_bits
+  ///   - recurrence     ← times が non-null なら 'daily'、それ以外は 'none'
+  ///   - relatedPetIds  ← [pet_id] を JSON 配列にエンコード
+  ///   - source_type    ← 'manual' (medication_reminders 由来であることは
+  ///                            notes へのトレースで識別)
+  ///   - deleted_at     ← そのまま (削除済みは削除済みのまま移行する)
+  ///   - sync_status    ← 'pending' (サーバ側にも反映が必要)
+  ///   - last_modified_at_client ← 現在時刻 (LWW で新しい方が勝つように)
+  ///
+  /// 安全性:
+  ///   - 同じ source_pet_id + title の schedule が既にあれば INSERT を
+  ///     スキップ (idempotent 化、複数回起動の保護)。
+  ///   - medication_reminders テーブル本体は **削除しない**。失敗時に
+  ///     原本が残ることで rollback と再実行が可能。
+  ///   - 件数を logger に出す (TestFlight ユーザの dev 確認で利用)。
+  Future<void> migrateMedicationRemindersToSchedules() async {
+    final int t = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final int today00 = DateTime.now().toUtc().millisecondsSinceEpoch -
+        (DateTime.now().toUtc().millisecondsSinceEpoch %
+            const Duration(days: 1).inMilliseconds);
+
+    // before: medication_reminders 件数
+    final List<QueryRow> beforeRow = await customSelect(
+      'SELECT COUNT(*) AS c FROM medication_reminders WHERE deleted_at IS NULL',
+    ).get();
+    final int beforeCount =
+        beforeRow.isEmpty ? 0 : (beforeRow.first.read<int>('c'));
+
+    // SELECT で旧データを引き、行ごとに INSERT する。
+    // CTE を含む 1 文の INSERT ... SELECT でもできるが、
+    //   - 既存 schedules で重複を判定したい
+    //   - notes に dosage を追記する文字列加工が必要
+    // のため Dart 側でループする方が読みやすい。
+    final List<QueryRow> rows = await customSelect(
+      'SELECT id, remote_id, group_id, pet_id, medicine_name, dosage, '
+      'times, weekdays_bits, enabled, start_date, end_date, notes, '
+      'created_by, sync_status, deleted_at, created_at, updated_at, '
+      'last_modified_at_client '
+      'FROM medication_reminders',
+    ).get();
+
+    int migrated = 0;
+    int skipped = 0;
+    for (final QueryRow row in rows) {
+      final int petId = row.read<int>('pet_id');
+      final String title = row.read<String>('medicine_name');
+      final String? dosage = row.read<String?>('dosage');
+      final String? legacyNotes = row.read<String?>('notes');
+      final String? times = row.read<String?>('times');
+      final int? weekdaysBits = row.read<int?>('weekdays_bits');
+      final int? startDate = row.read<int?>('start_date');
+      final int? legacyDeletedAt = row.read<int?>('deleted_at');
+      final int legacyCreatedAt = row.read<int>('created_at');
+      final String groupId = row.read<String>('group_id');
+
+      // 同名タイトル + 関連 pet_id + category=medication で既存があれば skip
+      final List<QueryRow> existing = await customSelect(
+        "SELECT id FROM schedules WHERE category = 'medication' "
+        "AND title = ? AND related_pet_ids = ? AND deleted_at IS NULL",
+        variables: <Variable<Object>>[
+          Variable<String>(title),
+          Variable<String>('["$petId"]'),
+        ],
+      ).get();
+      if (existing.isNotEmpty) {
+        skipped++;
+        continue;
+      }
+
+      final String mergedNotes = <String>[
+        if (legacyNotes != null && legacyNotes.isNotEmpty) legacyNotes,
+        if (dosage != null && dosage.isNotEmpty) '[dosage] $dosage',
+      ].join('\n');
+
+      // 旧 enabled=0 (disabled) は schedules に「times なし」で移行する。
+      // 新 schema には enabled フラグがないため、times が null だと
+      // notification scheduler が発火しない = disabled 状態に相当する。
+      // ユーザが後で再有効化したければ times を入力し直してもらう。
+      final bool wasEnabled = (row.read<int?>('enabled') ?? 1) != 0;
+      final String? effectiveTimes = wasEnabled ? times : null;
+      final String recurrence = effectiveTimes != null ? 'daily' : 'none';
+      final int scheduledAt = startDate ?? today00;
+
+      await customStatement(
+        'INSERT INTO schedules '
+        '(remote_id, group_id, title, category, scheduled_at, has_time, '
+        'recurrence, notification_timing, notes, related_pet_ids, '
+        'is_auto_generated, source_type, source_pet_id, created_by, '
+        'sync_status, deleted_at, created_at, updated_at, '
+        'last_modified_at_client, times, weekdays_bits) '
+        'VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '
+        '?, ?, ?)',
+        <Object?>[
+          groupId,
+          title,
+          'medication',
+          scheduledAt,
+          0, // has_time = false (時刻は times[] で持つ)
+          recurrence,
+          'none',
+          mergedNotes.isEmpty ? null : mergedNotes,
+          '["$petId"]',
+          0,
+          'manual',
+          petId,
+          row.read<String?>('created_by'),
+          'pending',
+          legacyDeletedAt,
+          legacyCreatedAt,
+          t,
+          t,
+          effectiveTimes,
+          weekdaysBits,
+        ],
+      );
+      migrated++;
+    }
+
+    // ignore: avoid_print
+    print(
+      '[migrate v6→v7] medication_reminders→schedules: '
+      'before=$beforeCount migrated=$migrated skipped=$skipped',
     );
   }
 }
