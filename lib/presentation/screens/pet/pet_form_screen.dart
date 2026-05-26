@@ -875,6 +875,9 @@ class _ScopeMoverSectionState extends ConsumerState<_ScopeMoverSection> {
     setState(() => _isMoving = true);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     try {
+      // ignore: deprecated_member_use_from_same_package
+      // build 45: G4b で _ScopeMoverSection を「共有先一覧」セクションに転換
+      // する際、本呼び出しは addPetScope / removePetScope に置換予定。
       final int n = await ref
           .read(petsRepositoryProvider)
           .movePetToGroup(pet.id, targetGid);

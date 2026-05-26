@@ -382,7 +382,7 @@ class PetsRepository extends BaseRepository {
   }
 
   // ============================================================================
-  // Write — Move between scopes (build 20)
+  // Write — Move between scopes (build 20, DEPRECATED in build 45)
   // ============================================================================
 
   /// build 20 phase 3: ペットを別スコープ (personal / 任意グループ) に移動。
@@ -395,6 +395,17 @@ class PetsRepository extends BaseRepository {
   ///
   /// 全更新は drift トランザクションでアトミック。
   /// 戻り値は移動した entity 総数 (pet + 紐レコード)。
+  ///
+  /// **DEPRECATED (build 45, Phase G4a)**: 「1 ペット = 1 group」転送モデルは
+  /// multi-scope モデルでは表現力不足。代わりに [PetScopesRepository.addPetScope]
+  /// (新規共有を追加) と [PetScopesRepository.removePetScope] (共有解除) を
+  /// 使う。直接呼び出し用の薄いラッパーは Phase G4b で `PetsRepository.sharePet`
+  /// として提供予定。現状の caller (build 44 時点で 2 箇所) は G4b の UI 改修
+  /// と同時に置換予定 — それまで本メソッドは動作互換のため残す。
+  @Deprecated(
+    'Use PetScopesRepository.addPetScope / removePetScope instead. '
+    'Targeted for removal in build 47+ after G4b UI refactor.',
+  )
   Future<int> movePetToGroup(int petId, String newGroupId) async {
     final PetEntity? pet = await getPet(petId);
     if (pet == null) {

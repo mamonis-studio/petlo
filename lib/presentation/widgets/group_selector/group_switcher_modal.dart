@@ -36,8 +36,10 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/local/app_database.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../providers/group_members_providers.dart';
 import '../../providers/group_selection_controller.dart';
 import '../../providers/groups_providers.dart';
+import '../../providers/pets_providers.dart';
 import '../../providers/scope_providers.dart';
 import '../../screens/groups/create_group_screen.dart';
 import 'group_role_badge.dart';
@@ -193,40 +195,72 @@ class _Header extends StatelessWidget {
 
 // ============================================================================
 // GroupRow (Personal / Shared共用)
+//
+// build 45 (Phase G4a, 旧 build 42 のバグ修正): meta 行を ConsumerWidget で
+// 実カウントから組み立てるよう変更。それまでは `'1 pet · only on this device'`
+// `'${permission.name} · last active'` というハードコード文字列だった。
+// 実装は pets_providers の `petsInScopeProvider` と group_members_providers の
+// `membersForGroupProvider` を組み合わせる。lastActive の relative 表示は
+// 段階的に追加する (G4a では pets · members まで)。
 // ============================================================================
-class _GroupRow extends StatelessWidget {
+class _GroupRow extends ConsumerWidget {
   const _GroupRow.personal({
     required this.isSelected,
     required this.onTap,
   })  : _kind = _RowKind.personal,
-        _name = 'Personal',
-        _meta = '1 pet · only on this device',
-        _badge = null;
+        _group = null,
+        _name = 'Personal';
 
-  _GroupRow.group({
+  const _GroupRow.group({
     required GroupEntity group,
     required this.isSelected,
     required this.onTap,
   })  : _kind = _RowKind.group,
-        _name = group.name,
-        _meta = '${group.myPermission.name} · last active', // TODO: メンバー数等
-        _badge = group.myPermission;
+        _group = group,
+        _name = '';
 
   final _RowKind _kind;
+  final GroupEntity? _group;
   final String _name;
-  final String _meta;
-  final MemberPermission? _badge;
   final bool isSelected;
   final VoidCallback onTap;
 
+  String _displayName() =>
+      _kind == _RowKind.personal ? _name : _group!.name;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final AppColors colors = AppColors.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
+
+    final String scopeId =
+        _kind == _RowKind.personal ? kPersonalGroupId : _group!.remoteId;
+    final AsyncValue<List<PetEntity>> petsAsync =
+        ref.watch(petsInScopeProvider(scopeId));
+    final int petCount = petsAsync.maybeWhen(
+      data: (List<PetEntity> ps) => ps.length,
+      orElse: () => 0,
+    );
+
+    final String meta;
+    if (_kind == _RowKind.personal) {
+      meta = l10n.group_switcher_personal_meta(petCount);
+    } else {
+      final AsyncValue<List<GroupMemberEntity>> membersAsync =
+          ref.watch(membersForGroupProvider(_group!.remoteId));
+      // membersForGroup は「自分以外」を返す (group_members.dart 注記)。
+      // 合計人数は + 1 (自分自身)。
+      final int memberCount = membersAsync.maybeWhen(
+        data: (List<GroupMemberEntity> m) => m.length + 1,
+        orElse: () => 1,
+      );
+      meta = l10n.group_switcher_group_meta(petCount, memberCount);
+    }
 
     return Semantics(
       button: true,
       selected: isSelected,
-      label: '$_name, $_meta',
+      label: '${_displayName()}, $meta',
       child: InkWell(
         onTap: onTap,
         splashColor: Colors.transparent,
@@ -247,7 +281,7 @@ class _GroupRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      _name,
+                      _displayName(),
                       style: TextStyle(
                         fontFamily: 'Fraunces',
                         fontStyle: FontStyle.italic,
@@ -258,7 +292,7 @@ class _GroupRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _meta,
+                      meta,
                       style: TextStyle(
                         fontFamily: 'JetBrainsMono',
                         fontWeight: FontWeight.w500,
@@ -273,7 +307,7 @@ class _GroupRow extends StatelessWidget {
               if (_kind == _RowKind.personal)
                 const GroupRoleBadge.localOnly()
               else
-                GroupRoleBadge.role(permission: _badge!),
+                GroupRoleBadge.role(permission: _group!.myPermission),
             ],
           ),
         ),

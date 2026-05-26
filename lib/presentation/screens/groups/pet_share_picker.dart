@@ -181,6 +181,9 @@ class _PetSharePickerSheet extends ConsumerWidget {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final NavigatorState navigator = Navigator.of(context);
     try {
+      // ignore: deprecated_member_use_from_same_package
+      // build 45: movePetToGroup deprecated. G4b で multi-select 共有 UI に
+      // 改修すると同時に PetScopesRepository.addPetScope 経由に切替予定。
       final int n = await ref
           .read(petsRepositoryProvider)
           .movePetToGroup(pet.id, targetGroupId);

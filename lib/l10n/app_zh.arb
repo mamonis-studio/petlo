@@ -1301,5 +1301,18 @@
   "backup_provider_unset": "未设置",
   "plans_show_past_action": "显示过往事件",
   "plans_hide_past_action": "隐藏过往事件",
-  "plans_no_past_events": "暂无过往事件"
+  "plans_no_past_events": "暂无过往事件",
+  "group_switcher_personal_meta": "{count} 只宠物 · 仅本设备",
+  "group_switcher_group_meta": "{petCount} 只 · {memberCount} 人",
+  "pet_share_section_title": "共享至",
+  "pet_share_section_hint_empty": "可以与家人或兽医共享此宠物。",
+  "pet_share_primary_badge": "主要",
+  "pet_share_add_action": "添加共享",
+  "pet_share_unshare_action": "停止共享",
+  "pet_share_unshare_confirm_title": "停止共享",
+  "pet_share_unshare_confirm_body": "停止与「{groupName}」共享 {petName} 吗?\n{groupName} 的成员将不再能查看此宠物及其记录。",
+  "pet_share_permission_owner": "所有者",
+  "pet_share_permission_editor": "编辑",
+  "pet_share_permission_viewer": "查看",
+  "pet_share_pro_required_hint": "与多个群组共享需要 Pro 套餐。"
 }

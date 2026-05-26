@@ -1443,6 +1443,46 @@
   "plans_show_past_action": "過去の予定を表示",
   "plans_hide_past_action": "過去の予定を隠す",
   "plans_no_past_events": "過去の予定はありません",
+  "group_switcher_personal_meta": "{count}匹のペット · この端末のみ",
+  "@group_switcher_personal_meta": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_switcher_group_meta": "{petCount}匹 · {memberCount}人",
+  "@group_switcher_group_meta": {
+    "placeholders": {
+      "petCount": {
+        "type": "int"
+      },
+      "memberCount": {
+        "type": "int"
+      }
+    }
+  },
+  "pet_share_section_title": "共有先",
+  "pet_share_section_hint_empty": "家族や獣医とこのペットを共有できます。",
+  "pet_share_primary_badge": "プライマリ",
+  "pet_share_add_action": "共有を追加",
+  "pet_share_unshare_action": "共有を解除",
+  "pet_share_unshare_confirm_title": "共有を解除",
+  "pet_share_unshare_confirm_body": "{petName} の「{groupName}」への共有を解除しますか?\n{groupName} のメンバーからこのペットと記録が見えなくなります。",
+  "@pet_share_unshare_confirm_body": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      },
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "pet_share_permission_owner": "オーナー",
+  "pet_share_permission_editor": "編集可",
+  "pet_share_permission_viewer": "閲覧のみ",
+  "pet_share_pro_required_hint": "複数のグループに共有するには Pro プランが必要です。",
   "@_PLACEHOLDERS": {
     "description": "後続Chunkで画面ごとの文言を追加していく"
   }

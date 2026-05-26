@@ -1301,5 +1301,18 @@
   "backup_provider_unset": "Not set",
   "plans_show_past_action": "Show past events",
   "plans_hide_past_action": "Hide past events",
-  "plans_no_past_events": "No past events"
+  "plans_no_past_events": "No past events",
+  "group_switcher_personal_meta": "{count} pets · only on this device",
+  "group_switcher_group_meta": "{petCount} pets · {memberCount} members",
+  "pet_share_section_title": "Shared with",
+  "pet_share_section_hint_empty": "You can share this pet with family or your vet.",
+  "pet_share_primary_badge": "Primary",
+  "pet_share_add_action": "Add share",
+  "pet_share_unshare_action": "Stop sharing",
+  "pet_share_unshare_confirm_title": "Stop sharing",
+  "pet_share_unshare_confirm_body": "Stop sharing {petName} with \"{groupName}\"?\nMembers of {groupName} will no longer see this pet or its records.",
+  "pet_share_permission_owner": "Owner",
+  "pet_share_permission_editor": "Editor",
+  "pet_share_permission_viewer": "Viewer",
+  "pet_share_pro_required_hint": "A Pro plan is required to share with multiple groups."
 }
