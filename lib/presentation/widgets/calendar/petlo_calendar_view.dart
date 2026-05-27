@@ -27,7 +27,6 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
 import '../../../data/models/day_summary.dart';
@@ -69,7 +68,6 @@ class _PetloCalendarViewState extends State<PetloCalendarView> {
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
-    final AppTypography typo = AppTypography.of(context);
 
     final String localeCode = Localizations.localeOf(context).languageCode;
 

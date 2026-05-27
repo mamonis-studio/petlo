@@ -39,8 +39,9 @@ void main() {
       await db.close();
     });
 
-    test('schemaVersion is 1 (rev5.4 F-73)', () {
-      expect(db.schemaVersion, 1);
+    test('schemaVersion matches AppDatabaseMigrations.currentVersion', () {
+      // build 49 (C1) で v8 (medication_reminders DROP)。
+      expect(db.schemaVersion, 8);
     });
 
     test('database initializes without errors', () async {
@@ -48,7 +49,7 @@ void main() {
       await db.customSelect('SELECT 1').get();
     });
 
-    test('all 28 tables exist', () async {
+    test('all expected tables exist (build 49: 27 after medication_reminders DROP + pet_scopes)', () async {
       final List<QueryRow> result = await db.customSelect(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_%'",
       ).get();
@@ -58,8 +59,8 @@ void main() {
           .toList()
         ..sort();
 
-      // 28テーブル + drift内部のschema_version で 29 を期待
-      expect(tables.length >= 28, isTrue, reason: 'Expected at least 28 tables, got ${tables.length}: $tables');
+      // 27 テーブル + pet_scopes (build 43) で 28 + drift 内部の schema_versions
+      expect(tables.length >= 27, isTrue, reason: 'Expected at least 27 tables, got ${tables.length}: $tables');
 
       // 主要テーブルの存在確認
       const List<String> expected = <String>[
@@ -74,7 +75,6 @@ void main() {
         'diaries',
         'visits',
         'medications',
-        'medication_reminders',
         'vaccinations',
         'bcs_checks',
         'expiration_items',

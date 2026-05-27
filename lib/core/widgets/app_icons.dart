@@ -236,8 +236,6 @@ abstract final class AppIcons {
       // 8本の放射スラッシュを簡易的に
       for (int i = 0; i < 8; i++) {
         final double angle = i * (3.14159 * 2 / 8);
-        final double cx = 12 + 7 * (i.isEven ? 0.7 : 1.0);
-        final double cy = 12;
         c.save();
         c.translate(12, 12);
         c.rotate(angle);

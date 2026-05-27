@@ -16,7 +16,7 @@ abstract final class AppConstants {
   // ===== アプリ基本情報 =====
   static const String appName = 'petlo';
   static const String appVersion = '1.0.0';
-  static const int appBuildNumber = 48;
+  static const int appBuildNumber = 49;
   static const String bundleId = 'mamonis.studio.petlo';
   static const String developerName = 'mamonis.studio';
 
@@ -45,7 +45,9 @@ abstract final class AppConstants {
   static const int freeMaxRecordsPerMonth = 30; // ご飯/うんち/おしっこ/嘔吐
   static const int freeMaxDiaryPerMonth = 10;
   static const int freeMaxVisits = 10;
-  static const int freeMaxMedicationReminders = 1;
+  // build 47b で medication_reminders → schedules に統合済み。
+  // 投薬の Pro 制限は撤廃したので freeMaxMedicationReminders 定数も削除
+  // (build 49)。schedules 全体に同じ制限がかかる将来仕様には別キーを用意。
   static const int freeMaxExpirationItems = 3;
   static const int freeWeightHistoryMonths = 3;
   static const int freeTemperatureHistoryMonths = 3;

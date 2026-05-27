@@ -254,7 +254,12 @@ class AuthService {
     final int expiresAt = (data['expiresAt'] as num).toInt();
     await _persist(token: token, refreshToken: refreshToken, userId: userId);
     _accessExpiresAt = expiresAt;
-    PetloLogger.instance.i('Anonymous auth ok: userId=$userId');
+    // build 49 (S1): userId は anonymous UUID だが、log に生で残すのは健全
+    // ではないので先頭 8 文字だけ出す。デバッグでの相関は十分付けられる。
+    final String masked = userId.length >= 8
+        ? '${userId.substring(0, 8)}***'
+        : '***';
+    PetloLogger.instance.i('Anonymous auth ok: userId=$masked');
   }
 
   Future<void> _persist({

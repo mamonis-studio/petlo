@@ -13,7 +13,6 @@
 //
 // ============================================================================
 
-import 'package:flutter/material.dart';
 
 abstract final class AppDimensions {
   AppDimensions._();

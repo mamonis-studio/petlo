@@ -149,7 +149,6 @@
   "more_diary": "日記",
   "more_gallery": "ギャラリー",
   "more_ai_chat": "AI相談",
-  "more_medication_reminders": "投薬リマインダー",
   "more_groups_list": "グループ一覧",
   "more_backup": "バックアップ",
   "more_theme": "外観テーマ",
@@ -187,7 +186,6 @@
   "more_item_pet_consult": "AI相談",
   "more_item_stool_diagnosis": "うんち画像診断",
   "more_item_groups": "家族共有グループ",
-  "more_item_medication_reminders": "投薬リマインダー",
   "more_item_theme": "外観テーマ",
   "more_item_language": "言語",
   "more_item_notifications": "通知設定",
@@ -404,10 +402,6 @@
   "ai_chat_system_quota": "今月の利用上限に達しました。Pro プランで上限なくお使いいただけます。",
   "ai_chat_image_camera": "カメラで撮影",
   "ai_chat_image_gallery": "ライブラリから選択",
-  "medication_reminders_app_bar": "投薬リマインダー",
-  "medication_reminders_eyebrow": "投薬",
-  "medication_reminders_empty": "リマインダーはまだありません",
-  "medication_reminders_add": "リマインダーを追加",
   "medication_reminder_form_app_bar_new": "新しいリマインダー",
   "medication_reminder_form_app_bar_edit": "リマインダーを編集",
   "medication_reminder_form_medicine_label": "薬の名前",
@@ -754,14 +748,10 @@
   "plans_legend_daily": "日常",
   "plans_legend_memory": "思い出",
   "plans_no_upcoming": "予定されているワクチンはありません",
-  "plans_no_reminders": "投薬リマインダーはありません",
-  "plans_set_reminder": "リマインダーを設定",
   "plans_overdue_label": "期限切れ",
   "plans_due_label": "予定",
   "plans_view_month": "月",
   "plans_view_list": "リスト",
-  "plans_more_count": "他{n}件",
-  "plans_every_day": "毎日",
   "plans_birthday_suffix": "の誕生日",
   "schedule_category_vaccination": "ワクチン",
   "schedule_category_medication": "投薬",
@@ -906,8 +896,6 @@
   "medication_reminder_weekday_thu": "木",
   "medication_reminder_weekday_fri": "金",
   "medication_reminder_weekday_sat": "土",
-  "medication_reminders_hero": "投薬。",
-  "medication_reminders_description": "お薬の予定を登録すると、飲み忘れを防げます。",
   "medication_reminder_form_hero": "投薬。",
   "medication_reminder_form_dosage_label_optional": "用量(任意)",
   "medication_reminder_form_notes_label_optional": "メモ(任意)",
@@ -920,8 +908,6 @@
   "medication_reminder_dosage_hint": "例: 1錠 / 0.5ml / 半錠",
   "medication_reminder_notes_hint": "空腹時に / 食後 など",
   "common_load_failed": "読み込めませんでした",
-  "medication_reminders_section_active": "有効",
-  "medication_reminders_section_paused": "停止中",
   "weight_chart_hero": "体重の推移。",
   "temperature_chart_hero": "体温の推移。",
   "gallery_empty_hero": "写真はまだありません",
@@ -1597,42 +1583,7 @@
   "schedule_medication_times_hint": "例:朝 8:00 と 夜 9:00 など、1 日に複数回設定できます。",
   "schedule_medication_weekdays_label": "通知する曜日",
   "schedule_medication_weekdays_hint": "何も選ばなければ毎日通知します。",
-  "@medication_reminders_app_bar": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_add": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_empty": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_description": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_section_active": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_section_paused": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@plans_no_reminders": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@plans_set_reminder": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@plans_more_count": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@plans_every_day": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@more_item_medication_reminders": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@notification_medication_default_body": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
+  "pet_share_action_failed": "共有の操作に失敗しました。しばらくしてからお試しください。",
   "@_PLACEHOLDERS": {
     "description": "後続Chunkで画面ごとの文言を追加していく"
   }

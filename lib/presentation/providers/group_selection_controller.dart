@@ -16,8 +16,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/logger.dart';
-import '../../data/local/app_database.dart';
-import '../../data/local/database_enums.dart';
 import 'groups_providers.dart';
 import 'scope_providers.dart';
 

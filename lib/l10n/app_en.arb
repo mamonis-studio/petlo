@@ -146,7 +146,6 @@
   "more_diary": "Diary",
   "more_gallery": "Gallery",
   "more_ai_chat": "AI chat",
-  "more_medication_reminders": "Medication reminders",
   "more_groups_list": "Groups",
   "more_backup": "Backup",
   "more_theme": "Theme",
@@ -184,7 +183,6 @@
   "more_item_pet_consult": "Pet consult",
   "more_item_stool_diagnosis": "Stool diagnosis",
   "more_item_groups": "Groups",
-  "more_item_medication_reminders": "Medication reminders",
   "more_item_theme": "Theme",
   "more_item_language": "Language",
   "more_item_notifications": "Notifications",
@@ -401,10 +399,6 @@
   "ai_chat_system_quota": "Monthly limit reached. Pro plan removes the limit.",
   "ai_chat_image_camera": "Take a photo",
   "ai_chat_image_gallery": "Choose from library",
-  "medication_reminders_app_bar": "Medication reminders",
-  "medication_reminders_eyebrow": "Reminders",
-  "medication_reminders_empty": "No reminders yet",
-  "medication_reminders_add": "Add reminder",
   "medication_reminder_form_app_bar_new": "New reminder",
   "medication_reminder_form_app_bar_edit": "Edit reminder",
   "medication_reminder_form_medicine_label": "Medicine",
@@ -751,14 +745,10 @@
   "plans_legend_daily": "Daily",
   "plans_legend_memory": "Memory",
   "plans_no_upcoming": "No upcoming vaccinations.",
-  "plans_no_reminders": "No medication reminders set.",
-  "plans_set_reminder": "Set up reminder",
   "plans_overdue_label": "OVERDUE",
   "plans_due_label": "DUE",
   "plans_view_month": "Month",
   "plans_view_list": "List",
-  "plans_more_count": "+{n} more",
-  "plans_every_day": "Every day",
   "plans_birthday_suffix": "'s birthday",
   "schedule_category_vaccination": "Vaccination",
   "schedule_category_medication": "Medication",
@@ -903,8 +893,6 @@
   "medication_reminder_weekday_thu": "Thu",
   "medication_reminder_weekday_fri": "Fri",
   "medication_reminder_weekday_sat": "Sat",
-  "medication_reminders_hero": "Medication.",
-  "medication_reminders_description": "Add your pet's medication schedule\nand never miss a dose.",
   "medication_reminder_form_hero": "Medication.",
   "medication_reminder_form_dosage_label_optional": "Dosage (optional)",
   "medication_reminder_form_notes_label_optional": "Notes (optional)",
@@ -917,8 +905,6 @@
   "medication_reminder_dosage_hint": "e.g. 1 tablet / 0.5ml / half",
   "medication_reminder_notes_hint": "before meals / after food, etc.",
   "common_load_failed": "Failed to load",
-  "medication_reminders_section_active": "Active",
-  "medication_reminders_section_paused": "Paused",
   "weight_chart_hero": "Weight,\nover time.",
   "temperature_chart_hero": "Temperature,\nover time.",
   "gallery_empty_hero": "No photos yet",
@@ -1343,40 +1329,5 @@
   "schedule_medication_times_hint": "Add multiple times per day (e.g., 8:00 and 21:00).",
   "schedule_medication_weekdays_label": "Notification days",
   "schedule_medication_weekdays_hint": "Leave empty for daily notifications.",
-  "@medication_reminders_app_bar": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_add": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_empty": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_description": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_section_active": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_section_paused": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@plans_no_reminders": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@plans_set_reminder": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@plans_more_count": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@plans_every_day": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@more_item_medication_reminders": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@notification_medication_default_body": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  }
+  "pet_share_action_failed": "Couldn't update sharing. Please try again later."
 }

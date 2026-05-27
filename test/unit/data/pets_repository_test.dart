@@ -261,9 +261,10 @@ void main() {
       });
 
       // build 47 (Scope A2): pet を softDelete すると紐づく子レコードも
-      // まとめて論理削除されること。13 テーブルすべてを毎回検査するのは
-      // 重いので、各タイプの代表 (meals=ジャーナル系、weights=計測系、
-      // medication_reminders=リマインダー系) で確認する。
+      // まとめて論理削除されること。複数のテーブルを毎回検査するのは重いので、
+      // 代表 (meals=ジャーナル系、weights=計測系、medications=処方系) で確認。
+      // build 49 (C1): medication_reminders は v8 で DROP されたので
+      // cascade 対象から外した。
       test('cascade soft delete: child rows in petBoundTables get deletedAt',
           () async {
         final int petId = await repo.createPet(
@@ -289,22 +290,12 @@ void main() {
           'VALUES (?, ?, ?, ?, ?, ?, ?)',
           <Object?>[petId, 'personal', 5000, t, 'synced', t, t],
         );
-        // medication_reminders
-        await db.customStatement(
-          'INSERT INTO medication_reminders '
-          '(pet_id, group_id, medicine_name, times, weekdays_bits, '
-          'enabled, sync_status, created_at, updated_at) '
-          'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          <Object?>[petId, 'personal', 'Antibiotics', '["08:00"]', 0, 1,
-              'synced', t, t],
-        );
 
         await repo.softDeletePet(petId);
 
         for (final String table in <String>[
           'meals',
           'weights',
-          'medication_reminders'
         ]) {
           final List<QueryRow> rows = await db
               .customSelect(

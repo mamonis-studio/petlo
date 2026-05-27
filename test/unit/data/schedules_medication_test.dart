@@ -141,8 +141,35 @@ void main() {
   group('migrateMedicationRemindersToSchedules (build 47b Scope B2)', () {
     late AppDatabase db;
 
-    setUp(() {
+    setUp(() async {
       db = AppDatabase.forTesting(NativeDatabase.memory());
+      // build 49 (Scope C1) で medication_reminders テーブルは drift schema
+      // から削除されたため、onCreate (= v8 current schema) では作られない。
+      // v7→v8 アップグレードパスの helper を検証するために、v7 時点の
+      // medication_reminders テーブルを手動で組み立てる (アップグレード時に
+      // 必ず存在していた構造をそのまま再現)。
+      await db.customStatement(
+        'CREATE TABLE medication_reminders ('
+        'id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, '
+        'remote_id TEXT, '
+        "group_id TEXT NOT NULL DEFAULT 'personal', "
+        'pet_id INTEGER NOT NULL, '
+        'medicine_name TEXT NOT NULL, '
+        'dosage TEXT, '
+        'times TEXT, '
+        'weekdays_bits INTEGER, '
+        'enabled INTEGER NOT NULL DEFAULT 1, '
+        'start_date INTEGER, '
+        'end_date INTEGER, '
+        'notes TEXT, '
+        'created_by TEXT, '
+        "sync_status TEXT NOT NULL DEFAULT 'synced', "
+        'deleted_at INTEGER, '
+        'created_at INTEGER NOT NULL, '
+        'updated_at INTEGER NOT NULL, '
+        'last_modified_at_client INTEGER'
+        ')',
+      );
     });
 
     tearDown(() async {

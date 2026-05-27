@@ -117,14 +117,6 @@ final FutureProvider<int> totalRecordCountProvider =
     try {
       final db = ref.watch(appDatabaseProvider);
       // 各テーブルから簡易 count
-      Future<int> _count(Future<int> Function() future) async {
-        try {
-          return await future();
-        } catch (_) {
-          return 0;
-        }
-      }
-
       final List<int> counts = await Future.wait<int>(<Future<int>>[
         db.select(db.meals).get().then((l) => l.length),
         db.select(db.poops).get().then((l) => l.length),

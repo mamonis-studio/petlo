@@ -341,7 +341,6 @@ class NotificationService {
     // weekday(0=日)→ DateTime.weekday(1-7、月=1)
     final int targetDtWd = weekday == 0 ? 7 : weekday;
 
-    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduled = _nextInstanceOf(hour, minute);
 
     while (scheduled.weekday != targetDtWd) {

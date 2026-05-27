@@ -43,7 +43,6 @@ import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_label.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
-import '../../../data/repositories/pets_repository.dart';
 import '../../providers/groups_providers.dart';
 import '../../providers/pet_scopes_providers.dart';
 import '../../providers/pets_providers.dart';
@@ -977,6 +976,14 @@ class _ScopeListRowState extends ConsumerState<_ScopeListRow> {
     } catch (e, st) {
       PetloLogger.instance
           .w('removePetScope failed', error: e, stackTrace: st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.l10n.pet_share_action_failed),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

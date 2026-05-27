@@ -52,7 +52,6 @@ class GroupDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final AppColors colors = AppColors.of(context);
     final AppTypography typo = AppTypography.of(context);
-    final AppLocalizations l10n = AppLocalizations.of(context);
     final groupsRepo = ref.watch(groupsRepositoryProvider);
     final AsyncValue<List<GroupMemberEntity>> membersAsync =
         ref.watch(membersForGroupProvider(groupRemoteId));

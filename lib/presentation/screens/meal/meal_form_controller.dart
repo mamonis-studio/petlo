@@ -24,7 +24,6 @@ import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../providers/database_provider.dart';
 import '../../providers/foods_providers.dart';
 import '../../providers/meals_providers.dart';
 import '../../providers/photo_storage_provider.dart';

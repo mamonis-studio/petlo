@@ -7,12 +7,12 @@
 // 構成:
 //   ペット中心:  pets
 //   記録系(7):  meals, foods, poops, pees, vomits, weights, temperatures, diaries
-//   健康(5):    visits, medications, medication_reminders, vaccinations, bcs_checks
+//   健康(4):    visits, medications, vaccinations, bcs_checks
 //   予定(2):    expiration_items, streak_statuses
 //   共有(5):    groups, group_members, invite_codes, pending_transfers, cancel_feedback
 //   AI(4):      ai_chat_messages, ai_sessions, ai_image_diagnoses, weekly_summaries
 //   同期(3):    sync_queue, upload_queue, account_deletion_queue
-//   合計:       28テーブル
+//   合計:       27テーブル (build 49 で medication_reminders を削除)
 //
 // 使い方:
 //   final db = AppDatabase();
@@ -53,7 +53,6 @@ import 'tables/group_members.dart';
 import 'tables/groups.dart';
 import 'tables/invite_codes.dart';
 import 'tables/meals.dart';
-import 'tables/medication_reminders.dart';
 import 'tables/medications.dart';
 import 'tables/pees.dart';
 import 'tables/pending_transfers.dart';
@@ -91,7 +90,6 @@ export 'tables/group_members.dart';
 export 'tables/groups.dart';
 export 'tables/invite_codes.dart';
 export 'tables/meals.dart';
-export 'tables/medication_reminders.dart';
 export 'tables/medications.dart';
 export 'tables/pees.dart';
 export 'tables/pending_transfers.dart';
@@ -129,7 +127,8 @@ part 'app_database.g.dart';
     // 健康
     Visits,
     Medications,
-    MedicationReminders,
+    // build 49 (C1): MedicationReminders は schedules に統合済み、
+    // v8 で物理削除。
     Vaccinations,
     BcsChecks,
 
@@ -202,11 +201,18 @@ class AppDatabase extends _$AppDatabase {
           }
           // build 47b / Scope B1+B2: schedules テーブルに times / weekdaysBits
           // を足し、既存 medication_reminders 行を schedules (category=medication)
-          // に 1:1 移行する。元テーブル DROP は build 48+ で行う (rollback safety)。
+          // に 1:1 移行する。元テーブル DROP は build 49 (v8) で実施。
           if (from < 7) {
             await m.addColumn(schedules, schedules.times);
             await m.addColumn(schedules, schedules.weekdaysBits);
             await migrateMedicationRemindersToSchedules();
+          }
+          // build 49 / Scope C1: medication_reminders テーブルを物理削除。
+          // v7 のデータ移行は完了済みなので元テーブルは不要。
+          // 注: v7→v8 へ skip 上がりするユーザはまずいないが、v6→v8 のような
+          // 飛び級でも v7 step が先に走るので順序的に安全。rollback 不可。
+          if (from < 8) {
+            await customStatement('DROP TABLE IF EXISTS medication_reminders');
           }
           await AppDatabaseMigrations.onUpgrade(m, from, to);
         },

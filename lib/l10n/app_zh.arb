@@ -146,7 +146,6 @@
   "more_diary": "日记",
   "more_gallery": "相册",
   "more_ai_chat": "AI咨询",
-  "more_medication_reminders": "用药提醒",
   "more_groups_list": "群组",
   "more_backup": "备份",
   "more_theme": "主题",
@@ -184,7 +183,6 @@
   "more_item_pet_consult": "AI咨询",
   "more_item_stool_diagnosis": "便便图像诊断",
   "more_item_groups": "家庭共享群组",
-  "more_item_medication_reminders": "用药提醒",
   "more_item_theme": "外观主题",
   "more_item_language": "语言",
   "more_item_notifications": "通知设置",
@@ -401,10 +399,6 @@
   "ai_chat_system_quota": "本月用量已达上限。Pro 套餐无限制。",
   "ai_chat_image_camera": "拍照",
   "ai_chat_image_gallery": "从相册选择",
-  "medication_reminders_app_bar": "用药提醒",
-  "medication_reminders_eyebrow": "提醒",
-  "medication_reminders_empty": "还没有提醒",
-  "medication_reminders_add": "添加提醒",
   "medication_reminder_form_app_bar_new": "新提醒",
   "medication_reminder_form_app_bar_edit": "编辑提醒",
   "medication_reminder_form_medicine_label": "药品名称",
@@ -751,14 +745,10 @@
   "plans_legend_daily": "日常",
   "plans_legend_memory": "回忆",
   "plans_no_upcoming": "没有即将到来的疫苗预约",
-  "plans_no_reminders": "未设置服药提醒",
-  "plans_set_reminder": "设置提醒",
   "plans_overdue_label": "逾期",
   "plans_due_label": "预定",
   "plans_view_month": "月",
   "plans_view_list": "列表",
-  "plans_more_count": "+{n}",
-  "plans_every_day": "每天",
   "plans_birthday_suffix": "的生日",
   "schedule_category_vaccination": "疫苗",
   "schedule_category_medication": "服药",
@@ -903,8 +893,6 @@
   "medication_reminder_weekday_thu": "四",
   "medication_reminder_weekday_fri": "五",
   "medication_reminder_weekday_sat": "六",
-  "medication_reminders_hero": "服药。",
-  "medication_reminders_description": "登记服药计划,防止漏服。",
   "medication_reminder_form_hero": "服药。",
   "medication_reminder_form_dosage_label_optional": "用量(可选)",
   "medication_reminder_form_notes_label_optional": "备注(可选)",
@@ -917,8 +905,6 @@
   "medication_reminder_dosage_hint": "例: 1片 / 0.5ml / 半片",
   "medication_reminder_notes_hint": "空腹 / 饭后 等",
   "common_load_failed": "加载失败",
-  "medication_reminders_section_active": "启用",
-  "medication_reminders_section_paused": "暂停",
   "weight_chart_hero": "体重趋势。",
   "temperature_chart_hero": "体温趋势。",
   "gallery_empty_hero": "暂无照片",
@@ -1343,40 +1329,5 @@
   "schedule_medication_times_hint": "可设置每天多个时间(例如 8:00 和 21:00)。",
   "schedule_medication_weekdays_label": "提醒星期",
   "schedule_medication_weekdays_hint": "不选则每天提醒。",
-  "@medication_reminders_app_bar": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_add": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_empty": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_description": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_section_active": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@medication_reminders_section_paused": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@plans_no_reminders": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@plans_set_reminder": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@plans_more_count": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@plans_every_day": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@more_item_medication_reminders": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  },
-  "@notification_medication_default_body": {
-    "description": "DEPRECATED in build 47b (Scope B6): medication reminders merged into schedules (category=medication). Key kept for one build cycle so the physical delete in build 48+ goes through an audit. Do not reference from new code."
-  }
+  "pet_share_action_failed": "共享操作失败,请稍后再试。"
 }

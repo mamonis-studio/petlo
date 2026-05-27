@@ -600,13 +600,36 @@ class SyncService {
 
   /// INSERT OR REPLACE で payload を行に焼く。
   /// payload は snake_case の列名キーを持つ Map である前提。
+  ///
+  /// build 49 (C5): カラム名を `^[a-z][a-z0-9_]*$` で validate し、合致しない
+  /// キーはスキップ。サーバが不正な payload を送ってきた場合の SQL injection
+  /// 防御。値側は ? bind なので元から安全だが、カラム名は文字列補間しているため
+  /// 念のためホワイトリスト方式で締める。
+  static final RegExp _columnNameRegExp = RegExp(r'^[a-z][a-z0-9_]*$');
+
   Future<void> _upsertByPk(
     AppDatabase db,
     String table,
     Map<String, dynamic> payload,
   ) async {
     if (payload.isEmpty) return;
-    final List<String> cols = payload.keys.toList();
+
+    final List<String> cols = <String>[];
+    final List<String> rejected = <String>[];
+    for (final String key in payload.keys) {
+      if (_columnNameRegExp.hasMatch(key)) {
+        cols.add(key);
+      } else {
+        rejected.add(key);
+      }
+    }
+    if (rejected.isNotEmpty) {
+      PetloLogger.instance.w(
+          'SyncService._upsertByPk($table): rejected non-snake_case '
+          'column key(s): $rejected');
+    }
+    if (cols.isEmpty) return;
+
     final String placeholders = List<String>.filled(cols.length, '?').join(', ');
     final List<Object?> values = cols.map((String c) => payload[c]).toList();
     try {

@@ -518,6 +518,15 @@ class _PermissionDropdown extends ConsumerWidget {
         } catch (e, st) {
           PetloLogger.instance.w('updatePetScopePermission failed',
               error: e, stackTrace: st);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    AppLocalizations.of(context).pet_share_action_failed),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
         }
       },
     );
@@ -562,6 +571,14 @@ class _ShareButtonState extends ConsumerState<_ShareButton> {
               } catch (e, st) {
                 PetloLogger.instance
                     .w('addPetScope failed', error: e, stackTrace: st);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(widget.l10n.pet_share_action_failed),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
               } finally {
                 if (mounted) setState(() => _busy = false);
               }
@@ -662,6 +679,14 @@ class _UnshareButtonState extends ConsumerState<_UnshareButton> {
     } catch (e, st) {
       PetloLogger.instance
           .w('removePetScope failed', error: e, stackTrace: st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.l10n.pet_share_action_failed),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

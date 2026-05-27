@@ -6,7 +6,6 @@
 //   - watchActivePetsInScope / watchPartedPetsInScope が pet_scopes 経由の
 //     JOIN 読み取りで正しく動くこと
 //   - createPet が primary pet_scope を自動作成すること
-//   - movePetToGroup が primary pet_scope を追従更新すること
 //   - hasPetWithName が pet_scopes 経由でスコープ内一致を判定すること
 //   - subscriber 視点 (他人のペットが共有された状態) でペットが見えること
 //
@@ -29,8 +28,9 @@ void main() {
   late PetsRepository pets;
   late PetScopesRepository scopes;
 
-  // movePetToGroup が SyncService.instance.syncAll() を呼ぶ際に
-  // PetloLogger.instance が必要になるので一度だけ初期化しておく。
+  // build 49: movePetToGroup の削除に伴い setUpAll(PetloLogger.initialize)
+  // も不要になったが、scopes 系の async コードでも logger を間接呼びする
+  // 可能性があるため安全側で残す。
   setUpAll(() async {
     await PetloLogger.initialize();
   });
@@ -154,28 +154,9 @@ void main() {
     });
   });
 
-  group('movePetToGroup keeps primary pet_scope in sync', () {
-    test('personal → group updates primary scope row', () async {
-      final int petId = await pets.createPet(
-          groupId: 'personal', name: 'Mover', type: PetType.dog);
-      await pets.movePetToGroup(petId, 'group-uuid-NEW');
-
-      final PetScopeEntity? primary = await scopes.findPrimaryScope(petId);
-      expect(primary, isNotNull);
-      expect(primary!.groupId, 'group-uuid-NEW');
-      // pets.group_id も同じ値に更新
-      final PetEntity? p = await pets.getPet(petId);
-      expect(p!.groupId, 'group-uuid-NEW');
-
-      // 移動先からは見える、Personal からは見えない
-      expect(
-          (await pets.watchActivePetsInScope('personal').first), isEmpty);
-      expect(
-        (await pets.watchActivePetsInScope('group-uuid-NEW').first).length,
-        1,
-      );
-    });
-  });
+  // build 49 (C3): movePetToGroup を物理削除したのでテスト group を削除。
+  // ペット所属の移動は addPetScope / removePetScope の組み合わせで行う想定で、
+  // それらの単体検証は sync_lww_test 等でカバー済み。
 
   group('hasPetWithName respects pet_scopes', () {
     test('same name same scope returns true', () async {

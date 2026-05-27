@@ -4,7 +4,7 @@ publish_to: "none"
 
 # Versioning: <major>.<minor>.<patch>+<build_number>
 # build_numberはApp Store Connect / Google Play Consoleで自動増加させる
-version: 1.0.0+48
+version: 1.0.0+49
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
@@ -68,10 +68,9 @@ dependencies:
   image_cropper: ^9.0.0
 
   # ===== Calendar (rev5.2新規) =====
-  # 月表示UI + OSカレンダー連携
+  # 月表示UI(OS カレンダー連携は v1.1+ で device_calendar / add_2_calendar
+  # を再追加予定。build 49 で未参照のため pubspec から外した)。
   table_calendar: ^3.1.2
-  device_calendar: ^4.3.3
-  add_2_calendar: ^3.0.1
 
   # ===== Onboarding (rev5.4新規) =====
   introduction_screen: ^3.1.14
@@ -89,9 +88,8 @@ dependencies:
   # ===== Backups (rev5.4) =====
   # iCloud Drive
   icloud_storage: ^2.2.0
-  # Google Drive
+  # Google Drive (build 49: google_sign_in は v1.1 backup 実装時に再追加)
   googleapis: ^13.2.0
-  google_sign_in: ^6.2.1
   archive: ^3.6.1  # ZIPバックアップ生成
 
   # ===== Home Widgets (rev5.4) =====
@@ -99,7 +97,6 @@ dependencies:
 
   # ===== Authentication =====
   sign_in_with_apple: ^6.1.2
-  # google_sign_in は上で記載
 
   # ===== Storage =====
   shared_preferences: ^2.3.2

@@ -18,7 +18,6 @@ class OnboardingPillarsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
-    final AppTypography typo = AppTypography.of(context);
     final AppLocalizations l10n = AppLocalizations.of(context);
 
     return Padding(

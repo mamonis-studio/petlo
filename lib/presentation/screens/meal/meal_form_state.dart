@@ -17,7 +17,6 @@ import 'package:flutter/foundation.dart';
 
 import '../../../data/local/database_enums.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../widgets/forms/validators.dart';
 
 /// バリデーション結果
 @immutable

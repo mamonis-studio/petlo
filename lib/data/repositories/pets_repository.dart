@@ -13,12 +13,10 @@
 //
 // ============================================================================
 
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
-import '../../core/sync/sync_service.dart';
 import '../local/app_database.dart';
 import '../local/database_enums.dart';
 import '../storage/photo_storage.dart';
@@ -382,150 +380,13 @@ class PetsRepository extends BaseRepository {
   }
 
   // ============================================================================
-  // Write — Move between scopes (build 20, DEPRECATED in build 45)
-  // ============================================================================
-
-  /// build 20 phase 3: ペットを別スコープ (personal / 任意グループ) に移動。
-  /// 紐づくレコードも groupId 連動更新し、sync_queue に必要な op を積む。
-  ///
-  /// 移動規則:
-  ///   - personal → group : 新グループに UPSERT op を積む (= 共有開始)
-  ///   - group   → personal: 旧グループに DELETE op を積む (= 共有解除)
-  ///   - group A → group B : 旧 A に DELETE、新 B に UPSERT (両方積む)
-  ///
-  /// 全更新は drift トランザクションでアトミック。
-  /// 戻り値は移動した entity 総数 (pet + 紐レコード)。
-  ///
-  /// **DEPRECATED (build 45, Phase G4a)**: 「1 ペット = 1 group」転送モデルは
-  /// multi-scope モデルでは表現力不足。代わりに [PetScopesRepository.addPetScope]
-  /// (新規共有を追加) と [PetScopesRepository.removePetScope] (共有解除) を
-  /// 使う。直接呼び出し用の薄いラッパーは Phase G4b で `PetsRepository.sharePet`
-  /// として提供予定。現状の caller (build 44 時点で 2 箇所) は G4b の UI 改修
-  /// と同時に置換予定 — それまで本メソッドは動作互換のため残す。
-  @Deprecated(
-    'Use PetScopesRepository.addPetScope / removePetScope instead. '
-    'Targeted for removal in build 47+ after G4b UI refactor.',
-  )
-  Future<int> movePetToGroup(int petId, String newGroupId) async {
-    final PetEntity? pet = await getPet(petId);
-    if (pet == null) {
-      throw StateError('Pet not found: id=$petId');
-    }
-    final String oldGroupId = pet.groupId;
-    if (oldGroupId == newGroupId) return 0;
-
-    final int t = now();
-    final String newStatus =
-        isSharedScope(newGroupId) ? 'pending' : 'synced';
-
-    // pet に紐づく「家族で見る価値のある」レコードテーブル。
-    // ai_*, weekly_summaries, streak_statuses は private/aggregate のため除外。
-    const List<String> petBoundTables = <String>[
-      'meals', 'poops', 'pees', 'vomits',
-      'weights', 'temperatures', 'bcs_checks',
-      'diaries', 'visits', 'vaccinations',
-      'medications', 'medication_reminders',
-      'expiration_items',
-    ];
-
-    final List<({String table, int id})> affected = <({String table, int id})>[];
-
-    await db.transaction(() async {
-      for (final String table in petBoundTables) {
-        // 対象 id を先に拾う (移動後の sync_queue 行に必要)
-        final List<QueryRow> ids = await db.customSelect(
-          'SELECT id FROM $table WHERE pet_id = ?',
-          variables: <Variable<Object>>[Variable<int>(petId)],
-        ).get();
-        for (final QueryRow row in ids) {
-          affected.add((table: table, id: row.read<int>('id')));
-        }
-        // 一括 UPDATE
-        await db.customStatement(
-          'UPDATE $table SET group_id = ?, sync_status = ?, updated_at = ?, '
-          'last_modified_at_client = ? WHERE pet_id = ?',
-          <Object?>[newGroupId, newStatus, t, t, petId],
-        );
-      }
-      // ペット本体
-      await db.customStatement(
-        'UPDATE pets SET group_id = ?, sync_status = ?, updated_at = ?, '
-        'last_modified_at_client = ? WHERE id = ?',
-        <Object?>[newGroupId, newStatus, t, t, petId],
-      );
-      // build 44 (Phase G2): 既存 movePetToGroup は「1 ペット = 1 scope」を
-      // 維持する転送なので、primary pet_scope の group_id も同じ値に更新する。
-      // Phase G4 で sharePet (= addPetScope) に置換予定、本処理はその移行
-      // までの繋ぎ。
-      await db.customStatement(
-        'UPDATE pet_scopes SET group_id = ?, sync_status = ?, '
-        'updated_at = ?, last_modified_at_client = ? '
-        'WHERE pet_id = ? AND is_primary = 1 AND deleted_at IS NULL',
-        <Object?>[newGroupId, newStatus, t, t, petId],
-      );
-    });
-
-    // drift watchers を発火 (StreamProvider 再評価)
-    db.notifyUpdates(<TableUpdate>{
-      const TableUpdate('pets'),
-      const TableUpdate('pet_scopes'),
-      for (final String t in petBoundTables) TableUpdate(t),
-    });
-
-    // 旧グループ向け DELETE op (旧が shared なら)
-    if (isSharedScope(oldGroupId)) {
-      await enqueueSyncIfShared(
-        groupId: oldGroupId,
-        operation: SyncOperation.delete,
-        targetTable: 'pets',
-        recordId: petId,
-        payloadJson: '{}',
-        clientTimestamp: t,
-      );
-      for (final ({String table, int id}) r in affected) {
-        await enqueueSyncIfShared(
-          groupId: oldGroupId,
-          operation: SyncOperation.delete,
-          targetTable: r.table,
-          recordId: r.id,
-          payloadJson: '{}',
-          clientTimestamp: t,
-        );
-      }
-    }
-
-    // 新グループ向け UPSERT op (新が shared なら)
-    if (isSharedScope(newGroupId)) {
-      await enqueueSyncIfShared(
-        groupId: newGroupId,
-        operation: SyncOperation.update,
-        targetTable: 'pets',
-        recordId: petId,
-        payloadJson: '{}',
-        clientTimestamp: t,
-      );
-      for (final ({String table, int id}) r in affected) {
-        await enqueueSyncIfShared(
-          groupId: newGroupId,
-          operation: SyncOperation.update,
-          targetTable: r.table,
-          recordId: r.id,
-          payloadJson: '{}',
-          clientTimestamp: t,
-        );
-      }
-    }
-
-    // build 26: グループ構成が変わる操作 (= ペットの所属移動) は
-    // debounce 2.5s を待たず即時 sync を発火する。
-    // 「共有してすぐ招待コードを送る」高速ケースで race を防ぐ。
-    unawaited(SyncService.instance.syncAll());
-
-    return affected.length + 1;
-  }
-
-  // ============================================================================
   // Write — Delete (論理削除)
+  // ============================================================================
+  //
+  // build 49 (C3): @Deprecated だった `movePetToGroup` (build 20-48) を物理
+  // 削除した。multi-scope モデルでは [PetScopesRepository.addPetScope]/
+  // [removePetScope] が公式 API。UI caller は build 46 (Phase G4b) で
+  // 全置換済み。
   // ============================================================================
 
   /// ペットを論理削除 (deletedAtセット)。
@@ -547,12 +408,17 @@ class PetsRepository extends BaseRepository {
 
     final meta = buildDeleteMetadata(groupId: pet.groupId);
 
+    // build 49 (C1): medication_reminders は v8 で DROP 済みなので外す。
+    // 投薬の枠は schedules (category=medication) に統合されたが、schedules は
+    // 「複数ペット共通の予定」を許す構造なので pet 単独削除では消さない
+    // (例: 旅行プラン schedule に複数ペットが related され、1 匹だけ削除
+    // するケースを正しく扱うため、schedule の cascade は schedules 側の
+    // relatedPetIds 編集経路で扱う)。
     const List<String> petBoundTables = <String>[
       'meals', 'poops', 'pees', 'vomits',
       'weights', 'temperatures', 'bcs_checks',
       'diaries', 'visits', 'vaccinations',
-      'medications', 'medication_reminders',
-      'expiration_items',
+      'medications', 'expiration_items',
     ];
 
     final List<({String table, int id})> affectedChildren =

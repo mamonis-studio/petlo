@@ -21,7 +21,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/eyebrow_text.dart';
-import '../../../core/widgets/outlined_action_button.dart';
 import '../../../core/widgets/section_label.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/models/day_summary.dart';
@@ -64,8 +63,6 @@ class _PlansTabScreenState extends ConsumerState<PlansTabScreen> {
     final AppTypography typo = AppTypography.of(context);
     final AppColors colors = AppColors.of(context);
     final AppLocalizations l10n = AppLocalizations.of(context);
-    final String? currentPetId = ref.watch(currentPetIdProvider);
-    final bool isAllPets = currentPetId == kAllPetsId;
     // build 9: ペットが 1匹以上いればカレンダーを表示(All Pets でも個別でも)。
     // 0匹の場合のみ select-pet 空状態。
     final bool noPets = ref.watch(hasNoPetsProvider).maybeWhen(

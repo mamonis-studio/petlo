@@ -16,7 +16,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
 import '../../providers/onboarding_completed_provider.dart';
 import '../tab_shell.dart';
 import 'pages/onboarding_done_page.dart';
@@ -92,7 +91,6 @@ class _OnboardingFlowState extends ConsumerState<OnboardingFlow> {
   @override
   Widget build(BuildContext context) {
     final AppColors colors = AppColors.of(context);
-    final AppTypography typo = AppTypography.of(context);
 
     return Scaffold(
       backgroundColor: colors.bg,

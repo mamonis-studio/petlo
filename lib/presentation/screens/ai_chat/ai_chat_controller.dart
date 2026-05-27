@@ -36,7 +36,6 @@ import '../../../data/local/database_enums.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/ai_chat_providers.dart';
 import '../../providers/ai_service_provider.dart';
-import '../../providers/connectivity_provider.dart';
 import '../../providers/pet_context_builder.dart';
 import '../../providers/pro_status_provider.dart';
 import '../../providers/scope_providers.dart';
@@ -178,7 +177,7 @@ class AiChatController extends Notifier<AiChatState> {
         );
         return false;
       }
-    } catch (e, st) {
+    } catch (e) {
       // カウント取得失敗時は通すべきか弾くべきか — 通す方針
       // (ローカルDB障害でユーザー体験を害さない)
       PetloLogger.instance.d(

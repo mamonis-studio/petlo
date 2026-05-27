@@ -14,7 +14,6 @@
 //
 // ============================================================================
 
-import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/sync/sync_service.dart';
