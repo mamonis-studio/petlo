@@ -166,3 +166,8 @@ lib/
 ## ライセンス
 
 Proprietary © 2026 mamonis.studio
+
+## Status
+
+- v1.0 release pending (build 49)
+- Multi-scope sharing, pet deletion UI, medication integration complete
