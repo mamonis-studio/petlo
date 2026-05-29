@@ -99,7 +99,13 @@ class PetSelectorPill extends StatelessWidget {
         child: AnimatedContainer(
           duration: AppDurations.petSwitch,
           curve: AppDurations.standardCurve,
-          padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
+          // build 50: padding を 14/12 → 10/8 に縮める。petSelectorHeight=56
+          // の中に「avatar 28 + padding 26 + active underline 2 = 56」が
+          // ぴったり収まる設計だったが、Fraunces italic 16 の line box が
+          // 実描画で数 px 上回ることがあり 3px overflow していた
+          // (iPhone 16 Pro Max / iPad Pro 13-inch 双方で再現)。
+          // 上下に 7-8px の headroom を確保することで font 描画ぶれを吸収。
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
