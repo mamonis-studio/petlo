@@ -678,13 +678,26 @@ class SyncService {
     }
   }
 
-  /// INSERT OR REPLACE で payload を行に焼く。
+  /// payload を upsert (PK = id) で行に焼く。
   /// payload は snake_case の列名キーを持つ Map である前提。
   ///
   /// build 49 (C5): カラム名を `^[a-z][a-z0-9_]*$` で validate し、合致しない
   /// キーはスキップ。サーバが不正な payload を送ってきた場合の SQL injection
   /// 防御。値側は ? bind なので元から安全だが、カラム名は文字列補間しているため
   /// 念のためホワイトリスト方式で締める。
+  ///
+  /// build 56 (案 F): 旧実装は `INSERT OR REPLACE INTO ...` で書いていた。
+  /// SQLite の INSERT OR REPLACE は内部的に `DELETE → INSERT` を行うため、
+  /// その DELETE が **FK ON DELETE CASCADE** を発火させる。
+  /// 具体的には `pet_scopes.pet_id` が `pets(id)` への CASCADE FK を持って
+  /// いるため、`pets` を pull で upsert するたびに `pet_scopes` がローカルから
+  /// 全消去され、`watchActivePetsInScope` の JOIN が空になりペットが UI から
+  /// 消える挙動になっていた。
+  ///
+  /// 修正: `INSERT INTO ... ON CONFLICT(id) DO UPDATE SET ...` (UPSERT) に
+  /// 切替。SQLite 3.24+ がサポート、内部的に純粋な UPDATE で済むので CASCADE
+  /// は発火しない。新規行は INSERT、既存行は in-place UPDATE。
+  /// 後方互換完全。
   static final RegExp _columnNameRegExp = RegExp(r'^[a-z][a-z0-9_]*$');
 
   Future<void> _upsertByPk(
@@ -710,13 +723,30 @@ class SyncService {
     }
     if (cols.isEmpty) return;
 
-    final String placeholders = List<String>.filled(cols.length, '?').join(', ');
+    final String placeholders =
+        List<String>.filled(cols.length, '?').join(', ');
     final List<Object?> values = cols.map((String c) => payload[c]).toList();
+    final List<String> updateCols =
+        cols.where((String c) => c != 'id').toList();
     try {
-      await db.customStatement(
-        'INSERT OR REPLACE INTO $table (${cols.join(',')}) VALUES ($placeholders)',
-        values,
-      );
+      if (updateCols.isEmpty) {
+        // 'id' しか列が無い (payload が id のみ) — UPDATE 対象が空。
+        // 既存行があれば触らず、無ければ id のみで INSERT する。
+        await db.customStatement(
+          'INSERT INTO $table (${cols.join(',')}) VALUES ($placeholders) '
+          'ON CONFLICT(id) DO NOTHING',
+          values,
+        );
+      } else {
+        final String setClause = updateCols
+            .map((String c) => '$c = excluded.$c')
+            .join(', ');
+        await db.customStatement(
+          'INSERT INTO $table (${cols.join(',')}) VALUES ($placeholders) '
+          'ON CONFLICT(id) DO UPDATE SET $setClause',
+          values,
+        );
+      }
     } catch (e, st) {
       PetloLogger.instance
           .w('SyncService._upsertByPk($table) failed', error: e, stackTrace: st);
