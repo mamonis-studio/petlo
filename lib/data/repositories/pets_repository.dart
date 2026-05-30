@@ -17,6 +17,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import '../../core/utils/logger.dart';
 import '../local/app_database.dart';
 import '../local/database_enums.dart';
 import '../storage/photo_storage.dart';
@@ -202,18 +203,20 @@ class PetsRepository extends BaseRepository {
     // pet_scopes 経由の JOIN 読み取り (watchActivePetsInScope) で新規ペットが
     // 即座に可視化されるための必須ステップ。Phase G1 の backfill と完全に
     // 同じ形 (permission=owner, isPrimary=true) で挿入する。
-    await db.into(db.petScopes).insert(PetScopesCompanion.insert(
-          petId: newId,
-          groupId: groupId,
-          permission: MemberPermission.owner,
-          isPrimary: const Value(true),
-          sharedAt: meta.createdAt,
-          sharedByUserId: Value(createdBy),
-          syncStatus: Value(meta.initialSyncStatus),
-          createdAt: meta.createdAt,
-          updatedAt: meta.updatedAt,
-          lastModifiedAtClient: Value(meta.lastModifiedAtClient),
-        ));
+    final int scopeId = await db.into(db.petScopes).insert(
+          PetScopesCompanion.insert(
+            petId: newId,
+            groupId: groupId,
+            permission: MemberPermission.owner,
+            isPrimary: const Value(true),
+            sharedAt: meta.createdAt,
+            sharedByUserId: Value(createdBy),
+            syncStatus: Value(meta.initialSyncStatus),
+            createdAt: meta.createdAt,
+            updatedAt: meta.updatedAt,
+            lastModifiedAtClient: Value(meta.lastModifiedAtClient),
+          ),
+        );
 
     await enqueueSyncIfShared(
       groupId: groupId,
@@ -227,6 +230,32 @@ class PetsRepository extends BaseRepository {
         'sex': sex?.name,
         // 写真は別途upload_queueで処理
       }),
+    );
+
+    // build 53a (構造的欠陥 #1 修正): 旧実装は pets だけ sync_queue に積み、
+    // 自動生成した primary pet_scope 行は積んでいなかった。結果、shared スコープで
+    // 新規ペットを作成しても server 側で pet_scopes 行が無いため、他端末から
+    // 見えない + 自分の端末でも sync の副作用で消える挙動を疑っていた。
+    // Personal は同期しないので enqueueSyncIfShared が no-op。
+    await enqueueSyncIfShared(
+      groupId: groupId,
+      operation: SyncOperation.update,
+      targetTable: 'pet_scopes',
+      recordId: scopeId,
+      payloadJson: '{}',
+    );
+
+    // build 53a: 診断ログ (構造的欠陥の検証用、build 53b で d レベルに下げる)
+    final int scopesCount = await (db.selectOnly(db.petScopes)
+          ..addColumns(<Expression<Object>>[db.petScopes.id])
+          ..where(db.petScopes.petId.equals(newId) &
+              db.petScopes.deletedAt.isNull()))
+        .get()
+        .then((List<TypedResult> rows) => rows.length);
+    PetloLogger.instance.i(
+      '[createPet diag] petId=$newId groupId=$groupId '
+      'scopeId=$scopeId pet_scopes_for_pet=$scopesCount '
+      'is_shared=${isSharedScope(groupId)}',
     );
 
     return newId;

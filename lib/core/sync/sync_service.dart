@@ -31,6 +31,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/local/app_database.dart';
 import '../auth/api_dio.dart';
+import '../groups/group_api_service.dart';
 import '../utils/logger.dart';
 
 class SyncService {
@@ -136,6 +137,50 @@ class SyncService {
     }
   }
 
+  /// build 55-client: 認証直後の "full restore" 同期。
+  ///
+  /// ユースケース:
+  ///   - アプリ削除 → 再インストール直後(Keychain に device_id 残存)
+  ///   - 機種変後の anonymous 再認証直後
+  ///   - 初回 anonymous 認証直後(server に既存データは無いが phantom 防止)
+  ///
+  /// 動作:
+  ///   1. `GroupApiService.listMyGroupRemoteIds()` で server 既知のグループを取得
+  ///   2. 各 group の since カーソルを 0 に戻して `_pullGroup` を実行
+  ///   3. 結果として groups / pets / records / pet_scopes がローカルに復元される
+  ///
+  /// 既存ローカル DB に group 行が無い状態を想定するため、`_pullGroup` の前に
+  /// `resetCursorForGroup` を呼んで完全リプレイを強制する。
+  Future<void> fullPull(GroupApiService groupApi) async {
+    final AppDatabase? db = _db;
+    if (db == null) {
+      PetloLogger.instance.d('SyncService.fullPull: db not bound');
+      return;
+    }
+    PetloLogger.instance.i('[fullPull] start');
+    final List<String> remoteIds = await groupApi.listMyGroupRemoteIds();
+    PetloLogger.instance
+        .i('[fullPull] server returned ${remoteIds.length} group(s)');
+    if (remoteIds.isEmpty) return;
+
+    int pulled = 0;
+    for (final String gid in remoteIds) {
+      try {
+        await resetCursorForGroup(gid);
+        await _pullGroup(db, gid);
+        pulled++;
+      } catch (e, st) {
+        PetloLogger.instance.w(
+          '[fullPull] pull failed for group=$gid',
+          error: e,
+          stackTrace: st,
+        );
+      }
+    }
+    PetloLogger.instance
+        .i('[fullPull] done: pulled=$pulled/${remoteIds.length}');
+  }
+
   /// 起動 / フォアグラウンド復帰 / 手動ボタン から呼ぶ。
   /// 全所属グループに対し push → pull を実行。
   Future<void> syncAll() async {
@@ -219,6 +264,17 @@ class SyncService {
         continue;
       }
 
+      // build 53a (診断): push 内訳を log。
+      final Map<String, int> entityCounts = <String, int>{};
+      for (final Map<String, dynamic> op in operations) {
+        final String et = (op['entityType'] as String?) ?? '?';
+        entityCounts[et] = (entityCounts[et] ?? 0) + 1;
+      }
+      PetloLogger.instance.i(
+        '[sync push diag] ops=${operations.length} '
+        'by_entity=$entityCounts batch_ids=${batch.map((r) => r.id).toList()}',
+      );
+
       // backend へ送信
       Map<String, dynamic>? respBody;
       try {
@@ -267,6 +323,23 @@ class SyncService {
             );
           }
         });
+      }
+
+      // build 53a (診断): pet_scope に関する accepted/rejected を抜粋 log
+      final List<SyncQueueItemEntity> petScopeBatchRows = batch
+          .where((SyncQueueItemEntity r) => r.targetTable == 'pet_scopes')
+          .toList();
+      if (petScopeBatchRows.isNotEmpty) {
+        final int psAccepted = petScopeBatchRows
+            .where((SyncQueueItemEntity r) => accepted.contains(r.opId))
+            .length;
+        PetloLogger.instance.i(
+          '[sync push diag] pet_scopes accepted=$psAccepted/'
+          '${petScopeBatchRows.length} '
+          'rejected=${petScopeBatchRows.where((SyncQueueItemEntity r) =>
+              rejectedReason.containsKey(r.opId)).map((SyncQueueItemEntity r) =>
+                  '${r.opId}:${rejectedReason[r.opId]}').toList()}',
+        );
       }
 
       // rejected: reason 別処理
@@ -426,6 +499,13 @@ class SyncService {
     // backend (Phase G3) で実装予定、それまでは empty list が来る想定。
     final List<dynamic> petScopes =
         (body['petScopes'] as List<dynamic>?) ?? const [];
+
+    // build 53a (診断): pull 内訳を log。
+    PetloLogger.instance.i(
+      '[sync pull diag] groupId=$groupId since=$since '
+      'pets=${pets.length} records=${records.length} '
+      'pet_scopes=${petScopes.length}',
+    );
 
     // upsert を 1 トランザクションで実行
     final Set<String> touchedTables = <String>{};

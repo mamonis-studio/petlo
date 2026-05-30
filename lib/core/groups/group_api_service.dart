@@ -216,6 +216,47 @@ class GroupApiService {
   }
 
   // ==========================================================================
+  // 自分が属するグループ一覧 (GET /groups)
+  // build 55-client: 認証直後の fullPull で「サーバが知ってる自分のグループ群」を
+  // 列挙するのに使う。アプリ削除→再インストール時にローカル DB が空でも、
+  // この endpoint でサーバ既存データへの足がかりを得る。
+  //
+  // レスポンス想定形式:
+  //   { "groups": [ { "id": "<uuid>", "name": "...", "myPermission": "owner|editor|viewer", ... } ] }
+  //
+  // 旧サーバが未実装の場合は 404 → catch 側で空リスト扱い (fullPull が no-op)。
+  // ==========================================================================
+  Future<List<String>> listMyGroupRemoteIds() async {
+    try {
+      final Response<dynamic> resp = await _dio.get<dynamic>('/groups');
+      final dynamic body = resp.data;
+      if (body is! Map<String, dynamic>) return const <String>[];
+      final dynamic groups = body['groups'];
+      if (groups is! List) return const <String>[];
+      final List<String> out = <String>[];
+      for (final dynamic g in groups) {
+        if (g is Map<String, dynamic>) {
+          final dynamic id = g['id'] ?? g['remoteId'] ?? g['groupId'];
+          if (id is String && id.isNotEmpty) out.add(id);
+        } else if (g is String && g.isNotEmpty) {
+          out.add(g);
+        }
+      }
+      return out;
+    } on DioException catch (e) {
+      // 404 (未実装) や 401 (auth 失敗) はすべて空リストで吸収。
+      PetloLogger.instance.d(
+        'listMyGroupRemoteIds: ${e.response?.statusCode} ${e.message}',
+      );
+      return const <String>[];
+    } catch (e, st) {
+      PetloLogger.instance
+          .w('listMyGroupRemoteIds unexpected', error: e, stackTrace: st);
+      return const <String>[];
+    }
+  }
+
+  // ==========================================================================
   // グループ退出 (DELETE /groups/:id/leave)
   // ==========================================================================
   Future<void> leaveGroup(String groupRemoteId) async {
@@ -254,6 +295,13 @@ class GroupApiService {
       final dynamic body = e.response?.data;
       final String? errMsg =
           body is Map<String, dynamic> ? body['error'] as String? : null;
+      // build 55-client: 新サーバ(Worker 3bd2e407)は 409 に
+      // `error_code` を付与する。"duplicate_name" / "user_at_group_limit"
+      // / "user_already_has_data" のいずれか。旧サーバは未設定 → 旧 conflict
+      // にフォールバック。
+      final String? errCode = body is Map<String, dynamic>
+          ? body['error_code'] as String?
+          : null;
 
       switch (status) {
         case 400:
@@ -277,10 +325,30 @@ class GroupApiService {
             message: errMsg,
           );
         case 409:
-          return GroupBadRequestException(
-            GroupApiErrorCode.conflict,
-            message: errMsg,
-          );
+          // build 55-client: error_code 別に細かい例外へマッピング。
+          switch (errCode) {
+            case 'duplicate_name':
+              return GroupBadRequestException(
+                GroupApiErrorCode.duplicateGroupName,
+                message: errMsg,
+              );
+            case 'user_at_group_limit':
+              return GroupBadRequestException(
+                GroupApiErrorCode.userAtGroupLimit,
+                message: errMsg,
+              );
+            case 'user_already_has_data':
+              return GroupBadRequestException(
+                GroupApiErrorCode.userAlreadyHasData,
+                message: errMsg,
+              );
+            default:
+              // 旧サーバ互換 — 詳細不明の conflict として扱う
+              return GroupBadRequestException(
+                GroupApiErrorCode.conflict,
+                message: errMsg,
+              );
+          }
         case 500:
         case 502:
         case 503:

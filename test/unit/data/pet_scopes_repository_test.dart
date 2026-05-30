@@ -23,11 +23,17 @@ library;
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:petlo/core/utils/logger.dart';
 import 'package:petlo/data/local/app_database.dart';
 import 'package:petlo/data/local/database_enums.dart';
 import 'package:petlo/data/repositories/pet_scopes_repository.dart';
 
 void main() {
+  // build 53a: addPetScope の診断ログが PetloLogger.instance を触るため。
+  setUpAll(() async {
+    await PetloLogger.initialize();
+  });
+
   late AppDatabase db;
   late PetScopesRepository repo;
 

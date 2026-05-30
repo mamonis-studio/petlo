@@ -23,6 +23,7 @@
 
 import 'package:drift/drift.dart';
 
+import '../../core/utils/logger.dart';
 import '../local/app_database.dart';
 import '../local/database_enums.dart';
 import 'base_repository.dart';
@@ -155,6 +156,16 @@ class PetScopesRepository extends BaseRepository {
       payloadJson: '{}',
       clientTimestamp: t,
     );
+
+    // build 53a (診断): pet_scopes の最新状態を log。
+    final List<PetScopeEntity> all = await getPetScopes(petId);
+    PetloLogger.instance.i(
+      '[addPetScope diag] petId=$petId groupId=$groupId '
+      'scopeId=$scopeId isPrimary=$isPrimary perm=${permission.name} '
+      'scopes_for_pet=${all.length} '
+      'groups=${all.map((PetScopeEntity s) => '${s.groupId}(primary=${s.isPrimary})').toList()}',
+    );
+
     return scopeId;
   }
 

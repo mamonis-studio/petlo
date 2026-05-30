@@ -13,6 +13,7 @@ library;
 import 'package:drift/drift.dart' show QueryRow, Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:petlo/core/utils/logger.dart';
 import 'package:petlo/data/local/app_database.dart';
 import 'package:petlo/data/local/database_enums.dart';
 import 'package:petlo/data/repositories/pets_repository.dart';
@@ -21,6 +22,12 @@ void main() {
   group('PetsRepository', () {
     late AppDatabase db;
     late PetsRepository repo;
+
+    // build 53a: createPet/addPetScope の診断ログが PetloLogger.instance を
+    // 触るので、test 側で 1 度だけ initialize する。
+    setUpAll(() async {
+      await PetloLogger.initialize();
+    });
 
     setUp(() {
       db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -67,13 +74,20 @@ void main() {
         final PetEntity? pet = await repo.getPet(petId);
         expect(pet!.syncStatus, SyncStatus.pending);
 
-        // sync_queueに積まれていること
+        // build 53a (構造的欠陥 #1 修正): shared scope での createPet は
+        // pets と pet_scopes の 2 件を sync_queue に積む。
         final List<SyncQueueItemEntity> queue =
             await db.select(db.syncQueue).get();
-        expect(queue.length, 1);
-        expect(queue.first.targetTable, 'pets');
-        expect(queue.first.recordId, petId);
-        expect(queue.first.operation, SyncOperation.insert);
+        expect(queue.length, 2);
+
+        final SyncQueueItemEntity petOp =
+            queue.firstWhere((q) => q.targetTable == 'pets');
+        expect(petOp.recordId, petId);
+        expect(petOp.operation, SyncOperation.insert);
+
+        final SyncQueueItemEntity scopeOp =
+            queue.firstWhere((q) => q.targetTable == 'pet_scopes');
+        expect(scopeOp.operation, SyncOperation.update);
       });
 
       test('sortOrder increments for each new pet in same scope', () async {

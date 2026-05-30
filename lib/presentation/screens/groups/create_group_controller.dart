@@ -81,6 +81,10 @@ enum CreateGroupOutcome {
   limitReached,
   network,
   serverError,
+  // build 55-client: 同名グループ409 を controller 側で識別したい時用 (UI で
+  // dialog 切替などに使う想定。現状は errorMessage で十分なので、
+  // 既存利用は変更しなくても良い)。
+  duplicateName,
   unknown,
 }
 
@@ -244,10 +248,22 @@ class CreateGroupController extends Notifier<CreateGroupState> {
         isSubmitting: false,
         errorMessage: groupApiErrorMessage(e, l10n),
       );
-      return (
-        outcome: CreateGroupOutcome.unknown,
-        createdGroupId: null
-      );
+      // build 55-client: 409 error_code 別に outcome を切替。
+      final CreateGroupOutcome outcome;
+      switch (e.code) {
+        case GroupApiErrorCode.duplicateGroupName:
+          outcome = CreateGroupOutcome.duplicateName;
+        case GroupApiErrorCode.userAtGroupLimit:
+        case GroupApiErrorCode.groupLimitReached:
+          outcome = CreateGroupOutcome.limitReached;
+        case GroupApiErrorCode.userAlreadyHasData:
+          // データ衝突は再起動を促すメッセージで unknown 扱い
+          outcome = CreateGroupOutcome.unknown;
+        // ignore: no_default_cases
+        default:
+          outcome = CreateGroupOutcome.unknown;
+      }
+      return (outcome: outcome, createdGroupId: null);
     } catch (e, st) {
       PetloLogger.instance
           .w('createGroup unexpected', error: e, stackTrace: st);

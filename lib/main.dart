@@ -22,6 +22,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/auth/auth_service.dart';
 import 'core/auth/user_profile_service.dart';
+import 'data/local/app_database.dart';
 import 'core/billing/purchase_service.dart';
 import 'core/constants/app_constants.dart';
 import 'core/notifications/notification_service.dart';
@@ -31,7 +32,9 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/locale_aware_theme.dart';
 import 'core/utils/logger.dart';
 import 'l10n/generated/app_localizations.dart';
+import 'presentation/providers/bootstrap_provider.dart';
 import 'presentation/providers/database_provider.dart';
+import 'presentation/providers/group_api_service_provider.dart';
 import 'presentation/providers/notification_scheduler_provider.dart';
 import 'presentation/providers/onboarding_completed_provider.dart';
 import 'presentation/providers/purchase_provider.dart';
@@ -156,7 +159,35 @@ class _PetloAppState extends ConsumerState<PetloApp>
 
   Future<void> _bootstrapSync() async {
     try {
-      SyncService.instance.bindDatabase(ref.read(appDatabaseProvider));
+      final db = ref.read(appDatabaseProvider);
+      SyncService.instance.bindDatabase(db);
+
+      // build 55-client: 初回起動 / アプリ削除→再インストール直後の検知。
+      // ローカル groups テーブルが空で、かつ認証済みなら、サーバから自分の
+      // 全グループを取得 + 各 group を since=0 で pull する (= fullPull)。
+      // 通常のセッション復帰では skip し、syncAll の incremental pull に任せる。
+      final List<GroupEntity> existingGroups =
+          await db.select(db.groups).get();
+      final bool needFullPull = existingGroups.isEmpty &&
+          AuthService.instance.isAuthenticated;
+      if (needFullPull) {
+        ref.read(bootstrapStatusProvider.notifier).begin();
+        try {
+          PetloLogger.instance.i(
+            '[bootstrap] local groups empty + authenticated → fullPull',
+          );
+          await SyncService.instance
+              .fullPull(ref.read(groupApiServiceProvider));
+        } catch (e, st) {
+          PetloLogger.instance.w(
+            '[bootstrap] fullPull failed (continuing)',
+            error: e, stackTrace: st,
+          );
+        } finally {
+          ref.read(bootstrapStatusProvider.notifier).end();
+        }
+      }
+
       await SyncService.instance.syncAll();
       // build 26: 起動完了 + 初回同期後、定期ポーリング開始
       SyncService.instance.startPolling();
@@ -206,7 +237,9 @@ class _PetloAppState extends ConsumerState<PetloApp>
           color: bg,
           child: LocaleAwareTheme.applyLocaleAdaptation(
             context: context,
-            child: child ?? const SizedBox.shrink(),
+            child: _BootstrapGate(
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
         );
       },
@@ -235,5 +268,60 @@ class _RootRouter extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final bool completed = ref.watch(onboardingCompletedProvider);
     return completed ? const TabShell() : const OnboardingFlow();
+  }
+}
+
+// ============================================================================
+// _BootstrapGate (build 55-client)
+// ============================================================================
+//
+// fullPull が走っている間だけ控えめなオーバーレイ(背景バリア + 中央スピナー
+// + 文言)を被せる。普段は完全に素通し。
+//
+// 注意: TabShell 自体は描画させたまま上に被せる(完全な splash 置換に
+// しない)。理由は fullPull 完了で各 StreamProvider が自然に更新され
+// データが入り始める UX を優先するため。
+//
+// ============================================================================
+class _BootstrapGate extends ConsumerWidget {
+  const _BootstrapGate({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bool inProgress = ref.watch(bootstrapStatusProvider);
+    if (!inProgress) return child;
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    return Stack(
+      children: <Widget>[
+        child,
+        Positioned.fill(
+          child: ColoredBox(
+            color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.92),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const SizedBox(
+                    width: 28, height: 28,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.bootstrap_restoring,
+                    style: const TextStyle(
+                      fontFamily: 'JetBrainsMono',
+                      fontSize: 11,
+                      letterSpacing: 11 * 0.18,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

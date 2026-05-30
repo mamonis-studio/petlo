@@ -42,6 +42,13 @@ enum GroupApiErrorCode {
   groupFull,
   alreadyMember,
   groupLimitReached,
+
+  // build 55-client: POST /groups の 409 で server が error_code を付ける。
+  // 旧来の `conflict` (= 詳細不明) は後方互換維持用に残す。
+  duplicateGroupName, // 同名グループ既存
+  userAtGroupLimit, // 3 グループ上限到達 (group_limit_reached と意味は同じだが
+                    // server-side error_code に厳密対応)
+  userAlreadyHasData, // 予約済み: アカウント既存データ検知
 }
 
 sealed class GroupApiException implements Exception {

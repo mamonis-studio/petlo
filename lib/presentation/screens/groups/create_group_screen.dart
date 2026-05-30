@@ -238,8 +238,9 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
         );
       case CreateGroupOutcome.network:
       case CreateGroupOutcome.serverError:
+      case CreateGroupOutcome.duplicateName:
       case CreateGroupOutcome.unknown:
-        // s.errorMessage 経由で表示
+        // s.errorMessage 経由で表示(build 55-client: duplicateName も同経路)
         break;
     }
   }

@@ -244,6 +244,10 @@ class PetFormController extends FamilyNotifier<PetFormState, int?> {
         petId = state.editingPetId!;
       } else {
         // === 新規 ===
+        PetloLogger.instance.i(
+          '[pet_form save diag] new pet starting create groupId=$groupId '
+          'name=${state.name.trim()} type=${state.type?.name}',
+        );
         petId = await repo.createPet(
           groupId: groupId,
           name: state.name.trim(),
@@ -313,6 +317,26 @@ class PetFormController extends FamilyNotifier<PetFormState, int?> {
       // === currentPetId 自動切替 (新規作成時のみ) ===
       if (!state.isEditing) {
         await ref.read(petSelectionControllerProvider.notifier).selectPet(petId);
+      }
+
+      // build 53a (診断): 保存直後に watchActivePetsInScope を 1 shot で読み返し、
+      // 自分の作成したペットが scope クエリ経由でちゃんと見えているかを log。
+      // 「保存しても消える」が pet_scopes / クエリ層のバグか確定するため。
+      try {
+        final List<PetEntity> visible =
+            await repo.watchActivePetsInScope(groupId).first;
+        final bool foundSelf =
+            visible.any((PetEntity p) => p.id == petId);
+        PetloLogger.instance.i(
+          '[pet_form save diag] post-save groupId=$groupId petId=$petId '
+          'visible_count=${visible.length} foundSelf=$foundSelf '
+          'visible_ids=${visible.map((PetEntity p) => p.id).toList()}',
+        );
+      } catch (e, st) {
+        PetloLogger.instance.w(
+          '[pet_form save diag] post-save visibility check failed',
+          error: e, stackTrace: st,
+        );
       }
 
       state = state.copyWith(isSubmitting: false);

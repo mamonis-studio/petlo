@@ -1329,5 +1329,10 @@
   "schedule_medication_times_hint": "可设置每天多个时间(例如 8:00 和 21:00)。",
   "schedule_medication_weekdays_label": "提醒星期",
   "schedule_medication_weekdays_hint": "不选则每天提醒。",
-  "pet_share_action_failed": "共享操作失败,请稍后再试。"
+  "pet_share_action_failed": "共享操作失败,请稍后再试。",
+  "bootstrap_restoring": "正在恢复数据…",
+  "groups_create_error_duplicate_name": "已存在同名群组。",
+  "groups_create_error_user_at_group_limit": "最多可创建 3 个群组。",
+  "groups_create_error_user_has_data": "账户中已有数据,请重新启动应用。",
+  "groups_create_error_unknown": "创建群组失败,请稍后再试。"
 }

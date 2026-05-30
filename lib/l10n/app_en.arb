@@ -1329,5 +1329,10 @@
   "schedule_medication_times_hint": "Add multiple times per day (e.g., 8:00 and 21:00).",
   "schedule_medication_weekdays_label": "Notification days",
   "schedule_medication_weekdays_hint": "Leave empty for daily notifications.",
-  "pet_share_action_failed": "Couldn't update sharing. Please try again later."
+  "pet_share_action_failed": "Couldn't update sharing. Please try again later.",
+  "bootstrap_restoring": "Restoring data…",
+  "groups_create_error_duplicate_name": "A group with that name already exists.",
+  "groups_create_error_user_at_group_limit": "You can create up to 3 groups.",
+  "groups_create_error_user_has_data": "Existing account data found. Please restart the app.",
+  "groups_create_error_unknown": "Couldn't create group. Please try again later."
 }

@@ -64,5 +64,13 @@ String _messageForCode(GroupApiErrorCode code, AppLocalizations l10n) {
       return l10n.group_api_error_alreadyMember;
     case GroupApiErrorCode.groupLimitReached:
       return l10n.group_api_error_groupLimitReached;
+    // build 55-client: 新 server (Worker 3bd2e407) が POST /groups の 409 で
+    // 返す error_code に対応。
+    case GroupApiErrorCode.duplicateGroupName:
+      return l10n.groups_create_error_duplicate_name;
+    case GroupApiErrorCode.userAtGroupLimit:
+      return l10n.groups_create_error_user_at_group_limit;
+    case GroupApiErrorCode.userAlreadyHasData:
+      return l10n.groups_create_error_user_has_data;
   }
 }
