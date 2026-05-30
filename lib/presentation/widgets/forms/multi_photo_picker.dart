@@ -22,12 +22,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/widgets/eyebrow_text.dart';
-import '../../../core/widgets/pet_avatar.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
 /// 1枚分のスロット情報
@@ -204,13 +205,86 @@ class _PhotoTile extends StatelessWidget {
       );
     }
     if (slot.savedRelativePath != null) {
-      // PetAvatar の中身を借りる(同じく相対パス対応)
-      return PetAvatar(
-        size: 80,
-        relativePhotoPath: slot.savedRelativePath,
-      );
+      // build 52: 旧実装は PetAvatar を流用していたが、PetAvatar は ClipOval
+      // で強制円形マスクされるため日記/通院の保存済み写真サムネが円形に
+      // 見えるバグになっていた。専用 loader を private で持たせ、
+      // 新規写真と同じ Image.file の角丸正方形描画に統一する。
+      return _SavedPhotoLoader(relativePath: slot.savedRelativePath!);
     }
     return const SizedBox.shrink();
+  }
+}
+
+// ============================================================================
+// _SavedPhotoLoader (build 52)
+// ============================================================================
+//
+// 保存済み写真の相対パスを絶対パスに解決して Image.file で描画する。
+// 親 _PhotoTile の 80×80 + 角丸ボーダーに収まる平面四角形で表示する
+// (PetAvatar の円形マスクを使わない)。
+//
+// memory: 写真は getApplicationDocumentsDirectory 相対で保存される設計。
+//   解決失敗 (ファイル消失など) は SizedBox.shrink で静かにフォールバック。
+//
+// ============================================================================
+class _SavedPhotoLoader extends StatefulWidget {
+  const _SavedPhotoLoader({required this.relativePath});
+
+  final String relativePath;
+
+  @override
+  State<_SavedPhotoLoader> createState() => _SavedPhotoLoaderState();
+}
+
+class _SavedPhotoLoaderState extends State<_SavedPhotoLoader> {
+  Future<File?>? _fileF;
+
+  @override
+  void initState() {
+    super.initState();
+    _fileF = _resolve(widget.relativePath);
+  }
+
+  @override
+  void didUpdateWidget(covariant _SavedPhotoLoader old) {
+    super.didUpdateWidget(old);
+    if (old.relativePath != widget.relativePath) {
+      _fileF = _resolve(widget.relativePath);
+    }
+  }
+
+  Future<File?> _resolve(String rel) async {
+    try {
+      final Directory dir = await getApplicationDocumentsDirectory();
+      final File f = File(p.join(dir.path, rel));
+      if (await f.exists()) return f;
+    } catch (_) {
+      // 失敗時は fallback (= 空)
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<File?>(
+      future: _fileF,
+      builder: (BuildContext context, AsyncSnapshot<File?> snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const SizedBox.shrink();
+        }
+        final File? f = snap.data;
+        if (f == null) return const SizedBox.shrink();
+        return Image.file(
+          f,
+          width: 80,
+          height: 80,
+          fit: BoxFit.cover,
+          errorBuilder:
+              (BuildContext c, Object e, StackTrace? s) =>
+                  const SizedBox.shrink(),
+        );
+      },
+    );
   }
 }
 
