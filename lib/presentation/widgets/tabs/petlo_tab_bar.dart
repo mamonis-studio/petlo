@@ -163,18 +163,34 @@ class _TabIconPainter extends CustomPainter {
         );
 
       case AppTab.life:
-        // 葉っぱ + 茎(日常・暮らしのアイコン)
-        final Path leaf = Path()
-          ..moveTo(w * 0.5, h * 0.85)
-          ..quadraticBezierTo(w * 0.15, h * 0.6, w * 0.3, h * 0.2)
-          ..quadraticBezierTo(w * 0.7, h * 0.3, w * 0.5, h * 0.85);
-        canvas.drawPath(leaf, stroke);
-        // 葉脈
-        canvas.drawLine(
-          Offset(w * 0.5, h * 0.85),
-          Offset(w * 0.42, h * 0.4),
+        // build 51: 葉っぱ → 肉球(paw print)に変更。
+        // ラベルが「あしあと」に揃ったため、ペットの足跡を視覚的に直結。
+        // 構造: 中央の pad(やや角丸の縦長楕円)+ 上に 4 つの toe(小さい円)
+        // すべて stroke で統一(他タブの線画と整合)。
+
+        // 中央 pad
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(w * 0.5, h * 0.66),
+            width: w * 0.40,
+            height: h * 0.32,
+          ),
           stroke,
         );
+
+        // 4 つの指(扇形に並ぶ)。
+        final List<Offset> toes = <Offset>[
+          Offset(w * 0.22, h * 0.38), // 外側左
+          Offset(w * 0.40, h * 0.20), // 内側左
+          Offset(w * 0.60, h * 0.20), // 内側右
+          Offset(w * 0.78, h * 0.38), // 外側右
+        ];
+        for (final Offset c in toes) {
+          canvas.drawOval(
+            Rect.fromCenter(center: c, width: w * 0.14, height: h * 0.16),
+            stroke,
+          );
+        }
 
       case AppTab.health:
         // ハート(やや幾何学的、医療/健康)
