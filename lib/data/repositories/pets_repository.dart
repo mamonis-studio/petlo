@@ -106,6 +106,22 @@ class PetsRepository extends BaseRepository {
         .getSingleOrNull();
   }
 
+  /// 自分が登録した active ペット数 (build 71、無料プラン上限チェック用)。
+  ///
+  /// 「self-registered」= primary scope が `'personal'` のペットだけを数える。
+  /// 共有グループに招待参加した先で見えている他人のペットは pets.groupId が
+  /// 別 group id なので除外される。Free user は共有作成不可、招待参加した
+  /// 場合でも追加するのは自分の personal scope なので、この集計が「自分が
+  /// 登録したペット」と一致する。
+  Future<int> countActivePets() async {
+    final result = await (db.selectOnly(db.pets)
+          ..addColumns(<Expression<int>>[db.pets.id.count()])
+          ..where(db.pets.groupId.equals('personal') &
+              db.pets.deletedAt.isNull()))
+        .getSingle();
+    return result.read(db.pets.id.count()) ?? 0;
+  }
+
   /// 指定グループの中で同名ペットが既に存在するか (rev5.5 同名警告用)。
   ///
   /// build 44 (Phase G2): 共有された他人のペットも判定対象に含めるため
@@ -199,24 +215,55 @@ class PetsRepository extends BaseRepository {
           ),
         );
 
-    // build 44 (Phase G2): 新規ペットには primary pet_scope を自動作成する。
-    // pet_scopes 経由の JOIN 読み取り (watchActivePetsInScope) で新規ペットが
-    // 即座に可視化されるための必須ステップ。Phase G1 の backfill と完全に
-    // 同じ形 (permission=owner, isPrimary=true) で挿入する。
-    final int scopeId = await db.into(db.petScopes).insert(
-          PetScopesCompanion.insert(
-            petId: newId,
-            groupId: groupId,
-            permission: MemberPermission.owner,
-            isPrimary: const Value(true),
-            sharedAt: meta.createdAt,
-            sharedByUserId: Value(createdBy),
-            syncStatus: Value(meta.initialSyncStatus),
-            createdAt: meta.createdAt,
-            updatedAt: meta.updatedAt,
-            lastModifiedAtClient: Value(meta.lastModifiedAtClient),
-          ),
-        );
+    // build 57 (Decision D 純粋実装): 全ペットを Personal に常在させる。
+    // 旧実装は「引数 groupId をそのまま primary scope に」していたため、
+    // 共有グループで作成したペットが Personal に出てこなかった。
+    //
+    // 新方針:
+    //   - Personal scope は **必ず** 自動作成 (is_primary=true, owner)
+    //     → Personal = 「自分が触れる全ペットの常在ビュー」
+    //   - 引数 groupId が non-Personal の場合は **追加で** 共有グループ scope
+    //     を作成 (is_primary=false, owner)
+    //     → そのグループ context でもペットが見える
+    //   - Personal scope は sync しない (enqueueSyncIfShared が no-op)
+    //   - 共有グループ scope のみ sync_queue 経由でサーバへ
+    //
+    // pets.group_id は引数 groupId のまま維持 — server 側の partition / sync
+    // 経路を壊さないため。pets.group_id は sync queue の partition キー、
+    // pet_scopes は表示用のソース・オブ・トゥルース。
+    const String personalGroupId = 'personal';
+
+    final int personalScopeId =
+        await db.into(db.petScopes).insert(PetScopesCompanion.insert(
+              petId: newId,
+              groupId: personalGroupId,
+              permission: MemberPermission.owner,
+              isPrimary: const Value(true),
+              sharedAt: meta.createdAt,
+              sharedByUserId: Value(createdBy),
+              // Personal は同期しないので常に synced 扱い
+              syncStatus: const Value(SyncStatus.synced),
+              createdAt: meta.createdAt,
+              updatedAt: meta.updatedAt,
+              lastModifiedAtClient: Value(meta.lastModifiedAtClient),
+            ));
+
+    int? groupScopeId;
+    if (isSharedScope(groupId)) {
+      groupScopeId =
+          await db.into(db.petScopes).insert(PetScopesCompanion.insert(
+                petId: newId,
+                groupId: groupId,
+                permission: MemberPermission.owner,
+                isPrimary: const Value(false),
+                sharedAt: meta.createdAt,
+                sharedByUserId: Value(createdBy),
+                syncStatus: Value(meta.initialSyncStatus),
+                createdAt: meta.createdAt,
+                updatedAt: meta.updatedAt,
+                lastModifiedAtClient: Value(meta.lastModifiedAtClient),
+              ));
+    }
 
     await enqueueSyncIfShared(
       groupId: groupId,
@@ -232,20 +279,18 @@ class PetsRepository extends BaseRepository {
       }),
     );
 
-    // build 53a (構造的欠陥 #1 修正): 旧実装は pets だけ sync_queue に積み、
-    // 自動生成した primary pet_scope 行は積んでいなかった。結果、shared スコープで
-    // 新規ペットを作成しても server 側で pet_scopes 行が無いため、他端末から
-    // 見えない + 自分の端末でも sync の副作用で消える挙動を疑っていた。
-    // Personal は同期しないので enqueueSyncIfShared が no-op。
-    await enqueueSyncIfShared(
-      groupId: groupId,
-      operation: SyncOperation.update,
-      targetTable: 'pet_scopes',
-      recordId: scopeId,
-      payloadJson: '{}',
-    );
+    // 共有グループ scope だけサーバへ push (Personal は対象外)
+    if (groupScopeId != null) {
+      await enqueueSyncIfShared(
+        groupId: groupId,
+        operation: SyncOperation.update,
+        targetTable: 'pet_scopes',
+        recordId: groupScopeId,
+        payloadJson: '{}',
+      );
+    }
 
-    // build 53a: 診断ログ (構造的欠陥の検証用、build 53b で d レベルに下げる)
+    // build 53a: 診断ログ
     final int scopesCount = await (db.selectOnly(db.petScopes)
           ..addColumns(<Expression<Object>>[db.petScopes.id])
           ..where(db.petScopes.petId.equals(newId) &
@@ -254,8 +299,8 @@ class PetsRepository extends BaseRepository {
         .then((List<TypedResult> rows) => rows.length);
     PetloLogger.instance.i(
       '[createPet diag] petId=$newId groupId=$groupId '
-      'scopeId=$scopeId pet_scopes_for_pet=$scopesCount '
-      'is_shared=${isSharedScope(groupId)}',
+      'personalScopeId=$personalScopeId groupScopeId=$groupScopeId '
+      'pet_scopes_for_pet=$scopesCount is_shared=${isSharedScope(groupId)}',
     );
 
     return newId;

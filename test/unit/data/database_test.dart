@@ -41,7 +41,8 @@ void main() {
 
     test('schemaVersion matches AppDatabaseMigrations.currentVersion', () {
       // build 49 (C1) で v8 (medication_reminders DROP)。
-      expect(db.schemaVersion, 8);
+      // build 57: Decision D 純粋実装で v9 (Personal scope backfill)。
+      expect(db.schemaVersion, 9);
     });
 
     test('database initializes without errors', () async {
@@ -146,9 +147,12 @@ void main() {
       const converter = TimeOfDayListConverter();
       // 正常
       expect(converter.toSql(<String>['07:00', '21:30']), isNotEmpty);
-      // 不正
+      // 桁数 NG: 1 桁時 → ArgumentError
       expect(() => converter.toSql(<String>['7:00']), throwsArgumentError);
-      expect(() => converter.toSql(<String>['25:00']), throwsArgumentError); // バリデーションは形式のみ
+      // build 61: production の RegExp `^\d{2}:\d{2}$` は形式 (2桁:2桁) のみ
+      // 検査するため、25:00 や 99:99 のような「形式は合うが範囲外」は
+      // throw しない (バリデーションは形式のみ、コメントの意図通り)。
+      expect(converter.toSql(<String>['25:00']), isNotEmpty);
     });
   });
 

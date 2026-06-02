@@ -60,6 +60,21 @@ class PoopsRepository extends BaseRepository {
         .getSingleOrNull();
   }
 
+  /// 当月の記録件数 (無料プラン上限チェック用、build 71)。
+  /// 月境界は created_at で集計 — meals.countMealsThisMonth と同じ semantics。
+  Future<int> countThisMonth(String groupId) async {
+    final DateTime now = DateTime.now();
+    final DateTime monthStart = DateTime(now.year, now.month);
+    final int from = monthStart.toUtc().millisecondsSinceEpoch;
+    final result = await (db.selectOnly(db.poops)
+          ..addColumns(<Expression<int>>[db.poops.id.count()])
+          ..where(db.poops.groupId.equals(groupId) &
+              db.poops.deletedAt.isNull() &
+              db.poops.createdAt.isBiggerOrEqualValue(from)))
+        .getSingle();
+    return result.read(db.poops.id.count()) ?? 0;
+  }
+
   // ============================================================================
   // Write
   // ============================================================================

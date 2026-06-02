@@ -13,6 +13,7 @@
 //
 // ============================================================================
 
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -196,10 +197,12 @@ class AboutScreen extends StatelessWidget {
               ),
               const SizedBox(height: 40),
 
-              // Footer (長押しで開発者メニュー)
+              // Footer (長押しで開発者メニュー、Release では無効)
+              // build 61: Release では onLongPress を null にして塞ぐ。
               GestureDetector(
-                onLongPress: () =>
-                    DeveloperSettingsScreen.push(context),
+                onLongPress: kReleaseMode
+                    ? null
+                    : () => DeveloperSettingsScreen.push(context),
                 child: Text(
                   '© ${DateTime.now().year} mamonis.studio',
                   style: TextStyle(

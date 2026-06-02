@@ -214,6 +214,10 @@ class AppDatabase extends _$AppDatabase {
           if (from < 8) {
             await customStatement('DROP TABLE IF EXISTS medication_reminders');
           }
+          // build 57 / Decision D 純粋実装: 全 pets に Personal scope を常在化。
+          if (from < 9) {
+            await backfillPersonalScopes();
+          }
           await AppDatabaseMigrations.onUpgrade(m, from, to);
         },
         beforeOpen: (OpeningDetails details) async {
@@ -222,8 +226,11 @@ class AppDatabase extends _$AppDatabase {
           // build 43 セーフティネット: 万一 v6 migration の backfill が
           // 一部失敗・スキップしていても、pet_scopes が空の pets を見つけたら
           // 起動時に補完する。permission=owner / is_primary=true で確定。
+          // build 57 セーフティネット: v9 で導入した Personal scope 常在化も
+          // 同様に起動時に再走させる (冪等)。
           if (details.wasCreated || details.hadUpgrade) {
             await backfillPetScopesFromPets();
+            await backfillPersonalScopes();
           }
         },
       );
@@ -250,6 +257,58 @@ class AppDatabase extends _$AppDatabase {
       "WHERE NOT EXISTS ("
       "  SELECT 1 FROM pet_scopes s "
       "  WHERE s.pet_id = p.id AND s.group_id = p.group_id"
+      ")",
+      <Object?>[t, t],
+    );
+  }
+
+  /// build 57 (Decision D 純粋実装): 既存 pets で Personal scope が無いものに
+  /// Personal scope を追加する。
+  ///
+  /// 不変条件 (1 ペット 1 primary) を維持するため、Personal を新たに primary に
+  /// するペットでは既存の non-Personal primary scope を is_primary=0 に降格する。
+  /// 順序:
+  ///   1. Personal scope を不在 pets に INSERT
+  ///   2. それらの pet で既存 non-Personal scope を is_primary=0 に降格
+  ///
+  /// 冪等性: WHERE NOT EXISTS により再実行しても重複 INSERT しない。
+  /// step 2 の UPDATE も既に is_primary=0 なら影響なし。
+  Future<void> backfillPersonalScopes() async {
+    final int t = DateTime.now().toUtc().millisecondsSinceEpoch;
+
+    // 1. Personal scope を追加 (deleted_at IS NULL の pets のみ)
+    await customStatement(
+      "INSERT INTO pet_scopes "
+      "(pet_id, group_id, permission, is_primary, shared_at, "
+      "sync_status, created_at, updated_at, last_modified_at_client) "
+      "SELECT p.id, 'personal', 'owner', 1, ?, 'synced', ?, ?, ? "
+      "FROM pets p "
+      "WHERE p.deleted_at IS NULL "
+      "AND NOT EXISTS ("
+      "  SELECT 1 FROM pet_scopes ps "
+      "  WHERE ps.pet_id = p.id "
+      "  AND ps.group_id = 'personal' "
+      "  AND ps.deleted_at IS NULL"
+      ")",
+      <Object?>[t, t, t, t],
+    );
+
+    // 2. 上記 1 で Personal scope を獲得した pet たちの、既存の
+    //    non-Personal primary scope を is_primary=0 に降格。
+    //    (1 ペット 1 primary を維持、Personal を canonical primary に)
+    //    既に is_primary=0 なら何も起きない、冪等。
+    await customStatement(
+      "UPDATE pet_scopes SET is_primary = 0, updated_at = ?, "
+      "last_modified_at_client = ? "
+      "WHERE group_id != 'personal' "
+      "AND is_primary = 1 "
+      "AND deleted_at IS NULL "
+      "AND EXISTS ("
+      "  SELECT 1 FROM pet_scopes ps2 "
+      "  WHERE ps2.pet_id = pet_scopes.pet_id "
+      "  AND ps2.group_id = 'personal' "
+      "  AND ps2.is_primary = 1 "
+      "  AND ps2.deleted_at IS NULL"
       ")",
       <Object?>[t, t],
     );

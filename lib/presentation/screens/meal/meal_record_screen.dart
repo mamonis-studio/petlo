@@ -50,6 +50,7 @@ import '../../providers/meals_providers.dart';
 import '../../widgets/meal/meal_appetite_selector.dart';
 import '../../widgets/meal/recent_foods_row.dart';
 import '../../widgets/records/record_delete_helper.dart';
+import '../paywall/paywall_screen.dart';
 import 'meal_form_controller.dart';
 import 'meal_form_state.dart';
 
@@ -348,6 +349,18 @@ class _MealRecordScreenState extends ConsumerState<MealRecordScreen> {
               behavior: SnackBarBehavior.floating,
             ),
           );
+        }
+
+      case MealFormSaveOutcome.proLimitReached:
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  AppLocalizations.of(context).pro_limit_record_monthly),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          await PaywallScreen.push(context);
         }
     }
   }

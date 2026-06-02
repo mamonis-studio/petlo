@@ -16,6 +16,7 @@ import '../../widgets/forms/date_field.dart';
 import '../../widgets/forms/editorial_text_field.dart';
 import '../../widgets/forms/multi_photo_picker.dart';
 import '../../widgets/records/record_delete_helper.dart';
+import '../paywall/paywall_screen.dart';
 import 'visit_form_controller.dart';
 import 'visit_form_state.dart';
 
@@ -317,6 +318,17 @@ class _VisitRecordScreenState extends ConsumerState<VisitRecordScreen> {
               behavior: SnackBarBehavior.floating,
             ),
           );
+        }
+      case VisitFormSaveOutcome.proLimitReached:
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text(AppLocalizations.of(context).pro_limit_visit_total),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          await PaywallScreen.push(context);
         }
     }
   }

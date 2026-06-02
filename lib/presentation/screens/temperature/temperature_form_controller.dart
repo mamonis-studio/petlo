@@ -9,8 +9,11 @@
 //
 // ============================================================================
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/review/review_prompt_service.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
@@ -133,6 +136,7 @@ class TemperatureFormController
           measuredAtMsec: t,
           notes: state.notes.trim().isEmpty ? null : state.notes.trim(),
         );
+        unawaited(ReviewPromptService.instance.onRecordAdded());
       }
 
       state = state.copyWith(isSubmitting: false);

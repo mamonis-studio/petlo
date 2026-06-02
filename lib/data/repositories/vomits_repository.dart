@@ -53,6 +53,20 @@ class VomitsRepository extends BaseRepository {
         .getSingleOrNull();
   }
 
+  /// 当月の記録件数 (無料プラン上限チェック用、build 71)。
+  Future<int> countThisMonth(String groupId) async {
+    final DateTime now = DateTime.now();
+    final DateTime monthStart = DateTime(now.year, now.month);
+    final int from = monthStart.toUtc().millisecondsSinceEpoch;
+    final result = await (db.selectOnly(db.vomits)
+          ..addColumns(<Expression<int>>[db.vomits.id.count()])
+          ..where(db.vomits.groupId.equals(groupId) &
+              db.vomits.deletedAt.isNull() &
+              db.vomits.createdAt.isBiggerOrEqualValue(from)))
+        .getSingle();
+    return result.read(db.vomits.id.count()) ?? 0;
+  }
+
   // ============================================================================
   // Write
   // ============================================================================

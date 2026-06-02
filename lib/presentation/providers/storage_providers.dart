@@ -70,6 +70,11 @@ abstract final class PrefsKeys {
   // === レビュー誘導 (rev4) ===
   static const String appLaunchCount = 'app_launch_count';
   static const String reviewPromptShownAt = 'review_prompt_shown_at';
+
+  // === build 58: ペット編集動線初回ヒント ===
+  /// ペット編集画面を一度でも開いたら true。
+  /// PetSelectorBar 下の「長押しで編集・削除」ヒントの常時非表示判定に使う。
+  static const String hasOpenedPetEdit = 'has_opened_pet_edit';
 }
 
 // ============================================================================
@@ -99,4 +104,9 @@ abstract final class SecureStorageKeys {
 
   /// User ID (永続)
   static const String userId = 'user_id';
+
+  /// Apple Sign-In の userIdentifier (Apple が発行する不透明 ID)
+  /// 値が存在すれば SIWA で連携済み。次回起動時に credential state を確認
+  /// するのにも使う。
+  static const String appleUserIdentifier = 'apple_user_identifier';
 }

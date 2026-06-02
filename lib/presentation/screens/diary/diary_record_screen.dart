@@ -28,6 +28,7 @@ import '../../widgets/forms/multi_photo_picker.dart';
 import '../../widgets/forms/tag_input_field.dart';
 import '../../widgets/records/date_time_picker_row.dart';
 import '../../widgets/records/record_delete_helper.dart';
+import '../paywall/paywall_screen.dart';
 import 'diary_form_controller.dart';
 import 'diary_form_state.dart';
 
@@ -270,6 +271,17 @@ class _DiaryRecordScreenState extends ConsumerState<DiaryRecordScreen> {
               behavior: SnackBarBehavior.floating,
             ),
           );
+        }
+      case DiaryFormSaveOutcome.proLimitReached:
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  AppLocalizations.of(context).pro_limit_diary_monthly),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          await PaywallScreen.push(context);
         }
     }
   }

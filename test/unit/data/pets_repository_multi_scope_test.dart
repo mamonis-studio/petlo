@@ -60,18 +60,33 @@ void main() {
     });
 
     test('group scope', () async {
+      // build 57 (Decision D): グループ context で作成しても primary は
+      // 必ず Personal、グループ scope は is_primary=false の追加共有として
+      // 入る。サーバへは groupId のみ push、Personal scope は per-client。
       final int petId = await pets.createPet(
         groupId: 'group-uuid-A',
         name: 'Hana',
         type: PetType.cat,
       );
       final PetScopeEntity? primary = await scopes.findPrimaryScope(petId);
-      expect(primary!.groupId, 'group-uuid-A');
+      expect(primary, isNotNull);
+      expect(primary!.groupId, 'personal');
+      expect(primary.isPrimary, isTrue);
+
+      final List<PetScopeEntity> all = await scopes.getPetScopes(petId);
+      expect(all.length, 2);
+      expect(
+        all.where((s) => s.groupId == 'group-uuid-A').first.isPrimary,
+        isFalse,
+      );
     });
   });
 
   group('watchActivePetsInScope (JOIN via pet_scopes)', () {
     test('returns pets whose pet_scope.group_id matches', () async {
+      // build 57 (Decision D): グループで作成したペットも Personal scope を
+      // 必ず取得する → Personal でも見える。グループに createPet したペット
+      // だけがそのグループで見える。
       await pets.createPet(
           groupId: 'personal', name: 'A', type: PetType.dog);
       await pets.createPet(
@@ -79,7 +94,7 @@ void main() {
 
       final List<PetEntity> inPersonal =
           await pets.watchActivePetsInScope('personal').first;
-      expect(inPersonal.map((p) => p.name), ['A']);
+      expect(inPersonal.map((p) => p.name).toSet(), {'A', 'B'});
 
       final List<PetEntity> inGroupX =
           await pets.watchActivePetsInScope('group-x').first;

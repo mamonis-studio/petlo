@@ -15,6 +15,7 @@
 
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -39,6 +40,9 @@ class DeveloperSettingsScreen extends ConsumerWidget {
   const DeveloperSettingsScreen({super.key});
 
   static Future<void> push(BuildContext context) {
+    // build 61: 多重防御。trigger 側でも Release ガードしているが、
+    // 万一 push 関数が他経路から呼ばれてもここで弾く。App Store 審査対策。
+    if (kReleaseMode) return Future<void>.value();
     return Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => const DeveloperSettingsScreen(),

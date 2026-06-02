@@ -31,9 +31,14 @@ android/key.properties
 lib/l10n/generated/
 .env
 .env.*
+.dev.vars
+.dev.vars.*
 *.p8
 *.p12
+*.cer
 *.mobileprovision
 AuthKey_*.p8
+**/GoogleService-Info.plist
+**/google-services.json
 *.log
 *.bak

@@ -103,7 +103,8 @@ void main() {
       );
       expect(typo.heroName.fontFamily, 'Fraunces');
       expect(typo.heroName.fontStyle, FontStyle.italic);
-      expect(typo.heroName.fontSize, 64);
+      // build 61: typography scale 調整後、heroName は 48pt。
+      expect(typo.heroName.fontSize, 48);
     });
 
     test('light() sectionTitle uses JetBrainsMono', () {

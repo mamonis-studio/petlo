@@ -15,6 +15,7 @@ import '../../../l10n/generated/app_localizations.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/chart_range.dart';
+import '../../screens/paywall/paywall_screen.dart';
 
 class ChartRangeSelector extends StatelessWidget {
   const ChartRangeSelector({
@@ -42,11 +43,18 @@ class ChartRangeSelector extends StatelessWidget {
               isLocked: !isProUser && !r.isFreeAllowed,
               onTap: () {
                 if (!isProUser && !r.isFreeAllowed) {
-                  // Pro限定機能の通知のみ(将来 IAP modal)
+                  // build 71: ロックされた期間タップ → SnackBar + 「Proを見る」
+                  // アクションで Paywall に誘導。
+                  final AppLocalizations l10n =
+                      AppLocalizations.of(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-              content: Text(AppLocalizations.of(context).chart_range_pro_only),
+                      content: Text(l10n.chart_range_pro_only),
                       behavior: SnackBarBehavior.floating,
+                      action: SnackBarAction(
+                        label: l10n.chart_range_pro_only_action,
+                        onPressed: () => PaywallScreen.push(context),
+                      ),
                     ),
                   );
                   return;

@@ -2,20 +2,24 @@
 // petlo - Vomit Form Controller
 // ============================================================================
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_constants.dart';
+import '../../../core/review/review_prompt_service.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/photo_storage_provider.dart';
+import '../../providers/pro_status_provider.dart';
 import '../../providers/scope_providers.dart';
 import '../../providers/vomits_providers.dart';
 import 'vomit_form_state.dart';
 
-enum VomitFormSaveOutcome { success, validationFailed, dbError }
+enum VomitFormSaveOutcome { success, validationFailed, dbError, proLimitReached }
 
 final NotifierProviderFamily<VomitFormController, VomitFormState, int?>
     vomitFormControllerProvider =
@@ -87,6 +91,20 @@ class VomitFormController extends FamilyNotifier<VomitFormState, int?> {
       state = validated;
       return VomitFormSaveOutcome.validationFailed;
     }
+    // build 71: 新規記録時のみ Free 月上限チェック。
+    if (!state.isEditing && !ref.read(isProProvider)) {
+      try {
+        final int monthCount = await ref
+            .read(vomitsRepositoryProvider)
+            .countThisMonth(ref.read(currentGroupIdProvider));
+        if (monthCount >= AppConstants.freeMaxRecordsPerMonth) {
+          return VomitFormSaveOutcome.proLimitReached;
+        }
+      } catch (e, st) {
+        PetloLogger.instance
+            .w('vomit count check failed', error: e, stackTrace: st);
+      }
+    }
     state = validated.copyWith(isSubmitting: true);
 
     try {
@@ -127,6 +145,7 @@ class VomitFormController extends FamilyNotifier<VomitFormState, int?> {
           vomitedAtMsec: t,
           notes: state.notes.trim().isEmpty ? null : state.notes.trim(),
         );
+        unawaited(ReviewPromptService.instance.onRecordAdded());
       }
 
       // 写真

@@ -2,18 +2,23 @@
 // petlo - Visit Form Controller
 // ============================================================================
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_constants.dart';
+import '../../../core/review/review_prompt_service.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/photo_storage_provider.dart';
+import '../../providers/pro_status_provider.dart';
 import '../../providers/scope_providers.dart';
 import '../../providers/visits_providers.dart';
 import '../../widgets/forms/multi_photo_picker.dart';
 import 'visit_form_state.dart';
 
-enum VisitFormSaveOutcome { success, validationFailed, dbError }
+enum VisitFormSaveOutcome { success, validationFailed, dbError, proLimitReached }
 
 final NotifierProviderFamily<VisitFormController, VisitFormState, int?>
     visitFormControllerProvider =
@@ -81,6 +86,21 @@ class VisitFormController extends FamilyNotifier<VisitFormState, int?> {
       state = validated;
       return VisitFormSaveOutcome.validationFailed;
     }
+    // build 71: 新規通院時のみ Free 累計上限チェック (= freeMaxVisits)。
+    // visit は月単位ではなく累計件数で gating する spec。
+    if (!state.isEditing && !ref.read(isProProvider)) {
+      try {
+        final int totalCount = await ref
+            .read(visitsRepositoryProvider)
+            .countAllVisits(ref.read(currentGroupIdProvider));
+        if (totalCount >= AppConstants.freeMaxVisits) {
+          return VisitFormSaveOutcome.proLimitReached;
+        }
+      } catch (e, st) {
+        PetloLogger.instance
+            .w('visit count check failed', error: e, stackTrace: st);
+      }
+    }
     state = validated.copyWith(isSubmitting: true);
 
     try {
@@ -126,6 +146,7 @@ class VisitFormController extends FamilyNotifier<VisitFormState, int?> {
           photoPaths: keptPaths.isEmpty ? null : keptPaths,
           notes: state.notes,
         );
+        unawaited(ReviewPromptService.instance.onRecordAdded());
       }
 
       // 新規写真ファイルを順次保存

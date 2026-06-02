@@ -19,6 +19,8 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/auth/auth_service.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
@@ -26,6 +28,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/pet_selection_controller.dart';
 import '../../providers/pets_providers.dart';
 import '../../providers/photo_storage_provider.dart';
+import '../../providers/pro_status_provider.dart';
 import '../../providers/schedules_providers.dart';
 import '../../providers/scope_providers.dart';
 import 'pet_form_state.dart';
@@ -43,6 +46,10 @@ enum PetFormSaveOutcome {
 
   /// DBエラー
   dbError,
+
+  /// build 71: Free プランの登録上限 (`freeMaxPets`) に達した。
+  /// 編集時は影響を受けない。UI で Paywall を提示。
+  proLimitReached,
 }
 
 /// 同名警告にユーザーが「続行」と答えた後に呼ばれる確認後saveの戻り値
@@ -185,6 +192,24 @@ class PetFormController extends FamilyNotifier<PetFormState, int?> {
     }
     state = validated;
 
+    // build 71: 新規登録時のみ Free 上限チェック (= freeMaxPets)。
+    // 編集 (state.isEditing) はカウントに関係なく続行できる。
+    // 同名チェックより前に判定して、ゲートに引っかかった時に dup ダイアログを
+    // 出さない。
+    if (!state.isEditing && !ref.read(isProProvider)) {
+      try {
+        final int activePetCount = await ref
+            .read(petsRepositoryProvider)
+            .countActivePets();
+        if (activePetCount >= AppConstants.freeMaxPets) {
+          return PetFormSaveOutcome.proLimitReached;
+        }
+      } catch (e, st) {
+        PetloLogger.instance
+            .w('pet count check failed', error: e, stackTrace: st);
+      }
+    }
+
     // 同名チェック (rev5.5 §4.17)
     final String groupId = ref.read(currentGroupIdProvider);
     final repo = ref.read(petsRepositoryProvider);
@@ -260,6 +285,9 @@ class PetFormController extends FamilyNotifier<PetFormState, int?> {
           idealWeightMaxG: state.idealWeightMaxG,
           chronicConditions: state.chronicConditions,
           allergies: state.allergies,
+          // build 60: 登録者の user_id を記録 (v1.1 で削除権限ガードに使う土台)。
+          // 認証失敗中 (userId==null) は null のまま、device_id fallback は入れない。
+          createdBy: AuthService.instance.userId,
           primaryVetName: state.primaryVetName.trim().isEmpty
               ? null
               : state.primaryVetName.trim(),

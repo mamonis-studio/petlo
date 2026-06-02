@@ -165,10 +165,12 @@ void main() {
       );
     });
 
-    test('40.0°C is urgentHigh for dog (>+1°C above 39.0)', () {
+    test('40.1°C is urgentHigh for dog (>+1°C above 39.0)', () {
+      // build 61: production の境界は「max+10 (= 400) より厳密に大きい」。
+      // 40.0°C 丁度では cautionHigh 止まり、40.1°C で urgentHigh。
       expect(
         TemperatureConverter.statusFor(
-          tempCelsiusX10: 400,
+          tempCelsiusX10: 401,
           petType: PetType.dog,
         ),
         TemperatureStatus.urgentHigh,

@@ -16,10 +16,13 @@
 //
 // ============================================================================
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_constants.dart';
+import '../../../core/review/review_prompt_service.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
@@ -27,6 +30,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/foods_providers.dart';
 import '../../providers/meals_providers.dart';
 import '../../providers/photo_storage_provider.dart';
+import '../../providers/pro_status_provider.dart';
 import '../../providers/scope_providers.dart';
 import 'meal_form_state.dart';
 
@@ -34,6 +38,9 @@ enum MealFormSaveOutcome {
   success,
   validationFailed,
   dbError,
+  /// build 71: Free プランの月上限 (`freeMaxRecordsPerMonth`) に達した。
+  /// UI は Paywall を出して新規追加を block する。編集は影響を受けない。
+  proLimitReached,
 }
 
 /// 食事記録Controller。
@@ -141,6 +148,21 @@ class MealFormController extends FamilyNotifier<MealFormState, int?> {
       state = validated;
       return MealFormSaveOutcome.validationFailed;
     }
+    // build 71: 新規記録の時だけ Free 月上限チェック。編集は影響を受けない。
+    if (!state.isEditing && !ref.read(isProProvider)) {
+      try {
+        final int monthCount = await ref
+            .read(mealsRepositoryProvider)
+            .countMealsThisMonth(ref.read(currentGroupIdProvider));
+        if (monthCount >= AppConstants.freeMaxRecordsPerMonth) {
+          return MealFormSaveOutcome.proLimitReached;
+        }
+      } catch (e, st) {
+        // count 失敗時はゲートを通す (誤検出より UX 優先)。
+        PetloLogger.instance
+            .w('meal count check failed', error: e, stackTrace: st);
+      }
+    }
     state = validated.copyWith(isSubmitting: true);
 
     try {
@@ -196,6 +218,7 @@ class MealFormController extends FamilyNotifier<MealFormState, int?> {
           eatenAtMsec: eatenAtMsec,
           notes: state.notes.trim().isEmpty ? null : state.notes.trim(),
         );
+        unawaited(ReviewPromptService.instance.onRecordAdded());
       }
 
       // 4. 写真保存

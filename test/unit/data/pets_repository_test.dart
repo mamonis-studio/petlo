@@ -474,9 +474,15 @@ void main() {
           await repo.hasPetWithName(groupId: 'group-uuid', name: 'Mike'),
           isFalse,
         );
-        // 別スコープには反応しない
+        // build 57 (Decision D): グループ作成したペットも Personal scope を
+        // 持つ。Personal は「自分の全ペットのビュー」なので同名検出も Personal
+        // で当然 hit する。「異なる他のグループ」が反応しないことを別途確認。
         expect(
           await repo.hasPetWithName(groupId: 'personal', name: 'Taro'),
+          isTrue,
+        );
+        expect(
+          await repo.hasPetWithName(groupId: 'group-other', name: 'Taro'),
           isFalse,
         );
       });

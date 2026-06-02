@@ -2,18 +2,23 @@
 // petlo - Diary Form Controller
 // ============================================================================
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_constants.dart';
+import '../../../core/review/review_prompt_service.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/diaries_providers.dart';
 import '../../providers/photo_storage_provider.dart';
+import '../../providers/pro_status_provider.dart';
 import '../../providers/scope_providers.dart';
 import '../../widgets/forms/multi_photo_picker.dart';
 import 'diary_form_state.dart';
 
-enum DiaryFormSaveOutcome { success, validationFailed, dbError }
+enum DiaryFormSaveOutcome { success, validationFailed, dbError, proLimitReached }
 
 final NotifierProviderFamily<DiaryFormController, DiaryFormState, int?>
     diaryFormControllerProvider =
@@ -73,6 +78,25 @@ class DiaryFormController extends FamilyNotifier<DiaryFormState, int?> {
       state = validated;
       return DiaryFormSaveOutcome.validationFailed;
     }
+    // build 71: 新規日記時のみ Free 月上限チェック (= freeMaxDiaryPerMonth)。
+    if (!state.isEditing && !ref.read(isProProvider)) {
+      try {
+        final DateTime now = DateTime.now();
+        final int monthCount = await ref
+            .read(diariesRepositoryProvider)
+            .countInMonth(
+              groupId: ref.read(currentGroupIdProvider),
+              year: now.year,
+              month: now.month,
+            );
+        if (monthCount >= AppConstants.freeMaxDiaryPerMonth) {
+          return DiaryFormSaveOutcome.proLimitReached;
+        }
+      } catch (e, st) {
+        PetloLogger.instance
+            .w('diary count check failed', error: e, stackTrace: st);
+      }
+    }
     state = validated.copyWith(isSubmitting: true);
 
     try {
@@ -111,6 +135,7 @@ class DiaryFormController extends FamilyNotifier<DiaryFormState, int?> {
           photoPaths: keptPaths.isEmpty ? null : keptPaths,
           eventAtMsec: t,
         );
+        unawaited(ReviewPromptService.instance.onRecordAdded());
       }
 
       // 新規写真ファイルを順次保存

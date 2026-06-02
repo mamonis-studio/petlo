@@ -17,6 +17,7 @@
 
 import 'package:drift/drift.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../local/app_database.dart';
 import '../local/database_enums.dart';
 import 'base_repository.dart';
@@ -59,9 +60,9 @@ class GroupsRepository extends BaseRepository {
         .getSingleOrNull();
   }
 
-  /// 自分が作成可能なグループ枠の残り数 (rev5.5: 最大3)。
+  /// 自分が作成可能なグループ枠の残り数 (rev5.5: 最大3、build 71 で定数化)。
   Future<int> remainingGroupSlots() async {
-    const int maxGroups = 3;
+    final int maxGroups = AppConstants.maxGroupsPerUser;
     final List<GroupEntity> groups = await db.select(db.groups).get();
     return (maxGroups - groups.length).clamp(0, maxGroups);
   }

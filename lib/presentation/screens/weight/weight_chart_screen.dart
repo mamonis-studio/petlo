@@ -29,6 +29,7 @@ import '../../../core/widgets/section_label.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/models/chart_range.dart';
 import '../../providers/chart_provider.dart';
+import '../../providers/pro_status_provider.dart';
 import '../../widgets/charts/chart_range_selector.dart';
 import '../../widgets/charts/petlo_line_chart.dart';
 import '../weight/weight_record_screen.dart';
@@ -105,6 +106,8 @@ class _WeightChartScreenState extends ConsumerState<WeightChartScreen> {
               ChartRangeSelector(
                 current: _range,
                 onChanged: (ChartRange r) => setState(() => _range = r),
+                // build 71: Pro なら全期間 (1Y / ALL 等) を解放、Free は 3M まで。
+                isProUser: ref.watch(isProProvider),
               ),
               const SizedBox(height: 16),
 

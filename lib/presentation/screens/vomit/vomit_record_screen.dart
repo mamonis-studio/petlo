@@ -20,6 +20,7 @@ import '../../widgets/records/date_time_picker_row.dart';
 import '../../widgets/records/record_amount_selector.dart';
 import '../../widgets/records/record_delete_helper.dart';
 import '../../widgets/vomit/vomit_color_selector.dart';
+import '../paywall/paywall_screen.dart';
 import 'vomit_form_controller.dart';
 import 'vomit_form_state.dart';
 
@@ -265,6 +266,17 @@ class _VomitRecordScreenState extends ConsumerState<VomitRecordScreen> {
               content: Text(AppLocalizations.of(context).common_save_failed),
                 behavior: SnackBarBehavior.floating),
           );
+        }
+      case VomitFormSaveOutcome.proLimitReached:
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  AppLocalizations.of(context).pro_limit_record_monthly),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          await PaywallScreen.push(context);
         }
     }
   }

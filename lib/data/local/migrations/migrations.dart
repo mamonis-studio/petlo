@@ -27,10 +27,14 @@ abstract final class AppDatabaseMigrations {
   /// v6: pet_scopes テーブル追加 + 既存 pets を 1:1 backfill (build 43, Phase G1)
   /// v7: schedules.times / weekdays_bits カラム追加 + medication_reminders
   ///     から schedules への 1:1 データ移行 (build 47b, Scope B1/B2)
-  /// v8: medication_reminders テーブル DROP (build 49, Scope C1)。
-  ///     v7 で全件 schedules に移行済み、コードからの参照も 0 になったので
-  ///     物理削除する。rollback 不可。
-  static const int currentVersion = 8;
+  /// v8: medication_reminders テーブル DROP (build 49, Scope C1)
+  /// v9: Decision D 純粋実装 (build 57)。
+  ///     全ペットに Personal scope を必ず常在させる。
+  ///     - 既存 pets で Personal scope が無いものに backfill
+  ///     - 既存 non-Personal primary scope は is_primary=0 へ降格
+  ///       (1 ペット 1 primary 不変条件を維持、Personal を canonical primary に)
+  ///     schema 変更なし、データ追加・更新のみ。
+  static const int currentVersion = 9;
 
   /// 新規インストール時の onCreate
   static Future<void> onCreate(Migrator m) async {

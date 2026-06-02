@@ -65,11 +65,15 @@ class UserPreferences {
   static const String _kProState = 'pref.pro.state';
   static const String _kProExpiresAt = 'pref.pro.expires_at';
   static const String _kProTrialEndsAt = 'pref.pro.trial_ends_at';
-  static const String _kBackupState = 'pref.backup.state';
-  static const String _kBackupProvider = 'pref.backup.provider';
-  static const String _kBackupLastSuccessAt = 'pref.backup.last_success_at';
-  static const String _kBackupLastError = 'pref.backup.last_error';
+  // build 62 でクラウド連携プレースホルダ撤去に伴い、_kBackupState /
+  // _kBackupProvider / _kBackupLastError は廃止。残存値は読み出さない。
+  static const String _kBackupLastExportAt = 'pref.backup.last_export_at';
   static const String _kBackupRemindLaterAt = 'pref.backup.remind_later_at';
+  // build 68: R2 クラウドバックアップ
+  static const String _kBackupLastCloudAt = 'pref.backup.last_cloud_at';
+  static const String _kBackupCloudByteSize = 'pref.backup.cloud_byte_size';
+  static const String _kBackupCloudAutoEnabled =
+      'pref.backup.cloud_auto_enabled';
   static const String _kOnboardingCompleted = 'pref.onboarding.completed';
   static const String _kForcePro = 'pref.dev.force_pro';
   static const String _kDisplayName = 'pref.user.display_name';
@@ -154,13 +158,17 @@ class UserPreferences {
 
   BackupSettings get backupSettings {
     final SharedPreferences? p = _prefs;
-    if (p == null) return BackupSettings.off;
+    if (p == null) return BackupSettings.initial;
     return BackupSettings.fromMap(<String, String?>{
-      'state': p.getString(_kBackupState),
-      'provider': p.getString(_kBackupProvider),
-      'lastSuccessAt': p.getString(_kBackupLastSuccessAt),
-      'lastErrorMessage': p.getString(_kBackupLastError),
+      'lastExportAt': p.getString(_kBackupLastExportAt),
       'remindLaterAt': p.getString(_kBackupRemindLaterAt),
+      // build 68: クラウドバックアップ系
+      'lastCloudBackupAt': p.getString(_kBackupLastCloudAt),
+      'cloudBackupByteSize': p.getString(_kBackupCloudByteSize),
+      // bool は明示的に '0' / '1' で保存。キー欠落 (未保存ユーザ) は default
+      // true を返したいので、null をそのまま fromMap に渡す (fromMap 側で
+      // `!= '0'` 判定にしている)。
+      'cloudBackupAutoEnabled': p.getString(_kBackupCloudAutoEnabled),
     });
   }
 
@@ -168,18 +176,11 @@ class UserPreferences {
     final SharedPreferences? p = _prefs;
     if (p == null) return;
     try {
-      await p.setString(_kBackupState, settings.state.name);
-      await p.setString(_kBackupProvider, settings.provider.name);
-      if (settings.lastSuccessAt != null) {
-        await p.setString(_kBackupLastSuccessAt,
-            settings.lastSuccessAt!.toIso8601String());
+      if (settings.lastExportAt != null) {
+        await p.setString(
+            _kBackupLastExportAt, settings.lastExportAt!.toIso8601String());
       } else {
-        await p.remove(_kBackupLastSuccessAt);
-      }
-      if (settings.lastErrorMessage != null) {
-        await p.setString(_kBackupLastError, settings.lastErrorMessage!);
-      } else {
-        await p.remove(_kBackupLastError);
+        await p.remove(_kBackupLastExportAt);
       }
       if (settings.remindLaterAt != null) {
         await p.setString(_kBackupRemindLaterAt,
@@ -187,6 +188,21 @@ class UserPreferences {
       } else {
         await p.remove(_kBackupRemindLaterAt);
       }
+      // build 68: クラウドバックアップ系
+      if (settings.lastCloudBackupAt != null) {
+        await p.setString(_kBackupLastCloudAt,
+            settings.lastCloudBackupAt!.toIso8601String());
+      } else {
+        await p.remove(_kBackupLastCloudAt);
+      }
+      if (settings.cloudBackupByteSize != null) {
+        await p.setString(
+            _kBackupCloudByteSize, settings.cloudBackupByteSize!.toString());
+      } else {
+        await p.remove(_kBackupCloudByteSize);
+      }
+      await p.setString(_kBackupCloudAutoEnabled,
+          settings.cloudBackupAutoEnabled ? '1' : '0');
     } catch (e) {
       PetloLogger.instance.d('setBackupSettings failed: $e');
     }

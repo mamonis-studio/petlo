@@ -19,6 +19,7 @@ import '../../widgets/poop/poop_form_selector.dart';
 import '../../widgets/records/date_time_picker_row.dart';
 import '../../widgets/records/record_amount_selector.dart';
 import '../../widgets/records/record_delete_helper.dart';
+import '../paywall/paywall_screen.dart';
 import 'poop_form_controller.dart';
 import 'poop_form_state.dart';
 
@@ -249,6 +250,17 @@ class _PoopRecordScreenState extends ConsumerState<PoopRecordScreen> {
               behavior: SnackBarBehavior.floating,
             ),
           );
+        }
+      case PoopFormSaveOutcome.proLimitReached:
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  AppLocalizations.of(context).pro_limit_record_monthly),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          await PaywallScreen.push(context);
         }
     }
   }

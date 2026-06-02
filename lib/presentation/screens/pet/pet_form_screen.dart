@@ -54,6 +54,7 @@ import '../../widgets/forms/editorial_text_field.dart';
 import '../../widgets/forms/pet_photo_picker.dart';
 import '../../widgets/forms/segmented_selector.dart';
 import '../../widgets/forms/tag_input_field.dart';
+import '../paywall/paywall_screen.dart';
 import 'pet_form_controller.dart';
 import 'pet_form_state.dart';
 
@@ -344,6 +345,18 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
               behavior: SnackBarBehavior.floating,
             ),
           );
+        }
+
+      case PetFormSaveOutcome.proLimitReached:
+        if (mounted) {
+          final AppLocalizations l10n = AppLocalizations.of(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.pro_limit_pet),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          await PaywallScreen.push(context);
         }
     }
   }

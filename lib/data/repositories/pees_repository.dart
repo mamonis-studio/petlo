@@ -42,6 +42,20 @@ class PeesRepository extends BaseRepository {
         .getSingleOrNull();
   }
 
+  /// 当月の記録件数 (無料プラン上限チェック用、build 71)。
+  Future<int> countThisMonth(String groupId) async {
+    final DateTime now = DateTime.now();
+    final DateTime monthStart = DateTime(now.year, now.month);
+    final int from = monthStart.toUtc().millisecondsSinceEpoch;
+    final result = await (db.selectOnly(db.pees)
+          ..addColumns(<Expression<int>>[db.pees.id.count()])
+          ..where(db.pees.groupId.equals(groupId) &
+              db.pees.deletedAt.isNull() &
+              db.pees.createdAt.isBiggerOrEqualValue(from)))
+        .getSingle();
+    return result.read(db.pees.id.count()) ?? 0;
+  }
+
   // ============================================================================
   // Write
   // ============================================================================

@@ -35,6 +35,8 @@ class PetSelectorPill extends StatelessWidget {
     required this.isActive,
     required this.onTap,
     this.relativePhotoPath,
+    // build 58: 編集動線。pet pill 専用、他 _kind では使われない。
+    this.onLongPress,
     super.key,
   })  : _kind = _PillKind.pet,
         _petType = petType,
@@ -54,7 +56,8 @@ class PetSelectorPill extends StatelessWidget {
         _petType = null,
         _breedDisplay = null,
         _petAgeYears = null,
-        _petCount = petCount;
+        _petCount = petCount,
+        onLongPress = null;
 
   /// "+" 追加ボタン
   const PetSelectorPill.add({
@@ -67,13 +70,16 @@ class PetSelectorPill extends StatelessWidget {
         _petType = null,
         _breedDisplay = null,
         _petAgeYears = null,
-        _petCount = null;
+        _petCount = null,
+        onLongPress = null;
 
   final _PillKind _kind;
   final String name;
   final String? relativePhotoPath;
   final bool isActive;
   final VoidCallback onTap;
+  // build 58: 長押し動線。pet pill のみ非 null、その他は null。
+  final VoidCallback? onLongPress;
 
   // pet固有
   final PetType? _petType;
@@ -94,6 +100,7 @@ class PetSelectorPill extends StatelessWidget {
       button: true,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         splashColor: Colors.transparent,
         highlightColor: colors.bgSoft,
         child: AnimatedContainer(

@@ -582,6 +582,21 @@ class SyncService {
     }
 
     await _upsertByPk(db, 'pets', payload);
+
+    // build 57 (Decision D 純粋実装): 他端末から pull したペットも、
+    // 受信側クライアントの Personal scope に常在させる。
+    // server には Personal scope は同期されない (Personal は per-client 概念)
+    // ので、各クライアントが自分の Personal scope を独立に管理する。
+    //
+    // 既存行があれば UNIQUE(pet_id, group_id) で IGNORE される (冪等)。
+    final int t = DateTime.now().toUtc().millisecondsSinceEpoch;
+    await db.customStatement(
+      "INSERT OR IGNORE INTO pet_scopes "
+      "(pet_id, group_id, permission, is_primary, shared_at, "
+      "sync_status, created_at, updated_at, last_modified_at_client) "
+      "VALUES (?, 'personal', 'owner', 1, ?, 'synced', ?, ?, ?)",
+      <Object?>[clientId, t, t, t, t],
+    );
     return true;
   }
 

@@ -39,9 +39,11 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../data/local/app_database.dart';
+import '../../providers/pet_edit_hint_provider.dart';
 import '../../providers/pet_selection_controller.dart';
 import '../../providers/pets_providers.dart';
 import '../../providers/scope_providers.dart';
+import '../../screens/pet/pet_form_screen.dart';
 import 'pet_selector_pill.dart';
 
 class PetSelectorBar extends ConsumerWidget {
@@ -65,23 +67,31 @@ class PetSelectorBar extends ConsumerWidget {
     final String? currentPetIdStr = ref.watch(currentPetIdProvider);
     final bool canEdit = ref.watch(canEditProvider);
 
-    return Container(
-      height: AppDimensions.petSelectorHeight,
-      decoration: BoxDecoration(
-        color: colors.bg,
-        border: Border(bottom: BorderSide(color: colors.line)),
-      ),
-      child: petsAsync.when(
-        loading: () => const _LoadingPlaceholder(),
-        error: (Object e, StackTrace st) => _ErrorPlaceholder(error: e),
-        data: (List<PetEntity> pets) => _buildBar(
-          context: context,
-          ref: ref,
-          pets: pets,
-          currentPetIdStr: currentPetIdStr,
-          canEdit: canEdit,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Container(
+          height: AppDimensions.petSelectorHeight,
+          decoration: BoxDecoration(
+            color: colors.bg,
+            border: Border(bottom: BorderSide(color: colors.line)),
+          ),
+          child: petsAsync.when(
+            loading: () => const _LoadingPlaceholder(),
+            error: (Object e, StackTrace st) => _ErrorPlaceholder(error: e),
+            data: (List<PetEntity> pets) => _buildBar(
+              context: context,
+              ref: ref,
+              pets: pets,
+              currentPetIdStr: currentPetIdStr,
+              canEdit: canEdit,
+            ),
+          ),
         ),
-      ),
+        // build 58: 初回ヒント。一度でも編集画面に入ったら以後永続非表示。
+        // canEdit=false (Viewer) のメンバーには出さない。
+        if (canEdit) const _LongPressHint(),
+      ],
     );
   }
 
@@ -132,6 +142,12 @@ class PetSelectorBar extends ConsumerWidget {
                   !isAllSelected && currentPetIdStr == pet.id.toString(),
               relativePhotoPath: pet.photoPath,
               onTap: () => controller.selectPet(pet.id),
+              // build 58: 長押しで編集画面に直行 (canEdit のみ)。
+              // 編集も削除も同じ PetFormScreen に着地するため、
+              // 中間のシートは不要 (build 59 で廃止)。
+              onLongPress: canEdit
+                  ? () => _openPetEdit(context, ref, pet)
+                  : null,
             ),
           if (canEdit && onAddPetTapped != null)
             PetSelectorPill.add(onTap: onAddPetTapped!),
@@ -231,6 +247,51 @@ class _ErrorPlaceholder extends StatelessWidget {
             fontSize: 12,
             color: colors.accentDanger,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// build 58: 長押し動線 + 初回ヒント
+// build 59: シートを廃止し、長押し → 編集画面へ直行に変更
+// ============================================================================
+
+Future<void> _openPetEdit(
+  BuildContext context,
+  WidgetRef ref,
+  PetEntity pet,
+) async {
+  // 編集も削除も同じ PetFormScreen(editingPetId) に着地するので、
+  // 中間のシートを挟まない (build 59 で簡素化)。
+  // 削除は編集画面末尾の _PetLifecycleSection (build 47a) で行う。
+  await ref.read(hasOpenedPetEditProvider.notifier).markOpened();
+  if (!context.mounted) return;
+  await PetFormScreen.push(context, editingPetId: pet.id);
+}
+
+class _LongPressHint extends ConsumerWidget {
+  const _LongPressHint();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bool dismissed = ref.watch(hasOpenedPetEditProvider);
+    if (dismissed) return const SizedBox.shrink();
+
+    final AppColors colors = AppColors.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    return Container(
+      width: double.infinity,
+      color: colors.bg,
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
+      child: Text(
+        l10n.pet_selector_longpress_hint,
+        style: TextStyle(
+          fontFamily: 'JetBrainsMono',
+          fontSize: 9,
+          letterSpacing: 9 * 0.15,
+          color: colors.fgFaint,
         ),
       ),
     );

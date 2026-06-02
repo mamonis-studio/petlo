@@ -13,6 +13,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/auth/auth_service.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/logger.dart';
@@ -21,8 +23,10 @@ import '../../../../core/widgets/section_label.dart';
 import '../../../../data/local/database_enums.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../providers/pets_providers.dart';
+import '../../../providers/pro_status_provider.dart';
 import '../../../providers/schedules_providers.dart';
 import '../../../providers/scope_providers.dart';
+import '../../paywall/paywall_screen.dart';
 import '../../../widgets/forms/date_field.dart';
 import '../../../widgets/forms/editorial_text_field.dart';
 
@@ -84,6 +88,33 @@ class _OnboardingPetFormPageState
       return;
     }
 
+    // build 71: onboarding 経路でも Free 上限を尊重する。通常 onboarding は
+    // 「ペット 0 件 → 1 件目作成」なので非ブロックだが、再 onboarding 等の
+    // 経路で既に 1 件保持しているケースを防ぐ defensive gate。
+    if (!ref.read(isProProvider)) {
+      try {
+        final int activeCount =
+            await ref.read(petsRepositoryProvider).countActivePets();
+        if (activeCount >= AppConstants.freeMaxPets) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context).pro_limit_pet),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          await PaywallScreen.push(context);
+          return;
+        }
+      } catch (e, st) {
+        PetloLogger.instance.w(
+          'pet count check failed in onboarding',
+          error: e,
+          stackTrace: st,
+        );
+      }
+    }
+
     setState(() {
       _isSubmitting = true;
       _nameError = null;
@@ -97,6 +128,8 @@ class _OnboardingPetFormPageState
             breed: '', // 後から編集
             sex: PetSex.unknown,
             birthday: _birthday?.millisecondsSinceEpoch,
+            // build 60: 登録者の user_id を記録 (v1.1 ガード用の土台)。
+            createdBy: AuthService.instance.userId,
           );
 
       // 誕生日 schedule 自動同期

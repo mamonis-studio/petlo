@@ -4,7 +4,7 @@ publish_to: "none"
 
 # Versioning: <major>.<minor>.<patch>+<build_number>
 # build_numberはApp Store Connect / Google Play Consoleで自動増加させる
-version: 1.0.0+56
+version: 1.0.0+71
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
@@ -81,6 +81,11 @@ dependencies:
   # ===== URL/Sharing =====
   url_launcher: ^6.3.0
   share_plus: ^10.0.0
+
+  # ===== File picking (build 64: backup import) =====
+  # ZIP 復元時に Files / iCloud Drive から選択するために
+  # UIDocumentPickerViewController を呼ぶ。Photo Library 権限は不要。
+  file_picker: ^8.3.7
 
   # ===== Reviews =====
   in_app_review: ^2.0.9

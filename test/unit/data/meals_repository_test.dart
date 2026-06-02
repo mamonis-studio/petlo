@@ -60,7 +60,7 @@ void main() {
         final List<SyncQueueItemEntity> queue =
             await db.select(db.syncQueue).get();
         expect(queue.length, 1);
-        expect(queue.first.tableName, 'meals');
+        expect(queue.first.targetTable, 'meals');
       });
 
       test('rejects when both foodId and freeText are missing', () async {
@@ -167,15 +167,13 @@ void main() {
           groupId: 'personal', petId: 1, foodNameFreeText: 'A',
           appetite: MealAppetite.ate_all, eatenAtMsec: now(),
         );
-        // ここで論理削除
-        // (注: deletedAt 検査はrepoのcountMealsThisMonth実装で含めてないので
-        //  ここでは物理的にcountに含まれる。実装方針: 削除でcount減らす場合はrepo修正)
-        // 現状の実装はdeletedAt問わずカウントなので、下記期待値は調整必要
         await repo.softDelete(id);
         final int count = await repo.countMealsThisMonth('personal');
-        // 削除しても作成日基準ではカウントされる(無料制限の趣旨上、削除して回避を防ぐ)
-        // → 1件のまま
-        expect(count, 1);
+        // build 61: production の countMealsThisMonth は
+        // `db.meals.deletedAt.isNull()` で論理削除済みを除外する。
+        // 旧テストコメントは「削除でもカウント」という意図だったが、
+        // 実装は「削除分は除外」になっているのでテストもそれに合わせる。
+        expect(count, 0);
       });
     });
   });

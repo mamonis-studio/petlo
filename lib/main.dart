@@ -22,6 +22,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/auth/auth_service.dart';
 import 'core/auth/user_profile_service.dart';
+import 'core/backup/backup_scheduler.dart';
 import 'data/local/app_database.dart';
 import 'core/billing/purchase_service.dart';
 import 'core/constants/app_constants.dart';
@@ -148,6 +149,9 @@ class _PetloAppState extends ConsumerState<PetloApp>
         // 復帰時: 即時 1 回同期 + 2 分ポーリング再開
         unawaited(SyncService.instance.syncAll());
         SyncService.instance.startPolling();
+        // build 68: 自動クラウドバックアップ。Pro + Apple 連携 + オンライン +
+        // 24h 経過の全条件を満たした時だけ送信。失敗は静かにログのみ。
+        unawaited(BackupScheduler.maybeRunCloudBackup(ref));
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:

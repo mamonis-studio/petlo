@@ -2,17 +2,22 @@
 // petlo - Pee Form Controller
 // ============================================================================
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_constants.dart';
+import '../../../core/review/review_prompt_service.dart';
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/pees_providers.dart';
+import '../../providers/pro_status_provider.dart';
 import '../../providers/scope_providers.dart';
 import 'pee_form_state.dart';
 
-enum PeeFormSaveOutcome { success, validationFailed, dbError }
+enum PeeFormSaveOutcome { success, validationFailed, dbError, proLimitReached }
 
 final NotifierProviderFamily<PeeFormController, PeeFormState, int?>
     peeFormControllerProvider =
@@ -66,6 +71,20 @@ class PeeFormController extends FamilyNotifier<PeeFormState, int?> {
       state = validated;
       return PeeFormSaveOutcome.validationFailed;
     }
+    // build 71: 新規記録時のみ Free 月上限チェック。
+    if (!state.isEditing && !ref.read(isProProvider)) {
+      try {
+        final int monthCount = await ref
+            .read(peesRepositoryProvider)
+            .countThisMonth(ref.read(currentGroupIdProvider));
+        if (monthCount >= AppConstants.freeMaxRecordsPerMonth) {
+          return PeeFormSaveOutcome.proLimitReached;
+        }
+      } catch (e, st) {
+        PetloLogger.instance
+            .w('pee count check failed', error: e, stackTrace: st);
+      }
+    }
     state = validated.copyWith(isSubmitting: true);
 
     try {
@@ -92,6 +111,7 @@ class PeeFormController extends FamilyNotifier<PeeFormState, int?> {
           peedAtMsec: t,
           notes: state.notes.trim().isEmpty ? null : state.notes.trim(),
         );
+        unawaited(ReviewPromptService.instance.onRecordAdded());
       }
 
       state = state.copyWith(isSubmitting: false);
