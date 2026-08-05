@@ -87,18 +87,42 @@ class SegmentedSelector<T> extends StatelessWidget {
         // 以前は外側 Container に負 margin (-1) を入れていたが、Flutter の
         // Container.margin.isNonNegative assert に違反するため、設計的に正しい
         // shared-border 構造へ変更した。
-        Row(
-          children: <Widget>[
-            for (int i = 0; i < options.length; i++)
-              Expanded(
-                child: _Segment<T>(
-                  label: optionLabel?.call(options[i]) ?? options[i].toString(),
-                  isSelected: value == options[i],
-                  showLeftBorder: i == 0,
-                  onTap: () => onChanged(options[i]),
+        //
+        // build 73: crossAxisAlignment を stretch にする。
+        //
+        // 既定の center だと、長いラベルの子だけ 2 行に折り返して背が高くなり、
+        // 他のセグメントは元の高さのまま **中央に浮く**。
+        // 結果として隣り合う矩形の上下の罫線が繋がらず、
+        // 「一続きのセグメントコントロール」という見た目が崩れる。
+        // (実測: 高さが [50, 70, 50] になる)
+        //
+        // stretch にすると全セグメントが最も高い子に揃うので、
+        // 箱は縦に伸びるが破綻はしない。伸びる量は _Segment 側の
+        // maxLines で頭打ちにしてある。
+        //
+        // ja のラベルは短いので通常は 1 行に収まり、見た目は変わらない。
+        //
+        // IntrinsicHeight が要るのは、Column の中の Row は高さが非拘束だから。
+        // stretch だけ付けると子に無限の高さ制約が渡って
+        // `BoxConstraints forces an infinite height` で落ちる。
+        // IntrinsicHeight が「最も背の高い子」を測って Row の高さを確定させる。
+        // 選択肢は 2〜5 個なので測り直しのコストは問題にならない。
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              for (int i = 0; i < options.length; i++)
+                Expanded(
+                  child: _Segment<T>(
+                    label:
+                        optionLabel?.call(options[i]) ?? options[i].toString(),
+                    isSelected: value == options[i],
+                    showLeftBorder: i == 0,
+                    onTap: () => onChanged(options[i]),
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
 
         // Error text
@@ -162,6 +186,22 @@ class _Segment<T> extends StatelessWidget {
           child: Text(
             label,
             textAlign: TextAlign.center,
+            // build 73: 伸びしろに上限を設ける。
+            //
+            // Row + Expanded は全選択肢を必ず 1 行に詰めるので、
+            // セグメント 1 個あたりの幅は「親の幅 ÷ 選択肢数」で決まる。
+            // 長い訳語や Dynamic Type の拡大で、ここに収まらない量の
+            // テキストが来たときに際限なく縦へ伸びるのを防ぐ。
+            //
+            // 既定の clip ではなく ellipsis にするのは、切り詰められたことが
+            // ユーザーに見えるようにするため。clip だと「…」も出ずに黙って
+            // 切り落とされ、切れたこと自体が伝わらない。
+            //
+            // 3 行以上必要になるほど長いラベルを 1 行に並べる設計自体が
+            // 無理なので、その場合は SegmentedSelector ではなく
+            // ChoiceChips を使うこと (下の doc コメント参照)。
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: typo.bodyMedium.copyWith(
               color: isSelected ? colors.bg : colors.fg,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
