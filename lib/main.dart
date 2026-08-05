@@ -19,11 +19,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/auth/auth_service.dart';
 import 'core/auth/user_profile_service.dart';
 import 'core/backup/backup_scheduler.dart';
-import 'data/local/app_database.dart';
 import 'core/billing/purchase_service.dart';
 import 'core/constants/app_constants.dart';
 import 'core/notifications/notification_service.dart';
@@ -32,18 +32,25 @@ import 'core/sync/sync_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/locale_aware_theme.dart';
 import 'core/utils/logger.dart';
+import 'core/utils/startup_trace.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'presentation/providers/bootstrap_provider.dart';
 import 'presentation/providers/database_provider.dart';
 import 'presentation/providers/group_api_service_provider.dart';
+import 'presentation/providers/notification_coordinator_provider.dart';
 import 'presentation/providers/notification_scheduler_provider.dart';
 import 'presentation/providers/onboarding_completed_provider.dart';
+import 'presentation/providers/pro_status_provider.dart';
 import 'presentation/providers/purchase_provider.dart';
 import 'presentation/providers/theme_mode_provider.dart';
 import 'presentation/screens/onboarding/onboarding_flow.dart';
 import 'presentation/screens/tab_shell.dart';
 
 Future<void> main() async {
+  // build 73: 起動シーケンスの計測を開始する。
+  // 結果は UserPreferences に永続化し、開発者設定から読む
+  // (ログは debug でしか出ず、この端末では debug が起動できないため)。
+  StartupTrace.begin();
   WidgetsFlutterBinding.ensureInitialized();
 
   // === システム設定 ===
@@ -71,23 +78,34 @@ Future<void> main() async {
   );
 
   // === ロガー初期化 ===
-  await PetloLogger.initialize();
+  await StartupTrace.measure('PetloLogger.initialize', PetloLogger.initialize);
   PetloLogger.instance
       .i('petlo starting up... version=${AppConstants.appVersion}');
 
+  // === 日付フォーマットのロケールデータ初期化 ===
+  // build 73: 通知の文言組み立ては Widget ツリーの外 (NotificationCoordinator)
+  // で走るため、GlobalMaterialLocalizations による暗黙の初期化に頼れない。
+  // 未初期化だと DateFormat が LocaleDataException を投げ、通知の再割り当てが
+  // 丸ごと失敗する。
+  StartupTrace.measureSync('initializeDateFormatting', initializeDateFormatting);
+
   // === ユーザー設定の初期化(テーマ等) ===
-  await UserPreferences.instance.initialize();
+  await StartupTrace.measure(
+      'UserPreferences.initialize', UserPreferences.instance.initialize);
 
   // === 通知初期化 ===
-  await NotificationService.instance.initialize();
+  await StartupTrace.measure(
+      'NotificationService.initialize', NotificationService.instance.initialize);
 
   // === IAP 初期化 (失敗してもアプリは起動する) ===
-  await PurchaseService.instance.initialize();
+  await StartupTrace.measure(
+      'PurchaseService.initialize', PurchaseService.instance.initialize);
 
   // === API 認証初期化 (初回 /auth/anonymous + secure_storage 同期、
   //     ネットワーク不通でも起動継続)
   try {
-    await AuthService.instance.initialize();
+    await StartupTrace.measure(
+        'AuthService.initialize', AuthService.instance.initialize);
   } catch (e, st) {
     PetloLogger.instance.w(
       'AuthService.initialize failed (continuing without auth)',
@@ -124,6 +142,10 @@ class _PetloAppState extends ConsumerState<PetloApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // build 73: 初回フレーム描画までの時間を記録する
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(StartupTrace.markFirstFrame());
+    });
     // 起動時に通知を再スケジュール (端末再起動・アプリkill対応)
     // fire-and-forget — UI起動を遅延させない
     Future<void>.microtask(_rescheduleNotifications);
@@ -167,24 +189,32 @@ class _PetloAppState extends ConsumerState<PetloApp>
       SyncService.instance.bindDatabase(db);
 
       // build 55-client: 初回起動 / アプリ削除→再インストール直後の検知。
-      // ローカル groups テーブルが空で、かつ認証済みなら、サーバから自分の
-      // 全グループを取得 + 各 group を since=0 で pull する (= fullPull)。
-      // 通常のセッション復帰では skip し、syncAll の incremental pull に任せる。
-      final List<GroupEntity> existingGroups =
-          await db.select(db.groups).get();
-      final bool needFullPull = existingGroups.isEmpty &&
+      // サーバから自分の全グループを取得 + 各 group を since=0 で pull する。
+      //
+      // build 73: 判定を「groups テーブルが空か」から専用フラグへ変更した。
+      // groups は **家族共有グループの一覧** であり、共有機能を使っていない
+      // ユーザーでは常に空。匿名認証も必ず成功するため、旧条件
+      // (groups.isEmpty && isAuthenticated) は毎回成立し、通常起動のたびに
+      // fullPull とオーバーレイが走っていた。
+      final bool needFullPull = !UserPreferences.instance.didInitialFullPull &&
           AuthService.instance.isAuthenticated;
       if (needFullPull) {
         ref.read(bootstrapStatusProvider.notifier).begin();
         try {
           PetloLogger.instance.i(
-            '[bootstrap] local groups empty + authenticated → fullPull',
+            '[bootstrap] initial fullPull not done yet → fullPull',
           );
-          await SyncService.instance
+          final bool ok = await SyncService.instance
               .fullPull(ref.read(groupApiServiceProvider));
+          // 成功したときだけフラグを立てる。
+          // 圏外・タイムアウトで失敗した場合は落としたままにして、
+          // 次回起動でリトライさせる。
+          if (ok) {
+            await UserPreferences.instance.setDidInitialFullPull(true);
+          }
         } catch (e, st) {
           PetloLogger.instance.w(
-            '[bootstrap] fullPull failed (continuing)',
+            '[bootstrap] fullPull failed (will retry next launch)',
             error: e, stackTrace: st,
           );
         } finally {
@@ -204,11 +234,25 @@ class _PetloAppState extends ConsumerState<PetloApp>
   Future<void> _rescheduleNotifications() async {
     try {
       final scheduler = ref.read(notificationSchedulerProvider);
-      // build 47b (Scope B3): schedules ベースに統合。
-      // 旧 rescheduleAllReminders は廃止 — schedules.times を持つ
-      // medication カテゴリは syncSchedule が拾うので等価。
-      await scheduler.rescheduleAllSchedules();
-      await scheduler.rescheduleAllVaccinationAlerts();
+      // build 73: 旧採番の残骸を一度だけ掃除する (DB には触らない)。
+      // 採番を変えた分は新採番の cancelRange では消しきれないため。
+      final Stopwatch migSw = Stopwatch()..start();
+      await scheduler.migrateLegacyScheduleNotificationIds();
+      await scheduler.migrateLegacyVaccinationNotificationIds();
+      migSw.stop();
+      await StartupTrace.addAfterFirstFrame(
+          'migrateLegacyIds', migSw.elapsedMilliseconds);
+
+      // build 73: 3 系統の合計を見て 64 枠に収める。
+      // 起動のたびに無条件で走らせることが、再割り当ての途中で落ちた場合の
+      // 回復経路になっている (DB が真実、OS 側の通知は導出物)。
+      final Stopwatch reSw = Stopwatch()..start();
+      await ref
+          .read(notificationCoordinatorProvider)
+          .rescheduleAll(isPro: ref.read(isProProvider));
+      reSw.stop();
+      await StartupTrace.addAfterFirstFrame(
+          'rescheduleAll', reSw.elapsedMilliseconds);
     } catch (e, st) {
       PetloLogger.instance.w('Failed to reschedule notifications on start',
           error: e, stackTrace: st);
@@ -297,30 +341,46 @@ class _BootstrapGate extends ConsumerWidget {
     final bool inProgress = ref.watch(bootstrapStatusProvider);
     if (!inProgress) return child;
     final AppLocalizations l10n = AppLocalizations.of(context);
+    final ThemeData theme = Theme.of(context);
     return Stack(
       children: <Widget>[
         child,
+        // build 73: Material で包む。
+        //
+        // このオーバーレイは MaterialApp.builder の位置、つまり Navigator の
+        // **外側** に置かれている。そこには Material も DefaultTextStyle も
+        // 無いため、素の Text が「赤文字 + 黄色の二重下線」(Flutter が
+        // 未設定のテキストに出す debug 表示) になっていた。
+        // 文字色を指定しても下線は消えない。Material 祖先を与えるのが正解。
+        //
+        // type: transparency にして Material 自身は何も描かせず、背景色は
+        // 従来どおり ColoredBox が担当する (見た目を変えないため)。
         Positioned.fill(
-          child: ColoredBox(
-            color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.92),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const SizedBox(
-                    width: 28, height: 28,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.bootstrap_restoring,
-                    style: const TextStyle(
-                      fontFamily: 'JetBrainsMono',
-                      fontSize: 11,
-                      letterSpacing: 11 * 0.18,
+          child: Material(
+            type: MaterialType.transparency,
+            child: ColoredBox(
+              color: theme.scaffoldBackgroundColor.withOpacity(0.92),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    const SizedBox(
+                      width: 28, height: 28,
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.bootstrap_restoring,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'JetBrainsMono',
+                        fontSize: 11,
+                        letterSpacing: 11 * 0.18,
+                        color: theme.textTheme.bodyMedium?.color,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

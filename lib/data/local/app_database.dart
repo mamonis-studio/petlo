@@ -9,10 +9,11 @@
 //   記録系(7):  meals, foods, poops, pees, vomits, weights, temperatures, diaries
 //   健康(4):    visits, medications, vaccinations, bcs_checks
 //   予定(2):    expiration_items, streak_statuses
+//   予防(2):    prevention_courses, prevention_doses
 //   共有(5):    groups, group_members, invite_codes, pending_transfers, cancel_feedback
 //   AI(4):      ai_chat_messages, ai_sessions, ai_image_diagnoses, weekly_summaries
 //   同期(3):    sync_queue, upload_queue, account_deletion_queue
-//   合計:       27テーブル (build 49 で medication_reminders を削除)
+//   合計:       29テーブル (build 72 で予防 2 テーブル追加)
 //
 // 使い方:
 //   final db = AppDatabase();
@@ -59,6 +60,8 @@ import 'tables/pending_transfers.dart';
 import 'tables/pet_scopes.dart';
 import 'tables/pets.dart';
 import 'tables/poops.dart';
+import 'tables/prevention_courses.dart';
+import 'tables/prevention_doses.dart';
 import 'tables/schedules.dart';
 import 'tables/streak_statuses.dart';
 import 'tables/sync_queue.dart';
@@ -96,6 +99,8 @@ export 'tables/pending_transfers.dart';
 export 'tables/pet_scopes.dart';
 export 'tables/pets.dart';
 export 'tables/poops.dart';
+export 'tables/prevention_courses.dart';
+export 'tables/prevention_doses.dart';
 export 'tables/schedules.dart';
 export 'tables/streak_statuses.dart';
 export 'tables/sync_queue.dart';
@@ -136,6 +141,10 @@ part 'app_database.g.dart';
     ExpirationItems,
     Schedules,
     StreakStatuses,
+
+    // 予防 (build 72)
+    PreventionCourses,
+    PreventionDoses,
 
     // 共有
     Groups,
@@ -217,6 +226,12 @@ class AppDatabase extends _$AppDatabase {
           // build 57 / Decision D 純粋実装: 全 pets に Personal scope を常在化。
           if (from < 9) {
             await backfillPersonalScopes();
+          }
+          // build 72: 予防コース機能。テーブル 2 本の新規作成のみ。
+          // backfill なし、既存テーブルへの ALTER なし。
+          if (from < 10) {
+            await m.createTable(preventionCourses);
+            await m.createTable(preventionDoses);
           }
           await AppDatabaseMigrations.onUpgrade(m, from, to);
         },

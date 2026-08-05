@@ -22,23 +22,65 @@
 //   - 実運用上、ユーザが持つ medication schedules は ≤ 2-3 件想定なので
 //     当面は per-schedule cap だけで十分。
 //
+// build 72: グローバル 50 slot を kScheduleSlotBudget (38) と
+//   kPreventionSlotBudget (12) に分割。予防コースは
+//   PreventionNotificationScheduler が後者の枠内で積む。
+//
 // ============================================================================
 
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'
+    show PendingNotificationRequest;
 
 import '../../data/local/app_database.dart';
 import '../../data/repositories/schedules_repository.dart';
 import '../../data/repositories/vaccinations_repository.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../constants/app_constants.dart';
+import '../preferences/user_preferences.dart';
 import '../utils/logger.dart';
 import 'notification_service.dart';
 
 /// グローバル通知 slot バジェット。iOS のシステム上限 (64) から
 /// ワクチン枠 (典型 ≤ 8) を引いた値を上限の目安にする。
+///
+/// build 72: グローバル 50 slot を schedule 系 / 予防系に分割する。
+/// 予防を無制限に積むと既存のワクチン通知が枯渇するため、予防側は
+/// 優先度ラダーで 12 slot に収める (PreventionNotificationScheduler)。
+/// schedules を 50 → 38 に下げるが、実運用でユーザが持つ medication
+/// schedule は 2-3 件 (= 最大 ~6 slot) 想定なので実害はない。
 const int _kGlobalSlotBudget = 50;
+const int _kPreventionSlotBudgetWhenEnabled = 12;
+
+/// 予防系に割り当てる slot 数。キルスイッチが倒れていれば 0。
+const int kPreventionSlotBudget =
+    AppConstants.enablePrevention ? _kPreventionSlotBudgetWhenEnabled : 0;
+
+/// schedule 系に割り当てる slot 数。
+///
+/// **build 73 のキルスイッチで最も重要な一行。**
+/// 予防を止めたら 50 に戻さないと、既存のワクチン・投薬通知が
+/// 12 slot 損したまま生き続ける。UI を隠すだけでは #4 は直らない。
+const int kScheduleSlotBudget =
+    _kGlobalSlotBudget - kPreventionSlotBudget;
+
+/// ワクチン 1 件が確保する ID 幅 (build 73)。現在使うのは 2 slot
+/// (3日前 / 当日) だが、将来「1 週間前」等を足す余地として 4 を取る。
+const int kVaccinationSlotSpan = 4;
+
+/// 旧採番 (`1000000 + vaccinationId`、幅 1) で積まれた通知が残る ID レンジ。
+/// 新採番と重ならない保証が無いため、起動時に一度だけ全掃除する。
+const int kVaccinationIdRangeStart = 1000000;
+const int kVaccinationIdRangeEnd = 10000000; // medication レンジの先頭 (排他)
+
+/// 旧採番 (`100000000 + scheduleId * 32 + slot` と内部の `+ wd`) で
+/// 積まれた通知が残る ID レンジ。新採番も同じレンジを使うので、
+/// 起動時に一度だけ全掃除してから積み直す。
+const int kScheduleIdRangeStart = 100000000;
+const int kScheduleIdRangeEnd = 400000000; // prevention dose レンジの先頭 (排他)
 
 class NotificationScheduler {
   NotificationScheduler({
@@ -82,37 +124,40 @@ class NotificationScheduler {
       final String body = _scheduleBody(s, l10n);
 
       // ===== 繰り返し通知 (medication カテゴリ + times) =====
+      // build 73: ID は通し番号ではなく (timeIndex, weekdaySlot) から決める。
+      // 通し番号 + scheduleDailyAt 内部の `id + wd` で衝突していたため。
       if (s.category == ScheduleCategory.medication && s.times != null) {
         final List<String> times = _decodeTimes(s.times);
         final Set<int> weekdays = _decodeWeekdays(s.weekdaysBits);
 
-        if (weekdays.isEmpty) {
-          for (int i = 0; i < times.length && slotIdx < 32; i++) {
-            final ({int hour, int minute})? parsed = _parseHHmm(times[i]);
-            if (parsed == null) continue;
+        // timeIndex は 0-6 まで (weekdaySlot 7 と合わせて幅 64 に収める)
+        final int maxTimes = times.length > 7 ? 7 : times.length;
+
+        for (int i = 0; i < maxTimes; i++) {
+          final ({int hour, int minute})? parsed = _parseHHmm(times[i]);
+          if (parsed == null) continue;
+
+          if (weekdays.isEmpty) {
+            // 毎日 → weekdaySlot 7
             await _service.scheduleDailyAt(
-              id: NotificationService.idForSchedule(scheduleId, slotIdx),
+              id: NotificationService.idForSchedule(scheduleId, i, 7),
               title: s.title,
               body: body,
               hour: parsed.hour,
               minute: parsed.minute,
-              weekdays: null, // null = 毎日
+              weekday: null,
             );
             slotIdx++;
-          }
-        } else {
-          for (int i = 0; i < times.length; i++) {
-            final ({int hour, int minute})? parsed = _parseHHmm(times[i]);
-            if (parsed == null) continue;
+          } else {
             for (final int wd in weekdays) {
-              if (slotIdx >= 32) break;
+              if (wd < 0 || wd > 6) continue;
               await _service.scheduleDailyAt(
-                id: NotificationService.idForSchedule(scheduleId, slotIdx),
+                id: NotificationService.idForSchedule(scheduleId, i, wd),
                 title: s.title,
                 body: body,
                 hour: parsed.hour,
                 minute: parsed.minute,
-                weekdays: <int>{wd},
+                weekday: wd,
               );
               slotIdx++;
             }
@@ -121,11 +166,11 @@ class NotificationScheduler {
       }
 
       // ===== one-shot 通知 (notificationTiming) =====
-      // 繰り返し通知の slot を 0..31 で確保したので、one-shot は 32 から。
+      // 繰り返しと衝突しない専用オフセット (63) を使う。
       final DateTime? oneShotAt = _oneShotFireTime(s);
       if (oneShotAt != null && oneShotAt.isAfter(DateTime.now())) {
         await _service.scheduleOneTime(
-          id: NotificationService.idForSchedule(scheduleId, 32),
+          id: NotificationService.idForScheduleOneShot(scheduleId),
           title: s.title,
           body: body,
           scheduledAt: oneShotAt,
@@ -146,12 +191,10 @@ class NotificationScheduler {
   }
 
   /// schedule 由来の通知を全部キャンセル。
-  /// slot 範囲: 0..31 (繰り返し) + 32 (one-shot) = 33 個。
+  /// build 73: 採番で幅 64 を確保したので、その全域を掃除する。
   Future<void> cancelSchedule(int scheduleId) async {
-    final int baseId = NotificationService.idForSchedule(scheduleId, 0);
-    await _service.cancelRange(baseId, 33);
-    // scheduleDailyAt(weekdays: {wd}) は内部で ID + wd するため、繰り返し
-    // 通知 baseId+0..7 もクリアしておく (cancelRange で吸収済みだが念のため)。
+    final int baseId = NotificationService.idForSchedule(scheduleId, 0, 0);
+    await _service.cancelRange(baseId, NotificationService.kScheduleIdSpan);
   }
 
   /// 起動時に全 schedule を読んで再スケジュール。
@@ -163,7 +206,7 @@ class NotificationScheduler {
       PetloLogger.instance
           .i('Rescheduling ${schedules.length} schedule(s) on app start');
 
-      int slotBudget = _kGlobalSlotBudget;
+      int slotBudget = kScheduleSlotBudget;
       int skipped = 0;
       for (final ScheduleEntity s in schedules) {
         if (slotBudget <= 0) {
@@ -189,13 +232,92 @@ class NotificationScheduler {
     try {
       final List<VaccinationEntity> vaccinations =
           await _vaccinationsRepo.getAllUpcomingDueAlerts();
-      PetloLogger.instance
-          .i('Rescheduling ${vaccinations.length} vaccination alert(s) on app start');
+      int used = 0;
       for (final VaccinationEntity v in vaccinations) {
-        await syncVaccinationDueAlert(v.id);
+        used += await syncVaccinationDueAlert(v.id);
       }
+      // build 73: 件数だけでなく実際に積んだ slot 数も出す。
+      // 「N 件登録したのに slot が増えない」を検知できるようにするため。
+      PetloLogger.instance.i(
+        'Rescheduling ${vaccinations.length} vaccination alert(s) on app '
+        'start: $used slot(s) scheduled',
+      );
     } catch (e, st) {
       PetloLogger.instance.w('rescheduleAllVaccinationAlerts failed',
+          error: e, stackTrace: st);
+    }
+  }
+
+  /// build 73: 旧採番で積まれた schedule 通知を一度だけ掃除する。
+  ///
+  /// 旧採番は通し番号 slot + scheduleDailyAt 内部の `+ wd` で実 ID が
+  /// ずれていたため、新採番の cancelRange では消しきれない残骸が残る。
+  /// ワクチンと同じ方式で、レンジ全域を列挙して消す。
+  ///
+  /// **DB には一切触らない。** 通知の積み直しのみ。
+  Future<void> migrateLegacyScheduleNotificationIds() async {
+    if (UserPreferences.instance.scheduleIdMigratedV2) return;
+    try {
+      final List<PendingNotificationRequest> pending =
+          await _service.pending();
+      final List<int> legacy = pending
+          .map((PendingNotificationRequest r) => r.id)
+          .where((int id) =>
+              id >= kScheduleIdRangeStart && id < kScheduleIdRangeEnd)
+          .toList();
+
+      for (final int id in legacy) {
+        await _service.cancel(id);
+      }
+      await UserPreferences.instance.setScheduleIdMigratedV2(true);
+      await UserPreferences.instance
+          .setScheduleIdMigratedCount(legacy.length);
+      PetloLogger.instance.i(
+        'Schedule notification id migration (v2): '
+        'cleared ${legacy.length} legacy notification(s)',
+      );
+    } catch (e, st) {
+      // 失敗してもフラグは立てない。次回起動で再試行する。
+      PetloLogger.instance.w('schedule id migration failed',
+          error: e, stackTrace: st);
+    }
+  }
+
+  /// build 73: 旧採番で積まれたワクチン通知を一度だけ掃除する。
+  ///
+  /// 旧採番は `1000000 + vaccinationId` (幅 1)。新採番 `+ id * 4 + slot` とは
+  /// ID が重ならない保証が無いため、残骸が生き残ると
+  ///   - 消せない通知が居座る
+  ///   - 新採番の通知と衝突して片方が消える
+  /// のどちらかが起きる。pending() が読めるようになった今なら確実に列挙できる。
+  ///
+  /// **DB には一切触らない。** 通知の積み直しのみ。
+  /// 掃除は 1 回だけ。フラグは UserPreferences に持つ。
+  Future<void> migrateLegacyVaccinationNotificationIds() async {
+    if (UserPreferences.instance.vaccinationIdMigratedV2) return;
+    try {
+      final List<PendingNotificationRequest> pending =
+          await _service.pending();
+      final List<int> legacy = pending
+          .map((PendingNotificationRequest r) => r.id)
+          .where((int id) =>
+              id >= kVaccinationIdRangeStart && id < kVaccinationIdRangeEnd)
+          .toList();
+
+      for (final int id in legacy) {
+        await _service.cancel(id);
+      }
+      await UserPreferences.instance.setVaccinationIdMigratedV2(true);
+      // ログは debug でしか出ないので、結果を永続化して画面から読めるようにする
+      await UserPreferences.instance
+          .setVaccinationIdMigratedCount(legacy.length);
+      PetloLogger.instance.i(
+        'Vaccination notification id migration (v2): '
+        'cleared ${legacy.length} legacy notification(s)',
+      );
+    } catch (e, st) {
+      // 失敗してもフラグは立てない。次回起動で再試行する。
+      PetloLogger.instance.w('vaccination id migration failed',
           error: e, stackTrace: st);
     }
   }
@@ -207,19 +329,23 @@ class NotificationScheduler {
   /// ワクチン1件分の通知を再構築。
   /// 3日前と当日(0時相当の朝9時)に通知。
   /// nextDueAt が null なら何もしない(キャンセルのみ)。
-  Future<void> syncVaccinationDueAlert(int vaccinationId) async {
+  /// 実際に積んだ slot 数を返す (build 73)。
+  /// 以前は「ワクチン 1 件につき 1 行」のログしか出しておらず、
+  /// 2 slot 積まれたのかを判定できなかった。schedule 系の
+  /// "N slot(s) scheduled" に粒度を揃える。
+  Future<int> syncVaccinationDueAlert(int vaccinationId) async {
     try {
       final VaccinationEntity? v = await _vaccinationsRepo.getById(vaccinationId);
       if (v == null || v.deletedAt != null) {
         await cancelVaccinationDueAlert(vaccinationId);
-        return;
+        return 0;
       }
 
       // 一旦削除
       await cancelVaccinationDueAlert(vaccinationId);
 
       final int? nextDue = v.nextDueAt;
-      if (nextDue == null) return;
+      if (nextDue == null) return 0;
 
       final DateTime dueDate =
           DateTime.fromMillisecondsSinceEpoch(nextDue);
@@ -232,52 +358,56 @@ class NotificationScheduler {
       final DateTime threeDaysBefore =
           onDay.subtract(const Duration(days: 3));
 
-      final int baseId = NotificationService.idForVaccination(vaccinationId);
-
       // build 34: 通知文言を l10n 化 (context 無いので platform locale を読む)
       final AppLocalizations l10n = _platformL10n();
+      int used = 0;
 
-      // 3日前
+      // slot 0: 3日前
       if (threeDaysBefore.isAfter(DateTime.now())) {
         await _service.scheduleOneTime(
-          id: baseId,
+          id: NotificationService.idForVaccination(vaccinationId, 0),
           title: l10n.notification_vaccination_upcoming_title,
           body: l10n.notification_vaccination_upcoming_body(v.kind),
           scheduledAt: threeDaysBefore,
           channelId: 'petlo_vaccinations',
           channelName: 'petlo vaccinations',
         );
+        used++;
       }
 
-      // 当日
+      // slot 1: 当日
       if (onDay.isAfter(DateTime.now())) {
         await _service.scheduleOneTime(
-          id: baseId + 1,
+          id: NotificationService.idForVaccination(vaccinationId, 1),
           title: l10n.notification_vaccination_today_title,
           body: l10n.notification_vaccination_today_body(v.kind),
           scheduledAt: onDay,
           channelId: 'petlo_vaccinations',
           channelName: 'petlo vaccinations',
         );
+        used++;
       }
 
       if (kDebugMode) {
-        PetloLogger.instance
-            .d('Synced vaccination $vaccinationId: due=$dueDate');
+        PetloLogger.instance.d(
+            'Synced vaccination $vaccinationId: $used slot(s) scheduled '
+            '(due=$dueDate)');
       }
+      return used;
     } catch (e, st) {
       PetloLogger.instance
           .w('syncVaccinationDueAlert failed: id=$vaccinationId',
               error: e, stackTrace: st);
+      return 0;
     }
   }
 
-  /// ワクチン通知を全部キャンセル(3日前 + 当日 = 2通知)
+  /// ワクチン通知を全部キャンセル。
+  /// build 73: 採番で幅 4 を確保したので、余った slot も含めて掃除する。
   Future<void> cancelVaccinationDueAlert(int vaccinationId) async {
     final int baseId =
-        NotificationService.idForVaccination(vaccinationId);
-    // 範囲: baseId, baseId+1
-    await _service.cancelRange(baseId, 2);
+        NotificationService.idForVaccination(vaccinationId, 0);
+    await _service.cancelRange(baseId, kVaccinationSlotSpan);
   }
 
   // ==========================================================================

@@ -320,3 +320,58 @@ enum ScheduleSourceType {
   pet_birthday,   // ペット birthday から自動生成
   pet_memorial;   // ペットお別れ日から自動生成 (将来用)
 }
+
+// ============================================================================
+// Prevention (build 72)
+// ============================================================================
+
+/// 予防コースの種別
+enum PreventionKind {
+  /// フィラリア (犬糸状虫) 予防
+  filaria,
+  /// ノミ・マダニ予防
+  flea_tick,
+  /// オールインワン製剤 (フィラリア + ノミダニ同時)
+  combo;
+}
+
+/// 予防薬の剤型
+enum PreventionForm {
+  /// チュアブル (おやつタイプ)
+  chewable,
+  /// 錠剤
+  tablet,
+  /// スポットオン (滴下)
+  spot_on,
+  /// 注射 (年 1 回タイプ)
+  injection;
+}
+
+/// 地域プリセット。予防期間の初期値算出にのみ使う。
+/// あくまで一般的な目安であり、医学的な指示ではない。
+enum PreventionRegion {
+  hokkaido,
+  tohoku,
+  kanto,
+  chubu,
+  kansai,
+  chugoku_shikoku,
+  kyushu,
+  okinawa,
+  /// ユーザーが月を手動指定
+  custom;
+}
+
+/// 1 回分の投与状態 (導出値。DB には保存しない)
+enum PreventionDoseStatus {
+  /// 未来の予定
+  upcoming,
+  /// 今日が予定日
+  due,
+  /// 予定日を過ぎたが未投与
+  overdue,
+  /// 投与済み
+  administered,
+  /// スキップ (獣医指示等でユーザーが明示的に飛ばした)
+  skipped;
+}

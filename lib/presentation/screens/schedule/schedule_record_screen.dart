@@ -12,6 +12,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/notifications/notification_permission_prompt.dart';
+import '../../providers/notification_coordinator_provider.dart';
+import '../../providers/pro_status_provider.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -23,7 +27,6 @@ import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
 import '../../../data/repositories/schedules_repository.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../providers/notification_scheduler_provider.dart';
 import '../../providers/pets_providers.dart';
 import '../../providers/schedules_providers.dart';
 import '../../providers/scope_providers.dart';
@@ -201,11 +204,17 @@ class _ScheduleRecordScreenState
         );
       }
 
-      // build 47b (Scope B3): 保存後にローカル通知を再構築する。
+      // build 73: 保存後は 3 系統まとめて再割り当てする。
+      // 個別 sync では総量 64 を守れないため (他系統の使用量が見えない)。
       if (savedScheduleId != null) {
+        // build 73: 通知を期待した文脈で権限を要求する。
+        // 未確定ならここで OS ダイアログ、拒否済みなら設定への導線。
+        if (mounted) {
+          await NotificationPermissionPrompt.ensureGranted(context);
+        }
         await ref
-            .read(notificationSchedulerProvider)
-            .syncSchedule(savedScheduleId);
+            .read(notificationCoordinatorProvider)
+            .rescheduleAll(isPro: ref.read(isProProvider));
       }
 
       if (!mounted) return;
@@ -231,11 +240,12 @@ class _ScheduleRecordScreenState
     final bool deleted = await ref
         .read(schedulesRepositoryProvider)
         .softDelete(widget.editingScheduleId!);
-    // build 47b: 削除時に紐づくローカル通知もキャンセル
+    // build 73: 削除後も全体を再割り当てする。
+    // 消えた分の枠が他系統に回るので、個別 cancel では不十分。
     if (deleted) {
       await ref
-          .read(notificationSchedulerProvider)
-          .cancelSchedule(widget.editingScheduleId!);
+          .read(notificationCoordinatorProvider)
+          .rescheduleAll(isPro: ref.read(isProProvider));
     }
     if (!mounted) return;
     if (deleted) {

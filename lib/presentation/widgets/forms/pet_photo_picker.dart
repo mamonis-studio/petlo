@@ -33,7 +33,6 @@ import '../../../core/utils/logger.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/pet_avatar.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../../l10n/generated/app_localizations.dart';
 
 class PetPhotoPicker extends StatelessWidget {
   const PetPhotoPicker({
@@ -183,6 +182,7 @@ class PetPhotoPicker extends StatelessWidget {
   Future<File?> _cropToSquare(BuildContext context, String path) async {
     final AppColors colors = AppColors.of(context);
     final AppLocalizations l10n = AppLocalizations.of(context);
+
     try {
       final CroppedFile? cropped = await ImageCropper().cropImage(
         sourcePath: path,
@@ -193,7 +193,19 @@ class PetPhotoPicker extends StatelessWidget {
         maxHeight: 1024,
         uiSettings: <PlatformUiSettings>[
           IOSUiSettings(
-            title: l10n.image_cropper_title,
+            // build 73: title は指定しない。
+            // TOCropViewController は title が設定されると画像領域の上に
+            // 独自の titleLabel を描画する (TOCropViewController.m:1055)。
+            // 標準ツールバーとは別物なので、タイトルが宙に浮いて見えた。
+            // ボタン文言 (doneButtonTitle / cancelButtonTitle) は
+            // ツールバー内の指定なので副作用が無く、そのまま使える。
+            //
+            // 注: これで浮いたタイトルは消えたが、
+            // 「キャンセル/確定 が上下 2 組出る」「下部ツールバーが
+            // 画面下端に沈む」症状は残っている (iOS 26 +
+            // TOCropViewController 2.7.4)。SystemChrome でステータスバーを
+            // 一時的に隠す対処も試したが効果が無く、むしろ上部のボタンが
+            // 画像に近づいたため差し戻した。別チケットで追う。
             doneButtonTitle: l10n.image_cropper_done,
             cancelButtonTitle: l10n.image_cropper_cancel,
             aspectRatioLockEnabled: true,

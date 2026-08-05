@@ -217,6 +217,30 @@ abstract final class AppIcons {
     semanticLabel: 'Medication',
   );
 
+  /// 盾アイコン (予防 — build 72)
+  /// M12 3 L20 6 V12 c0 5 -3.5 8 -8 9 c-4.5 -1 -8 -4 -8 -9 V6 z
+  /// 内側にチェックを重ねて「守られている」ことを示す。
+  static final LineIconData prevention = LineIconData(
+    paint: (Canvas c, Size s, Paint p) {
+      final Path shield = Path()
+        ..moveTo(12, 3)
+        ..lineTo(20, 6)
+        ..lineTo(20, 12)
+        ..relativeCubicTo(0, 5, -3.5, 8, -8, 9)
+        ..relativeCubicTo(-4.5, -1, -8, -4, -8, -9)
+        ..lineTo(4, 6)
+        ..close();
+      c.drawPath(shield, p);
+
+      final Path check = Path()
+        ..moveTo(9, 12)
+        ..lineTo(11.2, 14.2)
+        ..lineTo(15.5, 9.8);
+      c.drawPath(check, p);
+    },
+    semanticLabel: 'Prevention',
+  );
+
   // ===== UI icons =====
 
   /// 検索アイコン

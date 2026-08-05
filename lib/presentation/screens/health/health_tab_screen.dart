@@ -18,17 +18,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_constants.dart';
+import '../../../core/prevention/prevention_labels.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../core/utils/unit_converters.dart';
+import '../../../core/widgets/app_icons.dart';
 import '../../../core/widgets/eyebrow_text.dart';
+import '../../../core/widgets/line_icon.dart';
 import '../../../core/widgets/outlined_action_button.dart';
 import '../../../core/widgets/section_label.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/local/database_enums.dart';
+import '../../../data/repositories/prevention_courses_repository.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/pets_providers.dart';
+import '../../providers/prevention_providers.dart';
 import '../../providers/scope_providers.dart';
 import '../../providers/temperatures_providers.dart';
 import '../../providers/vaccinations_providers.dart';
@@ -37,7 +44,10 @@ import '../../providers/weights_providers.dart';
 import '../../providers/tab_provider.dart';
 import '../../widgets/pet_selector/auto_select_first_pet.dart';
 import '../../widgets/petlo_scaffold.dart';
+import '../../widgets/prevention/prevention_progress_bar.dart';
 import '../pet/pet_form_screen.dart';
+import '../prevention/prevention_course_detail_screen.dart';
+import '../prevention/prevention_course_list_screen.dart';
 import '../temperature/temperature_chart_screen.dart';
 import '../temperature/temperature_record_screen.dart';
 import '../vaccination/vaccination_record_screen.dart';
@@ -114,6 +124,13 @@ class HealthTabScreen extends ConsumerWidget {
 
               const _VaccinationsList(),
               const SizedBox(height: 32),
+
+              // build 72: 予防 (フィラリア / ノミダニ)
+              // build 73: キルスイッチ (1) — フラグが倒れていれば出さない。
+              if (AppConstants.enablePrevention) ...<Widget>[
+                const _PreventionSection(),
+                const SizedBox(height: 32),
+              ],
             ],
           ],
         ),
@@ -681,3 +698,144 @@ class _VaccinationsList extends ConsumerWidget {
 }
 
 bool _isPast(DateTime d) => d.isBefore(DateTime.now());
+
+// ============================================================================
+// PreventionSection (build 72)
+// ============================================================================
+//
+// 進行中の予防コースのサマリー (進捗バー + 次回予定日) と、
+// 「予防を管理」への導線。コースが無ければ作成導線だけ出す。
+//
+class _PreventionSection extends ConsumerWidget {
+  const _PreventionSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final AppColors colors = AppColors.of(context);
+    final AppTypography typo = AppTypography.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final AsyncValue<List<PreventionCourseEntity>> coursesAsync =
+        ref.watch(currentPetPreventionCoursesProvider);
+    final Set<int> unlocked = ref.watch(unlockedPreventionCourseIdsProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            LineIcon(
+              icon: AppIcons.prevention,
+              size: AppDimensions.iconSmall,
+              color: colors.fgMuted,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                l10n.prevention_section_title,
+                style: typo.metaSmall.copyWith(color: colors.fgMuted),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        coursesAsync.maybeWhen(
+          data: (List<PreventionCourseEntity> courses) {
+            final List<PreventionCourseEntity> visible = courses
+                .where((PreventionCourseEntity c) => unlocked.contains(c.id))
+                .toList();
+            if (visible.isEmpty) {
+              return Text(
+                l10n.prevention_list_empty,
+                style: typo.bodySmall.copyWith(color: colors.fgMuted),
+              );
+            }
+            return Column(
+              children: <Widget>[
+                for (final PreventionCourseEntity c in visible.take(2))
+                  _PreventionSummaryCard(course: c),
+              ],
+            );
+          },
+          orElse: () => const SizedBox.shrink(),
+        ),
+        const SizedBox(height: 12),
+        _TrendLinkButton(
+          label: l10n.prevention_list_appbar,
+          onTap: () => PreventionCourseListScreen.push(context),
+        ),
+      ],
+    );
+  }
+}
+
+class _PreventionSummaryCard extends ConsumerWidget {
+  const _PreventionSummaryCard({required this.course});
+
+  final PreventionCourseEntity course;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final AppColors colors = AppColors.of(context);
+    final AppTypography typo = AppTypography.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final String localeTag = Localizations.localeOf(context).toLanguageTag();
+    final AsyncValue<List<PreventionDoseEntity>> dosesAsync =
+        ref.watch(preventionDosesProvider(course.id));
+
+    return InkWell(
+      onTap: () => PreventionCourseDetailScreen.push(
+        context,
+        courseId: course.id,
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: colors.line, width: 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              PreventionLabels.kind(course.kind, l10n),
+              style: typo.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            dosesAsync.maybeWhen(
+              data: (List<PreventionDoseEntity> doses) {
+                final List<PreventionDoseEntity> inRange = doses
+                    .where((PreventionDoseEntity d) =>
+                        !PreventionCoursesRepository.isOrphanDose(course, d))
+                    .toList();
+                final int done = inRange
+                    .where((PreventionDoseEntity d) => d.administeredAt != null)
+                    .length;
+                PreventionDoseEntity? next;
+                for (final PreventionDoseEntity d in inRange) {
+                  if (d.administeredAt != null || d.skipped) continue;
+                  if (next == null || d.scheduledDate < next.scheduledDate) {
+                    next = d;
+                  }
+                }
+                return PreventionProgressBar(
+                  done: done,
+                  total: inRange.length,
+                  trailing: next == null
+                      ? null
+                      : l10n.prevention_next_dose_label(
+                          formatMonthDay(
+                            DateTime.fromMillisecondsSinceEpoch(
+                                next.scheduledDate),
+                            localeTag,
+                          ),
+                        ),
+                );
+              },
+              orElse: () => const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

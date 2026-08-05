@@ -57,7 +57,15 @@ class _PeeRecordScreenState extends ConsumerState<PeeRecordScreen> {
 
   void _syncControllers(PeeFormState s) {
     if (_initialSynced) return;
-    if (!s.isEditing) {
+    // build 73: 編集モードかは **widget が最初から知っている**。
+    // 以前は s.isEditing を見ていたが、これは
+    // `editingXxxId != null` であり、ロード前の初期 State では false になる。
+    // その結果「新規作成」と誤判定して _initialSynced を立ててしまい、
+    // 後からデータが届いても controller へ反映されなかった
+    // (アプリ再起動後の初回だけ入力欄が空になる不具合)。
+    //
+    // 「値が無い」と「まだ読めていない」を混同しないこと。
+    if (widget.editingPeeId == null) {
       _initialSynced = true;
       return;
     }

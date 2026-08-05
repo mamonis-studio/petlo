@@ -82,20 +82,39 @@ class SectionLabel extends StatelessWidget {
           ),
           const SizedBox(width: AppDimensions.gapMedium),
           // ラベル本文
-          Text(
-            text.toUpperCase(),
-            style: typo.sectionTitle.copyWith(
-              fontSize: labelSize,
-              fontWeight: labelWeight,
-              letterSpacing: labelSize * trackingFactor,
+          //
+          // build 73: Flexible で包む。以前は素の Text だったため、
+          // Dynamic Type を上げた端末 + 長い訳語で Row からはみ出し、
+          // 見えない部分が黙って切り落とされていた
+          // (デバッグビルドでは黄黒の縞が出る)。
+          // 通常サイズでは幅に収まるので、見た目は従来どおり変わらない。
+          Flexible(
+            child: Text(
+              text.toUpperCase(),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: typo.sectionTitle.copyWith(
+                fontSize: labelSize,
+                fontWeight: labelWeight,
+                letterSpacing: labelSize * trackingFactor,
+              ),
             ),
           ),
           const SizedBox(width: AppDimensions.gapMedium),
           // 右側の罫線(伸縮)
+          //
+          // build 73: ラベルが 2 行に折り返したとき、Row の既定
+          // (crossAxisAlignment: center) では罫線が 2 行分の中央に来て
+          // しまい、2 行目が線の下にはみ出して見えた。
+          // 最終行のベースライン側に寄せる。1 行のときは中央と同じ位置に
+          // なるので、既存の見た目は変わらない。
           Expanded(
-            child: Container(
-              height: AppDimensions.strokeLine,
-              color: colors.line,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                height: AppDimensions.strokeLine,
+                color: colors.line,
+              ),
             ),
           ),
         ],

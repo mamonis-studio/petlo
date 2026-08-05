@@ -16,6 +16,8 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../backup/backup_settings.dart';
@@ -77,6 +79,28 @@ class UserPreferences {
   static const String _kOnboardingCompleted = 'pref.onboarding.completed';
   static const String _kForcePro = 'pref.dev.force_pro';
   static const String _kDisplayName = 'pref.user.display_name';
+  // build 73: ワクチン通知 ID の採番変更に伴う旧レンジ掃除の実行済みフラグ
+  static const String _kVaccinationIdMigratedV2 =
+      'pref.notifications.vaccination_id_migrated_v2';
+  // build 73: 掃除で消した件数。ログに頼らず画面で確認できるようにする
+  static const String _kVaccinationIdMigratedCount =
+      'pref.notifications.vaccination_id_migrated_count';
+  // build 73: schedule 通知 ID の採番変更に伴う旧レンジ掃除
+  static const String _kScheduleIdMigratedV2 =
+      'pref.notifications.schedule_id_migrated_v2';
+  static const String _kScheduleIdMigratedCount =
+      'pref.notifications.schedule_id_migrated_count';
+  // build 73: 直近の通知割り当てレポート (JSON)
+  static const String _kNotificationAllocationReport =
+      'pref.notifications.allocation_report';
+  // build 73: 起動シーケンスの所要時間 (JSON)
+  static const String _kStartupTrace = 'pref.debug.startup_trace';
+  // build 73: 初回 fullPull を実施済みか
+  /// バックアップ復元後にこのキーを直接消したい箇所があるため公開する
+  /// (復元は SharedPreferences を直接触るので、setter 経由だと
+  ///  UserPreferences の初期化順に依存してしまう)。
+  static const String kDidInitialFullPull = 'pref.sync.did_initial_full_pull';
+  static const String _kDidInitialFullPull = kDidInitialFullPull;
 
   /// アプリ起動時に1度だけ呼ぶ
   Future<void> initialize() async {
@@ -239,6 +263,164 @@ class UserPreferences {
       await _prefs!.setBool(_kForcePro, value);
     } catch (e) {
       PetloLogger.instance.d('setForcePro failed: $e');
+    }
+  }
+
+  // ==========================================================================
+  // ワクチン通知 ID の移行 (build 73)
+  // ==========================================================================
+
+  /// 旧採番 (`1000000 + vaccinationId`) で積まれた通知の掃除が済んでいるか。
+  /// 掃除は 1 回だけ。毎起動で走らせない。
+  bool get vaccinationIdMigratedV2 {
+    return _prefs?.getBool(_kVaccinationIdMigratedV2) ?? false;
+  }
+
+  Future<void> setVaccinationIdMigratedV2(bool value) async {
+    if (_prefs == null) return;
+    try {
+      await _prefs!.setBool(_kVaccinationIdMigratedV2, value);
+    } catch (e) {
+      PetloLogger.instance.d('setVaccinationIdMigratedV2 failed: $e');
+    }
+  }
+
+  /// 掃除で消した旧採番通知の件数。未実行なら null。
+  ///
+  /// ログは debug ビルドでしか出ない (DevelopmentFilter) 一方、
+  /// debug は端末によっては JIT で起動できない。
+  /// 「未実行」と「実行して 0 件」を確実に区別するため、
+  /// 結果そのものを永続化して開発者設定から読めるようにする。
+  int? get vaccinationIdMigratedCount {
+    return _prefs?.getInt(_kVaccinationIdMigratedCount);
+  }
+
+  Future<void> setVaccinationIdMigratedCount(int value) async {
+    if (_prefs == null) return;
+    try {
+      await _prefs!.setInt(_kVaccinationIdMigratedCount, value);
+    } catch (e) {
+      PetloLogger.instance.d('setVaccinationIdMigratedCount failed: $e');
+    }
+  }
+
+  // ==========================================================================
+  // schedule 通知 ID の移行 (build 73)
+  // ==========================================================================
+
+  /// 旧採番 (通し番号 slot + 内部の `+ wd`) で積まれた通知の掃除が済んでいるか。
+  bool get scheduleIdMigratedV2 {
+    return _prefs?.getBool(_kScheduleIdMigratedV2) ?? false;
+  }
+
+  Future<void> setScheduleIdMigratedV2(bool value) async {
+    if (_prefs == null) return;
+    try {
+      await _prefs!.setBool(_kScheduleIdMigratedV2, value);
+    } catch (e) {
+      PetloLogger.instance.d('setScheduleIdMigratedV2 failed: $e');
+    }
+  }
+
+  /// 掃除で消した旧採番通知の件数。未実行なら null。
+  int? get scheduleIdMigratedCount {
+    return _prefs?.getInt(_kScheduleIdMigratedCount);
+  }
+
+  Future<void> setScheduleIdMigratedCount(int value) async {
+    if (_prefs == null) return;
+    try {
+      await _prefs!.setInt(_kScheduleIdMigratedCount, value);
+    } catch (e) {
+      PetloLogger.instance.d('setScheduleIdMigratedCount failed: $e');
+    }
+  }
+
+  // ==========================================================================
+  // 通知の割り当てレポート (build 73)
+  // ==========================================================================
+
+  /// 直近の再割り当てで「何を積み、何が溢れたか」。
+  ///
+  /// ログは debug ビルドでしか出ないうえ、debug は端末によっては JIT で
+  /// 起動できない。可観測性はこの永続化で担保する。
+  Map<String, dynamic>? get notificationAllocationReport {
+    final String? raw = _prefs?.getString(_kNotificationAllocationReport);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final Object? decoded = jsonDecode(raw);
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } catch (e) {
+      PetloLogger.instance.d('notificationAllocationReport decode failed: $e');
+      return null;
+    }
+  }
+
+  Future<void> setNotificationAllocationReport(
+      Map<String, dynamic> value) async {
+    if (_prefs == null) return;
+    try {
+      await _prefs!
+          .setString(_kNotificationAllocationReport, jsonEncode(value));
+    } catch (e) {
+      PetloLogger.instance.d('setNotificationAllocationReport failed: $e');
+    }
+  }
+
+  // ==========================================================================
+  // 起動シーケンスの計測 (build 73)
+  // ==========================================================================
+
+  /// 各処理の所要時間。ログは debug でしか出ず、この端末では debug が
+  /// 起動できないため、profile / release でも読めるよう永続化する。
+  Map<String, dynamic>? get startupTrace {
+    final String? raw = _prefs?.getString(_kStartupTrace);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final Object? decoded = jsonDecode(raw);
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } catch (e) {
+      PetloLogger.instance.d('startupTrace decode failed: $e');
+      return null;
+    }
+  }
+
+  Future<void> setStartupTrace(Map<String, dynamic> value) async {
+    if (_prefs == null) return;
+    try {
+      await _prefs!.setString(_kStartupTrace, jsonEncode(value));
+    } catch (e) {
+      PetloLogger.instance.d('setStartupTrace failed: $e');
+    }
+  }
+
+  // ==========================================================================
+  // 初回 fullPull (build 73)
+  // ==========================================================================
+
+  /// サーバからの初回一括取得 (fullPull) が済んでいるか。
+  ///
+  /// build 72 以前は `groups テーブルが空か` で判定していたが、
+  /// groups は **家族共有グループの一覧** であり、共有機能を使っていない
+  /// ユーザーでは常に空。その結果、通常起動のたびに fullPull が走り
+  /// 「データを復元しています」のオーバーレイが出ていた。
+  ///
+  /// 「値が無い」ことを「まだ処理していない」と読み替えず、
+  /// 状態は明示的に持つ。
+  ///
+  /// **バックアップ復元時は明示的に false へ戻すこと。**
+  /// DB は差し替わるが SharedPreferences は残るため、落とさないと
+  /// 復元した端末でサーバ側のグループデータが取得されない。
+  bool get didInitialFullPull {
+    return _prefs?.getBool(_kDidInitialFullPull) ?? false;
+  }
+
+  Future<void> setDidInitialFullPull(bool value) async {
+    if (_prefs == null) return;
+    try {
+      await _prefs!.setBool(_kDidInitialFullPull, value);
+    } catch (e) {
+      PetloLogger.instance.d('setDidInitialFullPull failed: $e');
     }
   }
 

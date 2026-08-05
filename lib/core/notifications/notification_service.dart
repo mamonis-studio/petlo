@@ -27,6 +27,7 @@
 // ============================================================================
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
@@ -41,7 +42,16 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
 
+  /// pending() のフォールバック用。プラグインが内部で使っているものと同じ
+  /// チャンネル名。プラグイン更新時は追従が必要 (詳細は pending() を参照)。
+  static const MethodChannel _rawChannel =
+      MethodChannel('dexterous.com/flutter/local_notifications');
+
   bool _initialized = false;
+
+  /// schedule 1 件が確保する ID 幅 (build 73)。
+  /// timeIndex(0-7) * 8 + weekdaySlot(0-7) = 0..63。
+  static const int kScheduleIdSpan = 64;
 
   /// アプリ起動時に一度だけ呼ぶ
   Future<void> initialize() async {
@@ -133,7 +143,14 @@ class NotificationService {
         return await android.areNotificationsEnabled() ?? false;
       }
       return false;
-    } catch (e) {
+    } catch (e, st) {
+      // build 73: 以前は黙って false を返していた。
+      // これは pending() と同じ「失敗を『無い』と偽る」形で、
+      // 「未許可」と「問い合わせに失敗」が区別できなくなる。
+      // 開発者設定の権限表示がこの値を出すため、診断を誤らせる。
+      PetloLogger.instance
+          .w('hasPermissions failed (reported as not granted)',
+              error: e, stackTrace: st);
       return false;
     }
   }
@@ -184,70 +201,55 @@ class NotificationService {
   }
 
   /// 毎日 / 毎週指定時刻の繰り返し通知
+  /// 毎日 / 毎週指定曜日の繰り返し通知。
+  ///
+  /// build 73: 以前は `Set<int>? weekdays` を受け取り、曜日ごとに
+  /// **内部で `id + wd` して登録**していた。呼び出し側は通し番号の
+  /// slot を渡していたため、実 ID が `base + slotIdx + wd` になり
+  /// 衝突していた (例: slotIdx=0/wd=1 と slotIdx=1/wd=0 が同じ ID)。
+  ///
+  /// ID の採番はすべて呼び出し側 (idForSchedule) の責任とし、
+  /// ここでは **渡された id をそのまま使う**。曜日は 1 回 1 つ。
   Future<void> scheduleDailyAt({
     required int id,
     required String title,
     required String body,
     required int hour,
     required int minute,
-    Set<int>? weekdays, // null なら毎日。0=日, 6=土
+    int? weekday, // null なら毎日。0=日, 6=土
     String? channelId,
     String? channelName,
   }) async {
     if (!_initialized) await initialize();
 
     try {
-      // weekdays が指定なし → 毎日
-      // 指定あり → 該当曜日それぞれ翌日以降の最初の発火日を計算
-      if (weekdays == null || weekdays.isEmpty) {
-        final tz.TZDateTime first = _nextInstanceOf(hour, minute);
-        await _plugin.zonedSchedule(
-          id,
-          title,
-          body,
-          first,
-          NotificationDetails(
-            android: AndroidNotificationDetails(
-              channelId ?? 'petlo_meds',
-              channelName ?? 'petlo medications',
-              importance: Importance.high,
-              priority: Priority.high,
-            ),
-            iOS: const DarwinNotificationDetails(),
+      final bool daily = weekday == null || weekday < 0 || weekday > 6;
+      final tz.TZDateTime when = daily
+          ? _nextInstanceOf(hour, minute)
+          : _nextInstanceOfWeekday(hour, minute, weekday);
+
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        when,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            channelId ?? 'petlo_meds',
+            channelName ?? 'petlo medications',
+            importance: Importance.high,
+            priority: Priority.high,
           ),
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          // ignore: deprecated_member_use
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-          matchDateTimeComponents: DateTimeComponents.time, // 毎日同じ時刻
-        );
-      } else {
-        // 各曜日に対して個別 ID で予約 (offset 0-6)
-        for (final int wd in weekdays) {
-          if (wd < 0 || wd > 6) continue;
-          final tz.TZDateTime when = _nextInstanceOfWeekday(hour, minute, wd);
-          await _plugin.zonedSchedule(
-            id + wd, // ID +0..6
-            title,
-            body,
-            when,
-            NotificationDetails(
-              android: AndroidNotificationDetails(
-                channelId ?? 'petlo_meds',
-                channelName ?? 'petlo medications',
-                importance: Importance.high,
-                priority: Priority.high,
-              ),
-              iOS: const DarwinNotificationDetails(),
-            ),
-            androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-            // ignore: deprecated_member_use
-            uiLocalNotificationDateInterpretation:
-                UILocalNotificationDateInterpretation.absoluteTime,
-            matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-          );
-        }
-      }
+          iOS: const DarwinNotificationDetails(),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        // ignore: deprecated_member_use
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: daily
+            ? DateTimeComponents.time
+            : DateTimeComponents.dayOfWeekAndTime,
+      );
     } catch (e, st) {
       PetloLogger.instance
           .w('scheduleDailyAt failed: id=$id', error: e, stackTrace: st);
@@ -280,10 +282,76 @@ class NotificationService {
   }
 
   /// 現在予約中の通知一覧 (debug用)
+  /// 現在予約中の通知一覧。
+  ///
+  /// build 73: 以前は例外を握り潰して空リストを返していたため、
+  /// 「本当に 0 件」と「読み出しに失敗」が区別できなかった。
+  ///
+  /// プラグインの Dart 側マッピングには null 安全の穴がある:
+  ///
+  ///     ?.map((p) => PendingNotificationRequest(
+  ///         p['id'], p['title'], p['body'], p['payload']))
+  ///
+  /// `p['id']` は non-nullable int へ暗黙キャストされる。iOS 側は
+  /// `request.content.userInfo[NOTIFICATION_ID]` から id を読むので、
+  /// **このプラグイン以外が登録した pending request** (例: FCM 由来) には
+  /// このキーが無く id が null になる。すると 1 件の異物でリスト全体が
+  /// 例外になり、こちらの通知まで丸ごと見えなくなる。
+  ///
+  /// そこで例外時は生のチャンネルへフォールバックし、壊れた要素だけを
+  /// 捨てて残りを返す。捨てた件数はログに出す。
   Future<List<PendingNotificationRequest>> pending() async {
+    if (!_initialized) await initialize();
     try {
       return await _plugin.pendingNotificationRequests();
-    } catch (e) {
+    } catch (e, st) {
+      PetloLogger.instance.w(
+        'pending() failed in plugin mapping; falling back to raw channel',
+        error: e,
+        stackTrace: st,
+      );
+      return _pendingViaRawChannel();
+    }
+  }
+
+  /// プラグインと同じメソッドチャンネルを直接叩き、要素単位で防御的に読む。
+  ///
+  /// チャンネル名とメソッド名はプラグイン内部の実装に合わせている
+  /// (`platform_flutter_local_notifications.dart` / `FlutterLocalNotificationsPlugin.m`)。
+  /// プラグイン更新時はここも追従が必要。
+  Future<List<PendingNotificationRequest>> _pendingViaRawChannel() async {
+    try {
+      final List<Map<dynamic, dynamic>>? raw =
+          await _rawChannel.invokeListMethod<Map<dynamic, dynamic>>(
+        'pendingNotificationRequests',
+      );
+      if (raw == null) return <PendingNotificationRequest>[];
+
+      final List<PendingNotificationRequest> out =
+          <PendingNotificationRequest>[];
+      int dropped = 0;
+      for (final Map<dynamic, dynamic> p in raw) {
+        final Object? id = p['id'];
+        if (id is! int) {
+          // 他プラグイン由来などで id を持たない要素。こちらの通知ではない。
+          dropped++;
+          continue;
+        }
+        out.add(PendingNotificationRequest(
+          id,
+          p['title'] as String?,
+          p['body'] as String?,
+          p['payload'] as String?,
+        ));
+      }
+      PetloLogger.instance.i(
+        'pending() via raw channel: ${out.length} readable, '
+        '$dropped dropped (no usable id)',
+      );
+      return out;
+    } catch (e, st) {
+      PetloLogger.instance
+          .w('pending() raw channel failed', error: e, stackTrace: st);
       return <PendingNotificationRequest>[];
     }
   }
@@ -293,8 +361,22 @@ class NotificationService {
   // ==========================================================================
 
   /// ワクチン期限通知 ID
-  static int idForVaccination(int vaccinationId) {
-    return 1000000 + vaccinationId;
+  /// ワクチン期限通知 ID (build 73 で採番変更)。slot は 0-3。
+  ///
+  /// 旧採番は `1000000 + vaccinationId` で **幅 1 しか確保していないのに
+  /// 2 slot (3日前 / 当日) を使っていた**。そのため隣接 ID のワクチン同士が
+  /// 必ず衝突し、N 件登録しても distinct な ID は N+1 個にしかならず、
+  /// 当日通知が後から登録したワクチンに上書きされて消えていた。
+  ///
+  /// 幅 4 を確保する。現在は 2 slot だが「1 週間前」等を足す余地を残す
+  /// (prevention dose と同じ幅)。
+  ///
+  /// レンジ境界: 次の medication レンジは 10,000,000 から始まる。
+  ///   1,000,000 + id * 4 < 10,000,000  ⇔  id < 2,250,000
+  /// vaccinationId が約 225 万を超えると medication レンジに食い込むが、
+  /// 1 ユーザーが記録するワクチンの件数として現実的に到達不能。
+  static int idForVaccination(int vaccinationId, int slot) {
+    return 1000000 + vaccinationId * 4 + slot;
   }
 
   /// 投薬リマインダー ID (slot は 0-31、weekday/time index)。
@@ -309,8 +391,46 @@ class NotificationService {
   /// scheduleId * 32 + slot、slot は 0-31 で時刻×曜日の組み合わせを表す。
   /// scheduleId が 3_124_999 を越えると衝突する (3_124_999 * 32 = 99_999_968)
   /// が、現実的に発生し得ない上限なので無視する。
-  static int idForSchedule(int scheduleId, int timeSlot) {
-    return 100000000 + scheduleId * 32 + timeSlot;
+  /// schedule 由来の通知 ID (build 73 で採番変更)。
+  ///
+  /// 旧採番は `100000000 + scheduleId * 32 + timeSlot` で、呼び出し側が
+  /// (時刻 × 曜日) の通し番号を渡していた。ところが scheduleDailyAt が
+  /// 内部で `id + wd` していたため実 ID は `base + slotIdx + wd` となり、
+  /// (時刻0,曜日1) と (時刻1,曜日0) のように別 slot が同じ ID に潰れていた。
+  ///
+  /// 新採番は意味のある座標から決める:
+  ///   timeIndex   : times[] の添字 (0-7)
+  ///   weekdaySlot : 0-6 = 曜日指定 / 7 = 毎日 (曜日を絞らない)
+  ///   one-shot 通知は (timeIndex=7, weekdaySlot=7) = オフセット 63 を使う
+  ///
+  /// 1 schedule あたり幅 [kScheduleIdSpan] (64) を確保する。
+  /// 繰り返しは最大 7 時刻 × 8 = 56 slot まで表現でき、旧実装の 32 上限より広い。
+  ///
+  /// レンジ境界: 次の prevention dose レンジは 400,000,000 から始まる。
+  ///   100,000,000 + id * 64 < 400,000,000  ⇔  id < 4,687,500
+  /// scheduleId が約 468 万を超えると食い込むが現実的に到達不能。
+  static int idForSchedule(int scheduleId, int timeIndex, int weekdaySlot) {
+    return 100000000 + scheduleId * kScheduleIdSpan + timeIndex * 8 + weekdaySlot;
+  }
+
+  /// one-shot (notificationTiming 由来) が使うオフセット
+  static int idForScheduleOneShot(int scheduleId) {
+    return idForSchedule(scheduleId, 7, 7);
+  }
+
+  /// 予防 1 回分の通知 ID (build 72)。slot は 0-3。
+  /// 400_000_000 + doseId * 4 + slot。
+  /// doseId が 24_999_999 を超えると course レンジと衝突するが、
+  /// 現実的に到達不能 (1 ペット年 8 件想定) なので無視する。
+  static int idForPreventionDose(int doseId, int slot) {
+    return 400000000 + doseId * 4 + slot;
+  }
+
+  /// 予防コース単位の通知 ID (build 72)。slot は 0-3。
+  /// Android の通知 ID は int32 (上限 2,147,483,647) なので
+  /// 500_000_000 + courseId * 4 は十分に収まる。
+  static int idForPreventionCourse(int courseId, int slot) {
+    return 500000000 + courseId * 4 + slot;
   }
 
   // ==========================================================================

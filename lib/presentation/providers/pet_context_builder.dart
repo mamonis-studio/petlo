@@ -8,10 +8,16 @@
 // rev3 F-18: AI相談チャット (過去7日詳細 + 30日サマリ + セッション履歴)
 //
 // 設計:
-//   - 直近7日の Meal/Poop/Pee/Vomit/Weight/Visit/Vaccination/Diary/Medication を集めて
+//   - 直近7日の Meal/Poop/Pee/Vomit/Weight/Visit/Diary を集めて
 //     date 別 type 別の自然言語1行に変換
 //   - 30日サマリーは件数ベース ("Meals: 84, Stools: 22, ...")
 //   - 体重・体温の最新値も summary に含める
+//   - 今シーズンの予防コースの進捗を preventions に載せる (build 73)
+//
+// build 73 (v2 §6.2): 冒頭コメントが `Medication` を列挙していたが、
+//   実装は medications を一切読んでいなかった (そもそもリポジトリが無い)。
+//   嘘のコメントを残さないため列挙から外し、代わりに予防を明記した。
+//   予防の状況は `medications` 経由ではなく `prevention_doses` を直接読む。
 //
 // ============================================================================
 
@@ -20,11 +26,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/ai/ai_pet_context.dart';
 import '../../data/local/app_database.dart';
 import '../../data/local/database_enums.dart';
+import '../../data/repositories/prevention_courses_repository.dart';
+import '../../data/repositories/prevention_doses_repository.dart';
 import 'diaries_providers.dart';
 import 'meals_providers.dart';
 import 'pees_providers.dart';
 import 'pets_providers.dart';
 import 'poops_providers.dart';
+import 'prevention_providers.dart';
 import 'temperatures_providers.dart';
 import 'vaccinations_providers.dart';
 import 'visits_providers.dart';
@@ -74,6 +83,11 @@ abstract final class PetContextBuilder {
     final TemperatureEntity? latestTemp = await ref
         .read(currentPetLatestTemperatureProvider.future)
         .catchError((_) => null);
+
+    // build 73: 今シーズンの予防コース。medications ではなく
+    // prevention_doses を直接読む (§6.2)。
+    final List<AiPreventionDto> preventions =
+        await _buildPreventions(ref, petId: pet.id, now: now);
 
     // ===== 7日以内の記録を AiRecentRecordDto に変換 =====
     final List<AiRecentRecordDto> recent7d = <AiRecentRecordDto>[];
@@ -175,7 +189,95 @@ abstract final class PetContextBuilder {
       idealWeightKg: idealWeightKg,
       summary30d: summary30d,
       recent7dRecords: recent7d,
+      preventions: preventions,
     );
+  }
+
+  // ==========================================================================
+  // 予防コース (build 73 / v2 §6.2)
+  // ==========================================================================
+
+  /// 「今日が属するシーズン」のコースだけを要約する。
+  /// 過去年のコースは AI のコンテキスト長を無駄に消費するので含めない。
+  ///
+  /// **事実の列挙に留める。** 投薬の要否や時期の判断は載せない (§9.2)。
+  static Future<List<AiPreventionDto>> _buildPreventions(
+    Ref ref, {
+    required int petId,
+    required DateTime now,
+  }) async {
+    try {
+      final PreventionCoursesRepository coursesRepo =
+          ref.read(preventionCoursesRepositoryProvider);
+      final PreventionDosesRepository dosesRepo =
+          ref.read(preventionDosesRepositoryProvider);
+
+      final List<PreventionCourseEntity> all =
+          await coursesRepo.getAllActiveByCreation();
+      final List<AiPreventionDto> out = <AiPreventionDto>[];
+
+      for (final PreventionCourseEntity c in all) {
+        if (c.petId != petId) continue;
+        if (!_isCurrentSeason(c, now)) continue;
+
+        final List<PreventionDoseEntity> doses =
+            await dosesRepo.getForCourse(c.id);
+        // コース範囲外に退避した実績 (§4.3 ケース c) は進捗に数えない
+        final List<PreventionDoseEntity> inRange = doses
+            .where((PreventionDoseEntity d) =>
+                !PreventionCoursesRepository.isOrphanDose(c, d))
+            .toList();
+        if (inRange.isEmpty) continue;
+
+        final int done = inRange
+            .where((PreventionDoseEntity d) => d.administeredAt != null)
+            .length;
+
+        PreventionDoseEntity? next;
+        bool hasOverdue = false;
+        for (final PreventionDoseEntity d in inRange) {
+          if (d.administeredAt != null || d.skipped) continue;
+          if (next == null || d.scheduledDate < next.scheduledDate) next = d;
+          if (PreventionDosesRepository.statusOf(
+                d,
+                nowMsec: now.millisecondsSinceEpoch,
+              ) ==
+              PreventionDoseStatus.overdue) {
+            hasOverdue = true;
+          }
+        }
+
+        out.add(AiPreventionDto(
+          kind: c.kind.name,
+          year: c.year,
+          doneCount: done,
+          totalCount: inRange.length,
+          hasOverdue: hasOverdue,
+          tested: c.testedAt != null,
+          nextDueDate: next == null
+              ? null
+              : _ymd(DateTime.fromMillisecondsSinceEpoch(next.scheduledDate)),
+        ));
+      }
+      return out;
+    } catch (_) {
+      // AI コンテキストは付加情報。取得に失敗しても相談自体は成立させる。
+      return const <AiPreventionDto>[];
+    }
+  }
+
+  /// 今日がコースのシーズン範囲に入っているか。
+  /// 越年コース (endMonth < startMonth) は year+1 まで伸びる。
+  static bool _isCurrentSeason(PreventionCourseEntity c, DateTime now) {
+    final List<PreventionPlannedMonth> planned =
+        PreventionCoursesRepository.plannedMonthsOf(c);
+    if (planned.isEmpty) return false;
+    final PreventionPlannedMonth first = planned.first;
+    final PreventionPlannedMonth last = planned.last;
+    // シーズン開始月の 1 日 〜 終了月の末日
+    final DateTime from = DateTime(first.year, first.month);
+    final DateTime toExclusive = DateTime(last.year, last.month + 1);
+    return !now.isBefore(from) && now.isBefore(toExclusive);
   }
 
   // ==========================================================================

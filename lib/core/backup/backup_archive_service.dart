@@ -47,6 +47,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/local/app_database.dart';
 import '../auth/api_dio.dart';
 import '../constants/app_constants.dart';
+import '../preferences/user_preferences.dart';
 import '../utils/logger.dart';
 
 /// バックアップ対象となる写真サブディレクトリ。
@@ -557,8 +558,18 @@ class BackupArchiveService {
       for (final String k in toRemove) {
         await prefs.remove(k);
       }
-      PetloLogger.instance
-          .i('importFromZip: cleared ${toRemove.length} sync cursor key(s)');
+      // build 73: 初回 fullPull 済みフラグも落とす。
+      //
+      // 復元した DB は「バックアップを取った時点」の状態であり、そこから
+      // 現在までの差分はローカルに無い。カーソルを消すだけでは不十分で、
+      // 「もう全件取得したことにする」フラグが立ったままだと次回起動で
+      // fullPull が走らず、欠けたまま運用が続いてしまう
+      // (Phase E で予防コースが 0 件のまま残った症状がこれ)。
+      await prefs.remove(UserPreferences.kDidInitialFullPull);
+      PetloLogger.instance.i(
+        'importFromZip: cleared ${toRemove.length} sync cursor key(s) '
+        '+ initial fullPull flag',
+      );
     } catch (e, st) {
       PetloLogger.instance.w(
         'importFromZip: sync cursor reset failed (data still ok)',

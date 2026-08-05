@@ -151,17 +151,42 @@ class SyncService {
   ///
   /// 既存ローカル DB に group 行が無い状態を想定するため、`_pullGroup` の前に
   /// `resetCursorForGroup` を呼んで完全リプレイを強制する。
-  Future<void> fullPull(GroupApiService groupApi) async {
+  /// build 73: 起動をブロックするため短いタイムアウトを設ける。
+  /// dio の既定は connect 10s / receive 30s で、圏外だとその間ずっと
+  /// 「同期しています」のオーバーレイが出たままになる。
+  static const Duration _kFullPullTimeout = Duration(seconds: 5);
+
+  /// 全所属グループをサーバから一括取得する。
+  ///
+  /// 戻り値は **成功したか**。false のとき呼び出し側はフラグを立てず、
+  /// 次回起動でリトライする (圏外での初回起動を取りこぼさないため)。
+  Future<bool> fullPull(GroupApiService groupApi) async {
     final AppDatabase? db = _db;
     if (db == null) {
       PetloLogger.instance.d('SyncService.fullPull: db not bound');
-      return;
+      return false;
     }
     PetloLogger.instance.i('[fullPull] start');
-    final List<String> remoteIds = await groupApi.listMyGroupRemoteIds();
+
+    // 「0 件」と「取得失敗」を区別できる版を使う。
+    List<String>? remoteIds;
+    try {
+      remoteIds = await groupApi
+          .tryListMyGroupRemoteIds()
+          .timeout(_kFullPullTimeout);
+    } on TimeoutException {
+      PetloLogger.instance
+          .w('[fullPull] listing groups timed out; will retry next launch');
+      return false;
+    }
+    if (remoteIds == null) {
+      PetloLogger.instance
+          .w('[fullPull] listing groups failed; will retry next launch');
+      return false;
+    }
     PetloLogger.instance
         .i('[fullPull] server returned ${remoteIds.length} group(s)');
-    if (remoteIds.isEmpty) return;
+    if (remoteIds.isEmpty) return true;
 
     int pulled = 0;
     for (final String gid in remoteIds) {
@@ -179,6 +204,13 @@ class SyncService {
     }
     PetloLogger.instance
         .i('[fullPull] done: pulled=$pulled/${remoteIds.length}');
+    // 全グループ取得できたときだけ成功。1 件でも落ちていればフラグを
+    // 立てず、次回起動でやり直す。
+    //
+    // (落ちたグループはカーソルだけリセット済みなので incremental pull でも
+    //  結果的に全件取れるが、それに頼ると「取れたことになっている」状態を
+    //  作ってしまう。余分な fullPull 1 回のコストの方が安い。)
+    return pulled == remoteIds.length;
   }
 
   /// 起動 / フォアグラウンド復帰 / 手動ボタン から呼ぶ。

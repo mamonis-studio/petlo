@@ -42,7 +42,8 @@ void main() {
     test('schemaVersion matches AppDatabaseMigrations.currentVersion', () {
       // build 49 (C1) で v8 (medication_reminders DROP)。
       // build 57: Decision D 純粋実装で v9 (Personal scope backfill)。
-      expect(db.schemaVersion, 9);
+      // build 72: 予防コースで v10 (prevention_courses / prevention_doses 追加)。
+      expect(db.schemaVersion, 10);
     });
 
     test('database initializes without errors', () async {
@@ -92,6 +93,9 @@ void main() {
         'sync_queue',
         'upload_queue',
         'account_deletion_queue',
+        // build 72: 予防コース
+        'prevention_courses',
+        'prevention_doses',
       ];
 
       for (final String name in expected) {

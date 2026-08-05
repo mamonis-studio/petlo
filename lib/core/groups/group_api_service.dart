@@ -226,6 +226,46 @@ class GroupApiService {
   //
   // 旧サーバが未実装の場合は 404 → catch 側で空リスト扱い (fullPull が no-op)。
   // ==========================================================================
+  /// build 73: 「取得できたか」を呼び出し側が判別できる版。
+  ///
+  /// listMyGroupRemoteIds() は 404 / 401 / 圏外をすべて空リストで吸収する。
+  /// 「グループが 0 件」と「取得に失敗」が区別できないため、初回 fullPull の
+  /// 成否判定には使えない (失敗しているのに成功扱いでフラグが立ってしまう)。
+  ///
+  /// null = 取得失敗 (次回起動でリトライすべき)
+  /// 空リスト = 取得成功、グループ 0 件
+  Future<List<String>?> tryListMyGroupRemoteIds() async {
+    try {
+      final Response<dynamic> resp = await _dio.get<dynamic>('/groups');
+      final dynamic body = resp.data;
+      if (body is! Map<String, dynamic>) return const <String>[];
+      final dynamic groups = body['groups'];
+      if (groups is! List) return const <String>[];
+      final List<String> out = <String>[];
+      for (final dynamic g in groups) {
+        if (g is Map<String, dynamic>) {
+          final dynamic id = g['id'] ?? g['remoteId'] ?? g['groupId'];
+          if (id is String && id.isNotEmpty) out.add(id);
+        } else if (g is String && g.isNotEmpty) {
+          out.add(g);
+        }
+      }
+      return out;
+    } on DioException catch (e) {
+      // 404 (エンドポイント未実装) は「グループ 0 件」と同義に扱ってよい。
+      // それ以外 (圏外・タイムアウト・5xx) は失敗として null を返す。
+      if (e.response?.statusCode == 404) return const <String>[];
+      PetloLogger.instance.d(
+        'tryListMyGroupRemoteIds failed: ${e.response?.statusCode} ${e.message}',
+      );
+      return null;
+    } catch (e, st) {
+      PetloLogger.instance
+          .w('tryListMyGroupRemoteIds unexpected', error: e, stackTrace: st);
+      return null;
+    }
+  }
+
   Future<List<String>> listMyGroupRemoteIds() async {
     try {
       final Response<dynamic> resp = await _dio.get<dynamic>('/groups');

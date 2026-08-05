@@ -6,10 +6,12 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../providers/notification_coordinator_provider.dart';
+import '../../providers/pro_status_provider.dart';
+
 import '../../../core/utils/logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../providers/notification_scheduler_provider.dart';
 import '../../providers/photo_storage_provider.dart';
 import '../../providers/scope_providers.dart';
 import '../../providers/vaccinations_providers.dart';
@@ -140,10 +142,11 @@ class VaccinationFormController
       }
 
       state = state.copyWith(isSubmitting: false);
-      // ワクチン期限通知を再スケジュール (3日前 + 当日)
+      // build 73: 3 系統まとめて再割り当てする。
+      // 個別 sync では総量 64 を守れない (他系統の使用量が見えない)。
       await ref
-          .read(notificationSchedulerProvider)
-          .syncVaccinationDueAlert(vaccinationId);
+          .read(notificationCoordinatorProvider)
+          .rescheduleAll(isPro: ref.read(isProProvider));
       return VaccinationFormSaveOutcome.success;
     } catch (e, st) {
       PetloLogger.instance

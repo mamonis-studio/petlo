@@ -493,6 +493,9 @@ class PetsRepository extends BaseRepository {
       'weights', 'temperatures', 'bcs_checks',
       'diaries', 'visits', 'vaccinations',
       'medications', 'expiration_items',
+      // build 72: 予防コース。両テーブルとも pet_id / deleted_at を持つので
+      // 既存の一括論理削除ループにそのまま乗る。
+      'prevention_courses', 'prevention_doses',
     ];
 
     final List<({String table, int id})> affectedChildren =

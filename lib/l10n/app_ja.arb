@@ -1598,7 +1598,7 @@
   "schedule_medication_weekdays_label": "通知する曜日",
   "schedule_medication_weekdays_hint": "何も選ばなければ毎日通知します。",
   "pet_share_action_failed": "共有の操作に失敗しました。しばらくしてからお試しください。",
-  "bootstrap_restoring": "データを復元しています…",
+  "bootstrap_restoring": "データを同期しています",
   "groups_create_error_duplicate_name": "同名のグループが既に存在します。",
   "groups_create_error_user_at_group_limit": "グループは最大 3 つまで作成できます。",
   "groups_create_error_user_has_data": "アカウントに既存データがあります。アプリを再起動してください。",
@@ -1649,6 +1649,214 @@
   "pro_limit_diary_monthly": "今月の日記上限に達しました",
   "pro_limit_visit_total": "通院記録は無料プランで10件までです",
   "chart_range_pro_only_action": "Proを見る",
+  "notification_permission_denied_message": "通知は届きません",
+  "notification_permission_open_settings": "設定を開く",
+  "prevention_section_title": "予防",
+  "prevention_list_appbar": "予防の管理",
+  "prevention_list_empty": "予防コースがありません",
+  "prevention_list_empty_action": "コースを作成",
+  "prevention_form_appbar_new": "新しい予防コース",
+  "prevention_form_appbar_edit": "予防コースを編集",
+  "prevention_form_hero_new": "新しい予防",
+  "prevention_form_hero_edit": "予防コースを編集",
+  "prevention_kind_filaria": "フィラリア予防",
+  "prevention_kind_flea_tick": "ノミ・マダニ予防",
+  "prevention_kind_combo": "オールインワン",
+  "prevention_form_chewable": "チュアブル",
+  "prevention_form_tablet": "錠剤",
+  "prevention_form_spot_on": "スポットオン",
+  "prevention_form_injection": "注射（年1回）",
+  "prevention_region_label": "お住まいの地域",
+  "prevention_region_hokkaido": "北海道",
+  "prevention_region_tohoku": "東北",
+  "prevention_region_kanto": "関東",
+  "prevention_region_chubu": "中部",
+  "prevention_region_kansai": "関西",
+  "prevention_region_chugoku_shikoku": "中国・四国",
+  "prevention_region_kyushu": "九州",
+  "prevention_region_okinawa": "沖縄",
+  "prevention_region_custom": "自分で設定する",
+  "prevention_period_label": "予防期間",
+  "prevention_period_value": "{start}月 〜 {end}月",
+  "@prevention_period_value": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_period_year_round": "通年",
+  "prevention_day_label": "毎月の投与日",
+  "prevention_day_value": "毎月{day}日",
+  "@prevention_day_value": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "prevention_time_label": "通知時刻",
+  "prevention_medicine_label": "薬の名前",
+  "prevention_medicine_hint": "例: ネクスガードスペクトラ",
+  "prevention_dosage_label": "用量",
+  "prevention_dosage_hint": "例: 1錠 / 1ピペット",
+  "prevention_test_section": "シーズン前の検査",
+  "prevention_test_done": "検査済み",
+  "prevention_test_not_yet": "まだ",
+  "prevention_test_date_label": "検査日",
+  "prevention_test_reminder_label": "検査のリマインドを受け取る",
+  "prevention_test_record_action": "検査を記録",
+  "prevention_test_status_done": "検査済み（{date}）",
+  "@prevention_test_status_done": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_test_status_pending": "未実施",
+  "prevention_progress_label": "{done} / {total} 回",
+  "@prevention_progress_label": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "prevention_next_dose_label": "次回 {date}",
+  "@prevention_next_dose_label": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_season_complete": "今シーズン完了",
+  "prevention_final_badge": "最終回",
+  "prevention_dose_status_upcoming": "予定",
+  "prevention_dose_status_due": "今日",
+  "prevention_dose_status_overdue": "未投与",
+  "prevention_dose_status_administered": "投与済み",
+  "prevention_dose_status_skipped": "スキップ",
+  "prevention_dose_sheet_title": "{month}月分",
+  "@prevention_dose_sheet_title": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_dose_record_action": "投与を記録",
+  "prevention_dose_undo_action": "記録を取り消す",
+  "prevention_dose_skip_action": "この回をスキップ",
+  "prevention_dose_unskip_action": "スキップをやめる",
+  "prevention_dose_recorded_at": "{date} に投与",
+  "@prevention_dose_recorded_at": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_orphan_section": "コース外の記録",
+  "prevention_notify_due_title": "{petName} の予防薬の日",
+  "@prevention_notify_due_title": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_notify_due_body": "{kind}の予定日です。",
+  "@prevention_notify_due_body": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_notify_followup_title": "{petName} の予防薬",
+  "@prevention_notify_followup_title": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_notify_followup_body": "昨日の投与が記録されていません",
+  "prevention_notify_final_title": "{petName} 今シーズン最後の1回",
+  "@prevention_notify_final_title": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_notify_final_body": "{date} が最終回の予定です。",
+  "@prevention_notify_final_body": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_notify_test_title": "{petName} のシーズン前検査",
+  "@prevention_notify_test_title": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_notify_test_body": "予防開始まであと1か月です。",
+  "prevention_notify_test_again_title": "{petName} のシーズン前検査",
+  "@prevention_notify_test_again_title": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_notify_test_again_body": "予防開始まであと1週間です。",
+  "prevention_notify_next_season_title": "{petName} の次のシーズン",
+  "@prevention_notify_next_season_title": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_notify_next_season_body": "今年のコースを作成できます",
+  "prevention_paywall_courses": "予防コースを追加するには petlo Pro が必要です",
+  "prevention_paywall_history": "過去の記録を見るには petlo Pro が必要です",
+  "prevention_delete_confirm_title": "このコースを削除しますか",
+  "prevention_delete_confirm_body": "投与記録は削除されません",
+  "prevention_disclaimer_period": "予防期間はお住まいの地域や気候、その年の気温によって変わります。表示は一般的な目安です。実際の開始・終了時期はかかりつけの獣医師にご確認ください。",
+  "prevention_disclaimer_test": "予防を始める前に、感染の有無を調べる検査が必要な場合があります。獣医師の指示に従ってください。",
+  "prevention_disclaimer_general": "petlo は記録とリマインダーのためのアプリです。診断・治療・投薬の指示を行うものではありません。健康に関する判断は必ず獣医師にご相談ください。",
+  "prevention_year_label": "対象年",
+  "prevention_year_locked_hint": "投与の記録があるため、年は変更できません。",
+  "prevention_pet_label": "ペット",
+  "prevention_kind_label": "予防の種類",
+  "prevention_form_label": "剤型",
+  "prevention_period_start_label": "開始",
+  "prevention_period_end_label": "終了",
+  "prevention_month_value": "{month}月",
+  "@prevention_month_value": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "prevention_test_date_empty": "未実施",
+  "prevention_notification_enabled_label": "通知を受け取る",
   "@_PLACEHOLDERS": {
     "description": "後続Chunkで画面ごとの文言を追加していく"
   }

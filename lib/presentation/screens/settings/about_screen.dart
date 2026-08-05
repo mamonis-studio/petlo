@@ -24,6 +24,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/widgets/eyebrow_text.dart';
 import '../../../core/widgets/section_label.dart';
+import '../../widgets/prevention/prevention_disclaimer.dart';
 import 'developer_settings_screen.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -136,6 +137,12 @@ class AboutScreen extends StatelessWidget {
                   label: 'VERSION', value: AppConstants.appVersion),
               _MetaRow(
                   label: 'BUNDLE', value: AppConstants.bundleId),
+              const SizedBox(height: 32),
+
+              // 医療免責 (build 72 §9.1)。常設・折りたたみ不可。
+              SectionLabel(AppLocalizations.of(context).prevention_section_title),
+              const SizedBox(height: 8),
+              const PreventionDisclaimer(PreventionDisclaimerKind.general),
               const SizedBox(height: 32),
 
               // Legal

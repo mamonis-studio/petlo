@@ -133,7 +133,15 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
   /// 編集モードで既存値ロード後にControllerにテキストを反映
   void _syncControllersFromState(PetFormState s) {
     if (_initialControllersSynced) return;
-    if (!s.isEditing) {
+    // build 73: 編集モードかは **widget が最初から知っている**。
+    // 以前は s.isEditing (= editingPetId != null) を見ていたが、
+    // ロード前の初期 State では false になるため「新規作成」と誤判定し、
+    // _initialControllersSynced を立ててしまっていた。
+    // その結果、後からデータが届いても controller へ反映されず、
+    // アプリ再起動後の初回だけ入力欄が空になっていた。
+    //
+    // 「値が無い」と「まだ読めていない」を混同しないこと。
+    if (widget.editingPetId == null) {
       _initialControllersSynced = true;
       return;
     }

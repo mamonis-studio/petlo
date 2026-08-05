@@ -15,8 +15,8 @@ abstract final class AppConstants {
 
   // ===== アプリ基本情報 =====
   static const String appName = 'petlo';
-  static const String appVersion = '1.0.0';
-  static const int appBuildNumber = 71;
+  static const String appVersion = '1.1.0';
+  static const int appBuildNumber = 76;
   static const String bundleId = 'mamonis.studio.petlo';
   static const String developerName = 'mamonis.studio';
 
@@ -51,6 +51,30 @@ abstract final class AppConstants {
   static const int freeMaxExpirationItems = 3;
   static const int freeWeightHistoryMonths = 3;
   static const int freeTemperatureHistoryMonths = 3;
+
+  // ===== 予防コースのキルスイッチ (build 73) =====
+  /// 予防コース機能を有効にするか。
+  ///
+  /// false に倒すと以下が **すべて** 止まる:
+  ///   1. 健康タブの予防セクションを表示しない
+  ///   2. rescheduleAllPreventions() を呼ばない
+  ///   3. 通知バジェットを予防導入前の 50 slot に戻す
+  ///
+  /// 3 を忘れると意味がない。#4 (iOS 64 slot 超え) の原因は予防の通知そのもの
+  /// ではなく、schedule 系のバジェットを 50 → 38 に下げたこと。UI だけ隠しても
+  /// 既存のワクチン・投薬通知が 12 slot 損したまま生き続ける。
+  ///
+  /// **DB には一切触らない。** フラグを倒しても schemaVersion は 10 のまま、
+  /// prevention_courses / prevention_doses も残す。migration の巻き戻しだけが
+  /// 本当に破壊的な操作であり、キルスイッチでやってよいことではない。
+  /// 再度 true に戻せば、記録は無傷のまま機能が復帰する。
+  static const bool enablePrevention = true;
+
+  // ===== 予防コース (build 72) =====
+  /// 無料プランで作成できる予防コース数 (created_at 昇順で先着)
+  static const int freeMaxPreventionCourses = 1;
+  /// 無料プランで閲覧できる予防履歴の年数
+  static const int freePreventionHistoryYears = 1;
 
   // Pro
   static const int proAiChatPerMonth = 100;

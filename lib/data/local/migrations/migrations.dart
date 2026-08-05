@@ -34,7 +34,10 @@ abstract final class AppDatabaseMigrations {
   ///     - 既存 non-Personal primary scope は is_primary=0 へ降格
   ///       (1 ペット 1 primary 不変条件を維持、Personal を canonical primary に)
   ///     schema 変更なし、データ追加・更新のみ。
-  static const int currentVersion = 9;
+  /// v10: 予防コース機能 (build 72)。
+  ///      prevention_courses / prevention_doses を新規作成。
+  ///      既存テーブル・既存データへの変更は一切なし。純粋な追加のみ。
+  static const int currentVersion = 10;
 
   /// 新規インストール時の onCreate
   static Future<void> onCreate(Migrator m) async {
