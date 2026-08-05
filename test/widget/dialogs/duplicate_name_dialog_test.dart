@@ -9,6 +9,10 @@ import 'package:petlo/presentation/widgets/dialogs/duplicate_name_dialog.dart';
 import '../../helpers/test_app.dart';
 
 void main() {
+  // アプリのプロバイダ群 (scope_providers など) が build 中に
+  // PetloLogger.instance を触るため、初期化しないと落ちる。
+  setUpAll(initTestLogger);
+
   group('DuplicateNameDialog', () {
     Future<bool?> openDialog(WidgetTester tester) async {
       bool? result;
@@ -45,6 +49,8 @@ void main() {
       expect(find.textContaining('お父さん家族'), findsOneWidget);
       expect(find.text('NAME CONFLICT'), findsOneWidget);
       expect(find.text('Two pets, same name?'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('returns true when user taps "GOT IT, CONTINUE"',
@@ -77,6 +83,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(captured, isTrue);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('returns false when user taps CANCEL',
@@ -105,10 +113,12 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('CANCEL'));
+      await tester.tap(find.text('キャンセル'));
       await tester.pumpAndSettle();
 
       expect(captured, isFalse);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('cannot dismiss by tapping outside (barrierDismissible: false)',
@@ -140,6 +150,8 @@ void main() {
 
       // ダイアログはまだ表示中
       expect(find.text('NAME CONFLICT'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 }

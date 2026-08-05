@@ -21,6 +21,10 @@ import 'package:petlo/presentation/widgets/group_selector/group_selector_bar.dar
 import '../helpers/test_app.dart';
 
 void main() {
+  // アプリのプロバイダ群 (scope_providers など) が build 中に
+  // PetloLogger.instance を触るため、初期化しないと落ちる。
+  setUpAll(initTestLogger);
+
   // ==========================================================================
   // GroupRoleBadge
   // ==========================================================================
@@ -32,6 +36,8 @@ void main() {
         ),
       );
       expect(find.text('OWNER'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('Editor badge shows EDITOR', (WidgetTester tester) async {
@@ -41,6 +47,8 @@ void main() {
         ),
       );
       expect(find.text('EDITOR'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('Viewer badge shows VIEWER', (WidgetTester tester) async {
@@ -50,6 +58,8 @@ void main() {
         ),
       );
       expect(find.text('VIEWER'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('localOnly badge shows LOCAL ONLY',
@@ -57,7 +67,9 @@ void main() {
       await tester.pumpWidget(
         wrapWithApp(child: const GroupRoleBadge.localOnly()),
       );
-      expect(find.text('LOCAL ONLY'), findsOneWidget);
+      expect(find.text('ローカルのみ'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -83,13 +95,11 @@ void main() {
     });
 
     Widget wrap() {
-      return UncontrolledProviderScope(
+      return wrapWithApp(
+        // 素の MaterialApp を自前で組むとテーマ (AppColors extension) と
+        // l10n デリゲートが入らず AppColors.of() が投げる。
         container: container,
-        child: const MaterialApp(
-          home: Scaffold(
-            body: GroupSelectorBar(),
-          ),
-        ),
+        child: GroupSelectorBar(),
       );
     }
 
@@ -98,9 +108,11 @@ void main() {
       await tester.pumpWidget(wrap());
       await tester.pumpAndSettle();
 
-      expect(find.text('Personal'), findsOneWidget);
-      expect(find.text('LOCAL ONLY'), findsOneWidget);
-      expect(find.text('GROUP'), findsOneWidget);
+      expect(find.text('マイ'), findsOneWidget);
+      expect(find.text('ローカルのみ'), findsOneWidget);
+      expect(find.text('グループ'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('shows group name + role badge when in shared group',
@@ -120,16 +132,18 @@ void main() {
       await container
           .read(currentGroupIdProvider.notifier)
           .switchTo('group-uuid-abc');
-      container
-          .read(currentRoleProvider.notifier)
-          .update(MemberPermission.owner);
+      // build 73: currentRoleProvider は DB のグループ (myPermission) から
+      // 派生する算出プロバイダになったため .notifier を持たない。
+      // 権限は upsertGroupFromServer / DB の状態が唯一の真実。
 
       await tester.pumpWidget(wrap());
       await tester.pumpAndSettle();
 
       expect(find.text('お父さん家族'), findsOneWidget);
       expect(find.text('OWNER'), findsOneWidget);
-      expect(find.text('LOCAL ONLY'), findsNothing);
+      expect(find.text('ローカルのみ'), findsNothing);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('uses warn color when group is pending deletion',
@@ -151,15 +165,17 @@ void main() {
       await container
           .read(currentGroupIdProvider.notifier)
           .switchTo('group-pd');
-      container
-          .read(currentRoleProvider.notifier)
-          .update(MemberPermission.editor);
+      // build 73: currentRoleProvider は DB のグループ (myPermission) から
+      // 派生する算出プロバイダになったため .notifier を持たない。
+      // 権限は upsertGroupFromServer / DB の状態が唯一の真実。
 
       await tester.pumpWidget(wrap());
       await tester.pumpAndSettle();
 
       // テキストはあるはず (色の確認は省略、find.byTypeで色検証は厳しい)
       expect(find.text('Closing soon'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('tap opens GroupSwitcherModal', (WidgetTester tester) async {
@@ -167,12 +183,14 @@ void main() {
       await tester.pumpAndSettle();
 
       // セレクターバー (Personalラベル)をタップ
-      await tester.tap(find.text('Personal'));
+      await tester.tap(find.text('マイ'));
       await tester.pumpAndSettle();
 
       // モーダルが表示される
       expect(find.text('Switch group'), findsOneWidget);
-      expect(find.text('CANCEL'), findsOneWidget);
+      expect(find.text('キャンセル'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
   });
 

@@ -2,7 +2,10 @@
 // petlo - Diary Tests
 // ============================================================================
 
+// Value を使うため。native.dart だけでは Value が入ってこない。
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
+import 'package:petlo/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,23 +22,31 @@ import 'package:petlo/presentation/widgets/forms/multi_photo_picker.dart';
 import '../../../helpers/test_app.dart';
 
 void main() {
+  // validate() が AppLocalizations を取るようになったため、
+  // State 単体のテストでもロケールを用意する。
+  late AppLocalizations l10n;
+  setUpAll(() async {
+    await initTestLogger();
+    l10n = await loadTestL10n();
+  });
+
   // ==========================================================================
   // DiaryFormState validate
   // ==========================================================================
   group('DiaryFormState validate', () {
     test('rejects empty body', () {
       const DiaryFormState s = DiaryFormState();
-      expect(s.validate().errors.body, isNotNull);
+      expect(s.validate(l10n).errors.body, isNotNull);
     });
 
     test('rejects whitespace-only body', () {
       const DiaryFormState s = DiaryFormState(body: '    ');
-      expect(s.validate().errors.body, isNotNull);
+      expect(s.validate(l10n).errors.body, isNotNull);
     });
 
     test('rejects null eventAt', () {
       const DiaryFormState s = DiaryFormState(body: 'something');
-      expect(s.validate().errors.eventAt, isNotNull);
+      expect(s.validate(l10n).errors.eventAt, isNotNull);
     });
 
     test('rejects future eventAt > tomorrow', () {
@@ -43,7 +54,7 @@ void main() {
         body: 'something',
         eventAt: DateTime.now().add(const Duration(days: 5)),
       );
-      expect(s.validate().errors.eventAt, isNotNull);
+      expect(s.validate(l10n).errors.eventAt, isNotNull);
     });
 
     test('valid full state has no errors', () {
@@ -51,7 +62,7 @@ void main() {
         body: 'today we walked in the park',
         eventAt: DateTime.now().subtract(const Duration(hours: 1)),
       );
-      expect(s.validate().errors.hasAny, isFalse);
+      expect(s.validate(l10n).errors.hasAny, isFalse);
     });
 
     test('title is optional', () {
@@ -60,7 +71,7 @@ void main() {
         body: 'something',
         eventAt: DateTime.now(),
       );
-      expect(s.validate().errors.hasAny, isFalse);
+      expect(s.validate(l10n).errors.hasAny, isFalse);
     });
   });
 
@@ -187,8 +198,8 @@ void main() {
               groupId: const Value('personal'),
               name: 'T',
               type: PetType.dog,
-              breed: 'b',
-              sex: PetSex.male,
+              breed: const Value('b'),
+              sex: const Value(PetSex.male),
               createdAt: t,
               updatedAt: t,
             ),
@@ -205,7 +216,7 @@ void main() {
         ..updateBody('Today was a fun day')
         ..updateTags(<String>['散歩', '公園']);
 
-      final r = await ctrl.save();
+      final r = await ctrl.save(l10n);
       expect(r, DiaryFormSaveOutcome.success);
 
       final repo = DiariesRepository(db);
@@ -220,7 +231,7 @@ void main() {
       final ctrl =
           container.read(diaryFormControllerProvider(null).notifier);
       // body 未入力で save
-      final r = await ctrl.save();
+      final r = await ctrl.save(l10n);
       expect(r, DiaryFormSaveOutcome.validationFailed);
     }, tags: <String>['needs_codegen']);
 
@@ -258,7 +269,9 @@ void main() {
         wrapWithAppAndDb(db: db, child: const DiaryRecordScreen()),
       );
       await tester.pumpAndSettle();
-      expect(find.text('NEW DIARY'), findsOneWidget);
+      expect(find.text('新しい日記'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('shows hero title', (WidgetTester tester) async {
@@ -266,7 +279,12 @@ void main() {
         wrapWithAppAndDb(db: db, child: const DiaryRecordScreen()),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('A moment'), findsOneWidget);
+      // 'A moment' という見出しは現在存在しない。hero の eyebrow は
+      // record_diary_eyebrow。textContaining だと AppBar の
+      // 「新しい日記」にも当たるので完全一致で見る。
+      expect(find.text('日記'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
   });
 }

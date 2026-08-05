@@ -2,7 +2,10 @@
 // petlo - Weight Tests
 // ============================================================================
 
+// Value を使うため。native.dart だけでは Value が入ってこない。
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
+import 'package:petlo/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,25 +21,33 @@ import 'package:petlo/presentation/screens/weight/weight_record_screen.dart';
 import '../../../helpers/test_app.dart';
 
 void main() {
+  // validate() が AppLocalizations を取るようになったため、
+  // State 単体のテストでもロケールを用意する。
+  late AppLocalizations l10n;
+  setUpAll(() async {
+    await initTestLogger();
+    l10n = await loadTestL10n();
+  });
+
   // ==========================================================================
   // WeightFormState
   // ==========================================================================
   group('WeightFormState validate', () {
     test('rejects null weight', () {
       const WeightFormState s = WeightFormState();
-      expect(s.validate().errors.weightG, isNotNull);
+      expect(s.validate(l10n).errors.weightG, isNotNull);
     });
 
     test('rejects zero or negative weight', () {
       const WeightFormState s1 = WeightFormState(weightG: 0);
-      expect(s1.validate().errors.weightG, isNotNull);
+      expect(s1.validate(l10n).errors.weightG, isNotNull);
       const WeightFormState s2 = WeightFormState(weightG: -100);
-      expect(s2.validate().errors.weightG, isNotNull);
+      expect(s2.validate(l10n).errors.weightG, isNotNull);
     });
 
     test('rejects > 200kg', () {
       const WeightFormState s = WeightFormState(weightG: 201000);
-      expect(s.validate().errors.weightG, isNotNull);
+      expect(s.validate(l10n).errors.weightG, isNotNull);
     });
 
     test('rejects future measuredAt', () {
@@ -44,7 +55,7 @@ void main() {
         weightG: 5200,
         measuredAt: DateTime.now().add(const Duration(hours: 1)),
       );
-      expect(s.validate().errors.measuredAt, isNotNull);
+      expect(s.validate(l10n).errors.measuredAt, isNotNull);
     });
 
     test('valid full state has no errors', () {
@@ -52,7 +63,7 @@ void main() {
         weightG: 5200,
         measuredAt: DateTime.now().subtract(const Duration(minutes: 1)),
       );
-      expect(s.validate().errors.hasAny, isFalse);
+      expect(s.validate(l10n).errors.hasAny, isFalse);
     });
   });
 
@@ -184,8 +195,8 @@ void main() {
               groupId: const Value('personal'),
               name: 'T',
               type: PetType.dog,
-              breed: 'b',
-              sex: PetSex.male,
+              breed: const Value('b'),
+              sex: const Value(PetSex.male),
               createdAt: t,
               updatedAt: t,
             ),
@@ -200,7 +211,7 @@ void main() {
           container.read(weightFormControllerProvider(null).notifier);
       ctrl.updateWeightG(5200);
 
-      final r = await ctrl.save();
+      final r = await ctrl.save(l10n);
       expect(r, WeightFormSaveOutcome.success);
 
       final repo = WeightsRepository(db);
@@ -218,7 +229,7 @@ void main() {
       ctrl.updateWeightG(5200);
       ctrl.updateUnit(WeightUnit.lb); // 単位変更だけしてSave
 
-      final r = await ctrl.save();
+      final r = await ctrl.save(l10n);
       expect(r, WeightFormSaveOutcome.success);
 
       final repo = WeightsRepository(db);
@@ -246,7 +257,10 @@ void main() {
         wrapWithAppAndDb(db: db, child: const WeightRecordScreen()),
       );
       await tester.pumpAndSettle();
-      expect(find.text('NEW WEIGHT'), findsOneWidget);
+      // appbar_new_weight の ja 訳。テストの既定ロケールは ja。
+      expect(find.text('新しい体重'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
   });
 }

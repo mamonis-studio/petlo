@@ -2,7 +2,10 @@
 // petlo - Visit Tests
 // ============================================================================
 
+// Value を使うため。native.dart だけでは Value が入ってこない。
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
+import 'package:petlo/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,18 +22,26 @@ import 'package:petlo/presentation/widgets/forms/multi_photo_picker.dart';
 import '../../../helpers/test_app.dart';
 
 void main() {
+  // validate() が AppLocalizations を取るようになったため、
+  // State 単体のテストでもロケールを用意する。
+  late AppLocalizations l10n;
+  setUpAll(() async {
+    await initTestLogger();
+    l10n = await loadTestL10n();
+  });
+
   // ==========================================================================
   // VisitFormState
   // ==========================================================================
   group('VisitFormState validate', () {
     test('rejects empty reason', () {
       const VisitFormState s = VisitFormState();
-      expect(s.validate().errors.reason, isNotNull);
+      expect(s.validate(l10n).errors.reason, isNotNull);
     });
 
     test('rejects whitespace-only reason', () {
       const VisitFormState s = VisitFormState(reason: '   ');
-      expect(s.validate().errors.reason, isNotNull);
+      expect(s.validate(l10n).errors.reason, isNotNull);
     });
 
     test('rejects future visitedAt > tomorrow', () {
@@ -38,7 +49,7 @@ void main() {
         reason: 'checkup',
         visitedAt: DateTime.now().add(const Duration(days: 5)),
       );
-      expect(s.validate().errors.visitedAt, isNotNull);
+      expect(s.validate(l10n).errors.visitedAt, isNotNull);
     });
 
     test('rejects negative cost', () {
@@ -47,7 +58,7 @@ void main() {
         visitedAt: DateTime.now(),
         costJpy: -100,
       );
-      expect(s.validate().errors.costJpy, isNotNull);
+      expect(s.validate(l10n).errors.costJpy, isNotNull);
     });
 
     test('valid full state has no errors', () {
@@ -56,7 +67,7 @@ void main() {
         visitedAt: DateTime.now(),
         costJpy: 5000,
       );
-      expect(s.validate().errors.hasAny, isFalse);
+      expect(s.validate(l10n).errors.hasAny, isFalse);
     });
   });
 
@@ -166,8 +177,8 @@ void main() {
               groupId: const Value('personal'),
               name: 'T',
               type: PetType.dog,
-              breed: 'b',
-              sex: PetSex.male,
+              breed: const Value('b'),
+              sex: const Value(PetSex.male),
               createdAt: t,
               updatedAt: t,
             ),
@@ -185,7 +196,7 @@ void main() {
         ..updateClinicName('X Clinic')
         ..updateCostJpy(5000);
 
-      final r = await ctrl.save();
+      final r = await ctrl.save(l10n);
       expect(r, VisitFormSaveOutcome.success);
 
       final repo = VisitsRepository(db);
@@ -200,7 +211,7 @@ void main() {
       final ctrl =
           container.read(visitFormControllerProvider(null).notifier);
       // reason 未入力で save 試行
-      final r = await ctrl.save();
+      final r = await ctrl.save(l10n);
       expect(r, VisitFormSaveOutcome.validationFailed);
     }, tags: <String>['needs_codegen']);
 
@@ -238,7 +249,9 @@ void main() {
         wrapWithAppAndDb(db: db, child: const VisitRecordScreen()),
       );
       await tester.pumpAndSettle();
-      expect(find.text('NEW VISIT'), findsOneWidget);
+      expect(find.text('新しい通院'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
   });
 }

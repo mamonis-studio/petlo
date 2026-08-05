@@ -2,7 +2,10 @@
 // petlo - Vaccination Tests
 // ============================================================================
 
+// Value を使うため。native.dart だけでは Value が入ってこない。
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
+import 'package:petlo/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,13 +21,21 @@ import 'package:petlo/presentation/screens/vaccination/vaccination_record_screen
 import '../../../helpers/test_app.dart';
 
 void main() {
+  // validate() が AppLocalizations を取るようになったため、
+  // State 単体のテストでもロケールを用意する。
+  late AppLocalizations l10n;
+  setUpAll(() async {
+    await initTestLogger();
+    l10n = await loadTestL10n();
+  });
+
   // ==========================================================================
   // VaccinationFormState
   // ==========================================================================
   group('VaccinationFormState validate', () {
     test('rejects empty kind', () {
       const VaccinationFormState s = VaccinationFormState();
-      expect(s.validate().errors.kind, isNotNull);
+      expect(s.validate(l10n).errors.kind, isNotNull);
     });
 
     test('rejects future administeredAt > tomorrow', () {
@@ -32,7 +43,7 @@ void main() {
         kind: '混合ワクチン',
         administeredAt: DateTime.now().add(const Duration(days: 5)),
       );
-      expect(s.validate().errors.administeredAt, isNotNull);
+      expect(s.validate(l10n).errors.administeredAt, isNotNull);
     });
 
     test('rejects nextDueAt <= administeredAt', () {
@@ -42,7 +53,7 @@ void main() {
         administeredAt: adm,
         nextDueAt: adm, // 同じ日付
       );
-      expect(s.validate().errors.nextDueAt, isNotNull);
+      expect(s.validate(l10n).errors.nextDueAt, isNotNull);
     });
 
     test('rejects nextDueAt before administeredAt', () {
@@ -53,7 +64,7 @@ void main() {
         administeredAt: adm,
         nextDueAt: due,
       );
-      expect(s.validate().errors.nextDueAt, isNotNull);
+      expect(s.validate(l10n).errors.nextDueAt, isNotNull);
     });
 
     test('valid full state has no errors', () {
@@ -62,7 +73,7 @@ void main() {
         administeredAt: DateTime.now(),
         nextDueAt: DateTime.now().add(const Duration(days: 365)),
       );
-      expect(s.validate().errors.hasAny, isFalse);
+      expect(s.validate(l10n).errors.hasAny, isFalse);
     });
 
     test('nextDueAt null is OK (optional)', () {
@@ -70,7 +81,7 @@ void main() {
         kind: '混合ワクチン',
         administeredAt: DateTime.now(),
       );
-      expect(s.validate().errors.hasAny, isFalse);
+      expect(s.validate(l10n).errors.hasAny, isFalse);
     });
   });
 
@@ -212,8 +223,8 @@ void main() {
               groupId: const Value('personal'),
               name: 'T',
               type: PetType.dog,
-              breed: 'b',
-              sex: PetSex.male,
+              breed: const Value('b'),
+              sex: const Value(PetSex.male),
               createdAt: t,
               updatedAt: t,
             ),
@@ -230,7 +241,7 @@ void main() {
         ..updateKind('混合ワクチン')
         ..updateNextDueAt(DateTime.now().add(const Duration(days: 365)));
 
-      final r = await ctrl.save();
+      final r = await ctrl.save(l10n);
       expect(r, VaccinationFormSaveOutcome.success);
 
       final repo = VaccinationsRepository(db);
@@ -245,7 +256,7 @@ void main() {
       final ctrl =
           container.read(vaccinationFormControllerProvider(null).notifier);
       // kind未入力でsave
-      final r = await ctrl.save();
+      final r = await ctrl.save(l10n);
       expect(r, VaccinationFormSaveOutcome.validationFailed);
     }, tags: <String>['needs_codegen']);
 
@@ -259,7 +270,7 @@ void main() {
       ctrl
         ..updateKind('X')
         ..updateNextDueAt(DateTime.now().add(const Duration(days: 30)));
-      await ctrl.save();
+      await ctrl.save(l10n);
 
       final repo = VaccinationsRepository(db);
       final list = await repo.watchForPet(petId).first;
@@ -286,7 +297,9 @@ void main() {
         wrapWithAppAndDb(db: db, child: const VaccinationRecordScreen()),
       );
       await tester.pumpAndSettle();
-      expect(find.text('NEW VACCINATION'), findsOneWidget);
+      expect(find.text('新しいワクチン'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('shows suggestion chips', (WidgetTester tester) async {
@@ -297,6 +310,8 @@ void main() {
       expect(find.text('混合ワクチン'), findsOneWidget);
       expect(find.text('狂犬病'), findsOneWidget);
       expect(find.text('レプトスピラ'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
   });
 }

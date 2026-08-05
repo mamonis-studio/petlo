@@ -11,6 +11,10 @@ import 'package:petlo/presentation/widgets/forms/tag_input_field.dart';
 import '../../helpers/test_app.dart';
 
 void main() {
+  // アプリのプロバイダ群 (scope_providers など) が build 中に
+  // PetloLogger.instance を触るため、初期化しないと落ちる。
+  setUpAll(initTestLogger);
+
   // ==========================================================================
   // EditorialTextField
   // ==========================================================================
@@ -26,6 +30,8 @@ void main() {
       );
       expect(find.text('PET NAME'), findsOneWidget);
       expect(find.text('Taro'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('shows asterisk when required', (WidgetTester tester) async {
@@ -35,6 +41,8 @@ void main() {
         ),
       );
       expect(find.text('*'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('shows errorText when provided', (WidgetTester tester) async {
@@ -47,6 +55,8 @@ void main() {
         ),
       );
       expect(find.text('Required'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('hides helperText when error present',
@@ -62,6 +72,8 @@ void main() {
       );
       expect(find.text('Error'), findsOneWidget);
       expect(find.text('Helper'), findsNothing);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('triggers onChanged', (WidgetTester tester) async {
@@ -76,6 +88,8 @@ void main() {
       );
       await tester.enterText(find.byType(TextField), 'hello');
       expect(captured, 'hello');
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('shows suffix text', (WidgetTester tester) async {
@@ -88,6 +102,8 @@ void main() {
         ),
       );
       expect(find.text('kg'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -109,6 +125,8 @@ void main() {
       expect(find.text('male'), findsOneWidget);
       expect(find.text('female'), findsOneWidget);
       expect(find.text('unknown'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('triggers onChanged when tapped',
@@ -127,6 +145,8 @@ void main() {
 
       await tester.tap(find.text('female'));
       expect(selected, 'female');
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('uses optionLabel mapper', (WidgetTester tester) async {
@@ -144,6 +164,8 @@ void main() {
       expect(find.text('Level 1'), findsOneWidget);
       expect(find.text('Level 2'), findsOneWidget);
       expect(find.text('Level 3'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('shows error text', (WidgetTester tester) async {
@@ -159,6 +181,8 @@ void main() {
         ),
       );
       expect(find.text('選択してください'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -178,6 +202,8 @@ void main() {
       );
       expect(find.text('ALLERGIES'), findsOneWidget);
       expect(find.byIcon(Icons.close), findsNothing);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('renders existing tags', (WidgetTester tester) async {
@@ -193,6 +219,8 @@ void main() {
       expect(find.text('鶏肉'), findsOneWidget);
       expect(find.text('小麦'), findsOneWidget);
       expect(find.byIcon(Icons.close), findsNWidgets(2));
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('adds new tag on submit', (WidgetTester tester) async {
@@ -212,6 +240,8 @@ void main() {
       await tester.pump();
 
       expect(captured, <String>['新タグ']);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('removes tag on close icon tap',
@@ -238,6 +268,8 @@ void main() {
       await tester.pump();
 
       expect(captured, <String>['B']);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('rejects duplicates', (WidgetTester tester) async {
@@ -257,6 +289,8 @@ void main() {
       await tester.pump();
 
       expect(captured, isNull); // onChanged は呼ばれない
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('disables input at maxTags', (WidgetTester tester) async {
@@ -274,6 +308,8 @@ void main() {
       // TextFieldが非活性
       final TextField tf = tester.widget(find.byType(TextField));
       expect(tf.enabled, isFalse);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 }

@@ -7,6 +7,7 @@
 // ============================================================================
 
 import 'package:drift/native.dart';
+import 'package:petlo/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +15,7 @@ import 'package:petlo/data/local/app_database.dart';
 import 'package:petlo/data/local/database_enums.dart';
 import 'package:petlo/data/repositories/pets_repository.dart';
 import 'package:petlo/presentation/providers/database_provider.dart';
+import 'package:petlo/presentation/providers/pro_status_provider.dart';
 import 'package:petlo/presentation/providers/scope_providers.dart';
 import 'package:petlo/presentation/screens/pet/pet_form_controller.dart';
 import 'package:petlo/presentation/screens/pet/pet_form_screen.dart';
@@ -22,9 +24,20 @@ import 'package:petlo/presentation/screens/pet/pet_form_state.dart';
 import '../../../helpers/test_app.dart';
 
 void main() {
+  // validate() が AppLocalizations を取るようになったため、
+  // State 単体のテストでもロケールを用意する。
+  late AppLocalizations l10n;
+  setUpAll(() async {
+    await initTestLogger();
+    l10n = await loadTestL10n();
+  });
+
   // ==========================================================================
   // PetFormState (Pure DTO)
   // ==========================================================================
+  // build 73: 'empty breed yields error' / 'null sex yields error' は削除した。
+  // breed は build 12、sex は build 22 で任意化され (DB も nullable)、
+  // validate() は両方とも常に null を返す。存在しない仕様の検証だった。
   group('PetFormState', () {
     test('default state is empty', () {
       const PetFormState s = PetFormState();
@@ -55,40 +68,21 @@ void main() {
     group('validate()', () {
       test('empty name yields error', () {
         const PetFormState s = PetFormState();
-        final PetFormState v = s.validate();
+        final PetFormState v = s.validate(l10n);
         expect(v.errors.name, isNotNull);
       });
 
       test('long name (>50) yields error', () {
         final String longName = 'X' * 51;
         final PetFormState s = PetFormState(name: longName);
-        final PetFormState v = s.validate();
+        final PetFormState v = s.validate(l10n);
         expect(v.errors.name, isNotNull);
       });
 
       test('null type yields error', () {
         const PetFormState s = PetFormState(name: 'Taro');
-        final PetFormState v = s.validate();
+        final PetFormState v = s.validate(l10n);
         expect(v.errors.type, isNotNull);
-      });
-
-      test('empty breed yields error', () {
-        const PetFormState s = PetFormState(
-          name: 'Taro',
-          type: PetType.dog,
-        );
-        final PetFormState v = s.validate();
-        expect(v.errors.breed, isNotNull);
-      });
-
-      test('null sex yields error', () {
-        const PetFormState s = PetFormState(
-          name: 'Taro',
-          type: PetType.dog,
-          breed: 'shiba',
-        );
-        final PetFormState v = s.validate();
-        expect(v.errors.sex, isNotNull);
       });
 
       test('idealWeight min > max yields error', () {
@@ -100,7 +94,7 @@ void main() {
           idealWeightMinG: 5000,
           idealWeightMaxG: 4000,
         );
-        final PetFormState v = s.validate();
+        final PetFormState v = s.validate(l10n);
         expect(v.errors.idealWeightMinG, isNotNull);
         expect(v.errors.idealWeightMaxG, isNotNull);
       });
@@ -114,7 +108,7 @@ void main() {
           idealWeightMinG: 4000,
           idealWeightMaxG: 6000,
         );
-        final PetFormState v = s.validate();
+        final PetFormState v = s.validate(l10n);
         expect(v.errors.hasAny, isFalse);
       });
 
@@ -126,7 +120,7 @@ void main() {
           sex: PetSex.male,
           primaryVetPhone: 'abc-def',
         );
-        final PetFormState v = s.validate();
+        final PetFormState v = s.validate(l10n);
         expect(v.errors.primaryVetPhone, isNotNull);
       });
     });
@@ -144,6 +138,10 @@ void main() {
       container = ProviderContainer(
         overrides: <Override>[
           appDatabaseProvider.overrideWithValue(db),
+          // build 71 で Free プランのペット上限 (freeMaxPets = 1) が入った。
+          // 同名確認は 2 匹目を作ろうとしたときの挙動なので、Pro 扱いに
+          // しないと上限判定が先に当たり proLimitReached が返る。
+          isProProvider.overrideWithValue(true),
         ],
       );
     });
@@ -161,7 +159,7 @@ void main() {
         ..updateBreed('shiba')
         ..updateSex(PetSex.male);
 
-      final PetFormSaveOutcome r = await ctrl.save();
+      final PetFormSaveOutcome r = await ctrl.save(l10n);
       expect(r, PetFormSaveOutcome.success);
 
       // ペットが作成されている
@@ -175,7 +173,7 @@ void main() {
     test('save() returns validationFailed when invalid', () async {
       final ctrl = container.read(petFormControllerProvider(null).notifier);
       // 名前なしで save
-      final PetFormSaveOutcome r = await ctrl.save();
+      final PetFormSaveOutcome r = await ctrl.save(l10n);
       expect(r, PetFormSaveOutcome.validationFailed);
 
       final state = container.read(petFormControllerProvider(null));
@@ -202,7 +200,7 @@ void main() {
         ..updateBreed('shiba')
         ..updateSex(PetSex.male);
 
-      final PetFormSaveOutcome r = await ctrl.save();
+      final PetFormSaveOutcome r = await ctrl.save(l10n);
       expect(r, PetFormSaveOutcome.duplicateNameNeedsConfirmation);
 
       // ペットはまだ作成されてない
@@ -229,7 +227,7 @@ void main() {
         ..updateSex(PetSex.female);
 
       // 同名チェックを回避して保存
-      final PetFormFinalSaveOutcome r = await ctrl.confirmAndSave();
+      final PetFormFinalSaveOutcome r = await ctrl.confirmAndSave(l10n);
       expect(r, PetFormFinalSaveOutcome.success);
 
       final List<PetEntity> pets =
@@ -248,7 +246,7 @@ void main() {
       // 保存前は未選択
       expect(container.read(currentPetIdProvider), isNull);
 
-      await ctrl.save();
+      await ctrl.save(l10n);
       // pet_selection_controller のmicrotask完了を待つ
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
@@ -304,8 +302,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('NEW PET'), findsOneWidget);
-      expect(find.text('Save'), findsOneWidget);
+      expect(find.text('新しいペット'), findsOneWidget);
+      expect(find.text('保存'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('shows "Edit" header for existing pet',
@@ -328,8 +328,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('EDIT PET'), findsOneWidget);
-      expect(find.text('Update'), findsOneWidget);
+      expect(find.text('ペットを編集'), findsOneWidget);
+      expect(find.text('更新'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('CANCEL pops with false', (WidgetTester tester) async {
@@ -354,10 +356,12 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('CANCEL'));
+      await tester.tap(find.text('キャンセル'));
       await tester.pumpAndSettle();
 
       expect(popResult, isFalse);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('shows validation errors when Save tapped on empty form',
@@ -371,11 +375,13 @@ void main() {
       await tester.pumpAndSettle();
 
       // Saveをタップ
-      await tester.tap(find.text('Save'));
+      await tester.tap(find.text('保存'));
       await tester.pumpAndSettle();
 
       // 名前必須エラー
       expect(find.textContaining('名前'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
   });
 }

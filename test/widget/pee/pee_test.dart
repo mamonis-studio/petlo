@@ -2,6 +2,8 @@
 // petlo - Pee Tests
 // ============================================================================
 
+// Value を使うため。native.dart だけでは Value が入ってこない。
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +26,10 @@ import '../../helpers/test_app.dart';
 final AppLocalizations _l10n = lookupAppLocalizations(const Locale('ja'));
 
 void main() {
+  // アプリのプロバイダ群 (scope_providers など) が build 中に
+  // PetloLogger.instance を触るため、初期化しないと落ちる。
+  setUpAll(initTestLogger);
+
   // ==========================================================================
   // PeeFormState
   // ==========================================================================
@@ -66,12 +72,14 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Pale'), findsOneWidget);
-      expect(find.text('Yellow'), findsOneWidget);
-      expect(find.text('Dark'), findsOneWidget);
-      expect(find.text('Amber'), findsOneWidget);
-      expect(find.text('Red'), findsOneWidget);
-      expect(find.text('Cloudy'), findsOneWidget);
+      expect(find.text('淡色'), findsOneWidget);
+      expect(find.text('黄'), findsOneWidget);
+      expect(find.text('濃い'), findsOneWidget);
+      expect(find.text('琥珀'), findsOneWidget);
+      expect(find.text('赤'), findsOneWidget);
+      expect(find.text('濁り'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('triggers onChanged on tap', (WidgetTester tester) async {
@@ -84,8 +92,10 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.text('Red'));
+      await tester.tap(find.text('赤'));
       expect(captured, PeeColor.red);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -104,6 +114,8 @@ void main() {
         ),
       );
       expect(find.text('3'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('+ button increments', (WidgetTester tester) async {
@@ -119,6 +131,8 @@ void main() {
       );
       await tester.tap(find.byIcon(Icons.add));
       expect(captured, 4);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('- button decrements', (WidgetTester tester) async {
@@ -134,6 +148,8 @@ void main() {
       );
       await tester.tap(find.byIcon(Icons.remove));
       expect(captured, 2);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('- disabled at min', (WidgetTester tester) async {
@@ -150,6 +166,8 @@ void main() {
       );
       await tester.tap(find.byIcon(Icons.remove));
       expect(captured, isNull);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('+ disabled at max', (WidgetTester tester) async {
@@ -166,6 +184,8 @@ void main() {
       );
       await tester.tap(find.byIcon(Icons.add));
       expect(captured, isNull);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -245,8 +265,8 @@ void main() {
               groupId: const Value('personal'),
               name: 'T',
               type: PetType.dog,
-              breed: 'b',
-              sex: PetSex.male,
+              breed: const Value('b'),
+              sex: const Value(PetSex.male),
               createdAt: t,
               updatedAt: t,
             ),
@@ -292,7 +312,9 @@ void main() {
         wrapWithAppAndDb(db: db, child: const PeeRecordScreen()),
       );
       await tester.pumpAndSettle();
-      expect(find.text('NEW PEE'), findsOneWidget);
+      expect(find.text('新しいおしっこ'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
   });
 }

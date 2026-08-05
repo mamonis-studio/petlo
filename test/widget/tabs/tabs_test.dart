@@ -4,6 +4,7 @@
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:petlo/data/local/app_database.dart';
@@ -14,6 +15,10 @@ import 'package:petlo/presentation/widgets/tabs/petlo_tab_bar.dart';
 import '../../helpers/test_app.dart';
 
 void main() {
+  // アプリのプロバイダ群 (scope_providers など) が build 中に
+  // PetloLogger.instance を触るため、初期化しないと落ちる。
+  setUpAll(initTestLogger);
+
   // ==========================================================================
   // AppTab labels
   // ==========================================================================
@@ -23,7 +28,8 @@ void main() {
       expect(AppTab.life.label, 'Life');
       expect(AppTab.health.label, 'Health');
       expect(AppTab.plans.label, 'Plans');
-      expect(AppTab.more.label, 'More');
+      // build 73: 5番目のタブは more から ai に置き換わった。
+      expect(AppTab.ai.label, 'AI');
     });
 
     test('enum order matches IndexedStack expectation', () {
@@ -31,7 +37,7 @@ void main() {
       expect(AppTab.life.index, 1);
       expect(AppTab.health.index, 2);
       expect(AppTab.plans.index, 3);
-      expect(AppTab.more.index, 4);
+      expect(AppTab.ai.index, 4);
     });
   });
 
@@ -52,8 +58,8 @@ void main() {
       container.read(currentTabProvider.notifier).select(AppTab.life);
       expect(container.read(currentTabProvider), AppTab.life);
 
-      container.read(currentTabProvider.notifier).select(AppTab.more);
-      expect(container.read(currentTabProvider), AppTab.more);
+      container.read(currentTabProvider.notifier).select(AppTab.ai);
+      expect(container.read(currentTabProvider), AppTab.ai);
     });
 
     test('select same tab does nothing (no rebuild storm)', () {
@@ -93,11 +99,13 @@ void main() {
           ),
         ),
       );
-      expect(find.text('HOME'), findsOneWidget);
-      expect(find.text('LIFE'), findsOneWidget);
-      expect(find.text('HEALTH'), findsOneWidget);
-      expect(find.text('PLANS'), findsOneWidget);
-      expect(find.text('MORE'), findsOneWidget);
+      expect(find.text('ホーム'), findsOneWidget);
+      expect(find.text('あしあと'), findsOneWidget);
+      expect(find.text('みまもる'), findsOneWidget);
+      expect(find.text('よてい'), findsOneWidget);
+      expect(find.text('AI相談'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('triggers onTabSelected on tap',
@@ -111,8 +119,10 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.text('HEALTH'));
+      await tester.tap(find.text('みまもる'));
       expect(captured, AppTab.health);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('Semantics announces selection state',
@@ -127,17 +137,20 @@ void main() {
       );
 
       // life タブはSemantics.selected=true、それ以外はfalse
-      final SemanticsNode lifeNode = tester.getSemantics(find.text('LIFE'));
+      //
+      // build 73: SemanticsData.hasFlag(SemanticsFlag.isSelected) は
+      // flagsCollection (Tristate) に置き換わった。フラグの表現に依存しない
+      // containsSemantics を使う (matchesSemantics と違い部分一致)。
       expect(
-        lifeNode.getSemanticsData().hasFlag(SemanticsFlag.isSelected),
-        isTrue,
+        tester.getSemantics(find.text('あしあと')),
+        containsSemantics(isSelected: true),
       );
-
-      final SemanticsNode homeNode = tester.getSemantics(find.text('HOME'));
       expect(
-        homeNode.getSemanticsData().hasFlag(SemanticsFlag.isSelected),
-        isFalse,
+        tester.getSemantics(find.text('ホーム')),
+        containsSemantics(isSelected: false),
       );
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -161,11 +174,16 @@ void main() {
       );
       await tester.pumpAndSettle();
       // 5タブ全部表示
-      expect(find.text('HOME'), findsOneWidget);
-      expect(find.text('LIFE'), findsOneWidget);
-      expect(find.text('HEALTH'), findsOneWidget);
-      expect(find.text('PLANS'), findsOneWidget);
-      expect(find.text('MORE'), findsOneWidget);
+      //
+      // TabShell はタブバーのラベルに加えてホーム画面自身も描画するため、
+      // 'ホーム' はタブラベルと画面見出しの2箇所に出る。
+      expect(find.text('ホーム'), findsWidgets);
+      expect(find.text('あしあと'), findsOneWidget);
+      expect(find.text('みまもる'), findsOneWidget);
+      expect(find.text('よてい'), findsOneWidget);
+      expect(find.text('AI相談'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('tap switches active tab', (WidgetTester tester) async {
@@ -174,15 +192,20 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // 初期: Home(petlo タイトル表示)
-      expect(find.text('petlo'), findsOneWidget);
+      // 初期は Home。ブランドバーは 'PETLO'、Home 画面の見出しは § ホーム。
+      // (以前は 'petlo' / 'Daily,' というヒーロー文言を見ていたが
+      //  どちらも現在のUIには存在しない)
+      expect(find.text('PETLO'), findsOneWidget);
 
       // Life タブをタップ
-      await tester.tap(find.text('LIFE'));
+      await tester.tap(find.text('あしあと'));
       await tester.pumpAndSettle();
 
-      // Life画面のヒーロー文言を確認
-      expect(find.textContaining('Daily,'), findsOneWidget);
+      // Life 画面固有の文言。見出しの 'あしあと' はタブラベルとも
+      // 一致してしまうので、画面本文で判定する。
+      expect(find.textContaining('日々のあしあとが表示されます'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('IndexedStack preserves Home state when returning',
@@ -193,12 +216,16 @@ void main() {
       await tester.pumpAndSettle();
 
       // Home → Health → Home に戻ってもHomeのヒーローが見える
-      await tester.tap(find.text('HEALTH'));
+      await tester.tap(find.text('みまもる'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('HOME'));
+      await tester.tap(find.text('ホーム').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('petlo'), findsOneWidget);
+      // Home 画面固有の文言で判定する。
+      // 'petlo' というタイトルは現在のUIには存在しない。
+      expect(find.textContaining('うちの子から'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
   });
 }

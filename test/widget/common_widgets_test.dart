@@ -23,12 +23,18 @@ import 'package:petlo/presentation/widgets/petlo_scaffold.dart';
 import '../helpers/test_app.dart';
 
 void main() {
+  // scope_providers などが build 中に PetloLogger.instance を触るため、
+  // 初期化しないと `Bad state: PetloLogger.initialize() must be called` で落ちる。
+  setUpAll(initTestLogger);
+
   group('EyebrowText', () {
     testWidgets('renders text in uppercase', (WidgetTester tester) async {
       await tester.pumpWidget(
         wrapWithApp(child: const EyebrowText('today, may 4')),
       );
       expect(find.text('TODAY, MAY 4'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('respects custom color', (WidgetTester tester) async {
@@ -40,6 +46,8 @@ void main() {
       );
       final Text textWidget = tester.widget(find.text('WARNING'));
       expect(textWidget.style?.color, customColor);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -50,6 +58,8 @@ void main() {
       );
       expect(find.text('§'), findsOneWidget);
       expect(find.text('QUICK · LOG'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -60,6 +70,8 @@ void main() {
       );
       final Container container = tester.widget(find.byType(Container));
       expect(container.constraints?.maxHeight, anyOf(isNull, isNonZero));
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -71,6 +83,8 @@ void main() {
         ),
       );
       expect(find.text('SAVE'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('triggers onPressed when tapped', (WidgetTester tester) async {
@@ -85,6 +99,8 @@ void main() {
       );
       await tester.tap(find.text('SAVE'));
       expect(pressedCount, 1);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('disabled when onPressed is null', (WidgetTester tester) async {
@@ -95,6 +111,8 @@ void main() {
       );
       // disabled状態でもテキストは表示される
       expect(find.text('SAVE'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -109,6 +127,8 @@ void main() {
         ),
       );
       expect(find.text('Send to OS calendar'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('shows subLabel when provided', (WidgetTester tester) async {
@@ -123,6 +143,8 @@ void main() {
       );
       expect(find.text('Export'), findsOneWidget);
       expect(find.text('PRO · OPTIONAL'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -132,6 +154,8 @@ void main() {
         wrapWithApp(child: LineIcon(icon: AppIcons.home)),
       );
       expect(find.byType(LineIcon), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('respects custom size', (WidgetTester tester) async {
@@ -146,6 +170,8 @@ void main() {
       );
       expect(sized.width, 32);
       expect(sized.height, 32);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('renders all defined icons without exception',
@@ -177,6 +203,8 @@ void main() {
         await tester.pumpWidget(wrapWithApp(child: LineIcon(icon: icon)));
         expect(find.byType(LineIcon), findsOneWidget);
       }
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -190,9 +218,16 @@ void main() {
           ),
         ),
       );
-      final Size size = tester.getSize(find.byType(ConstrainedBox));
+      // TapTarget 自身のサイズを測る。
+      // 以前は find.byType(ConstrainedBox) だったが、ツリー内に
+      // ConstrainedBox が複数あって getSize が Too many elements で落ちる。
+      // 検証したいのは「TapTarget が最小タップ領域を確保しているか」
+      // なので、TapTarget を直接指すのが意図に合う。
+      final Size size = tester.getSize(find.byType(TapTarget));
       expect(size.width >= 48, isTrue);
       expect(size.height >= 48, isTrue);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -212,6 +247,8 @@ void main() {
       );
       expect(find.text('mobile'), findsOneWidget);
       expect(find.text('tablet'), findsNothing);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('uses tablet layout when width >= 600', (WidgetTester tester) async {
@@ -228,6 +265,8 @@ void main() {
         ),
       );
       expect(find.text('tablet'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('falls back to mobile when tablet not provided',
@@ -240,6 +279,8 @@ void main() {
         wrapWithApp(child: const ResponsiveLayout(mobile: Text('mobile-only'))),
       );
       expect(find.text('mobile-only'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -261,12 +302,20 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('PETLO'), findsOneWidget);
-        expect(find.text('Personal'), findsOneWidget); // Group selector
-        expect(find.text('LOCAL ONLY'), findsOneWidget); // Personalバッジ
-        // 本物のペットセレクターはペット0匹時にempty stateを表示 (canEdit=trueなので "+" ピル)
-        expect(find.text('+'), findsOneWidget);
+        // group_selector_personal の ja 訳。テストの既定ロケールは ja。
+        expect(find.text('マイ'), findsOneWidget); // Group selector
+        // common_local_only の ja 訳。en では toUpperCase されて
+        // "LOCAL ONLY" になるが、ja では大文字化しても変わらない。
+        expect(find.text('ローカルのみ'), findsOneWidget); // Personalバッジ
+        // ペット0匹時は empty state を表示する。
+        // 以前は canEdit=true のとき "+" ピルだったが、現在は
+        // 説明文を出す形に変わっている。
+        expect(find.text('このグループにはまだペットがいません'), findsOneWidget);
         expect(find.textContaining('TAB BAR'), findsOneWidget);
         expect(find.text('content'), findsOneWidget);
+
+        // ペットセレクターが drift のクエリストリームを張るため必須。
+        await disposeTreeAndDrainTimers(tester);
       },
       tags: <String>['needs_codegen'],
     );
@@ -292,7 +341,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('PETLO'), findsNothing);
-        expect(find.text('Personal'), findsNothing);
+        expect(find.text('マイ'), findsNothing);
         expect(find.text('+'), findsNothing);
         expect(find.text('clean'), findsOneWidget);
       },

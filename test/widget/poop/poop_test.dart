@@ -2,6 +2,8 @@
 // petlo - Poop Tests
 // ============================================================================
 
+// Value を使うため。native.dart だけでは Value が入ってこない。
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +26,10 @@ import '../../helpers/test_app.dart';
 final AppLocalizations _l10n = lookupAppLocalizations(const Locale('ja'));
 
 void main() {
+  // アプリのプロバイダ群 (scope_providers など) が build 中に
+  // PetloLogger.instance を触るため、初期化しないと落ちる。
+  setUpAll(initTestLogger);
+
   // ==========================================================================
   // PoopFormState (Pure DTO)
   // ==========================================================================
@@ -71,11 +77,13 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Hard'), findsOneWidget);
-      expect(find.text('Lumpy'), findsOneWidget);
-      expect(find.text('Normal'), findsOneWidget);
-      expect(find.text('Soft'), findsOneWidget);
-      expect(find.text('Watery'), findsOneWidget);
+      expect(find.text('硬便'), findsOneWidget);
+      expect(find.text('コロコロ'), findsOneWidget);
+      expect(find.text('普通'), findsOneWidget);
+      expect(find.text('軟便'), findsOneWidget);
+      expect(find.text('水様'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('triggers onChanged on tap', (WidgetTester tester) async {
@@ -88,8 +96,10 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.text('Watery'));
+      await tester.tap(find.text('水様'));
       expect(captured, PoopForm.watery);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -103,11 +113,13 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Brown'), findsOneWidget);
-      expect(find.text('Black'), findsOneWidget);
-      expect(find.text('Red'), findsOneWidget);
-      expect(find.text('Yellow'), findsOneWidget);
-      expect(find.text('Pale'), findsOneWidget);
+      expect(find.text('茶'), findsOneWidget);
+      expect(find.text('黒'), findsOneWidget);
+      expect(find.text('赤'), findsOneWidget);
+      expect(find.text('黄'), findsOneWidget);
+      expect(find.text('淡色'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('triggers onChanged on tap', (WidgetTester tester) async {
@@ -120,8 +132,10 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.text('Black'));
+      await tester.tap(find.text('黒'));
       expect(captured, PoopColor.black);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -169,7 +183,7 @@ void main() {
       );
       final List<SyncQueueItemEntity> q = await db.select(db.syncQueue).get();
       expect(q.length, 1);
-      expect(q.first.tableName, 'poops');
+      expect(q.first.targetTable, 'poops');
     }, tags: <String>['needs_codegen']);
 
     test('softDelete excludes from watchForPet', () async {
@@ -211,8 +225,8 @@ void main() {
               groupId: const Value('personal'),
               name: 'T',
               type: PetType.dog,
-              breed: 'b',
-              sex: PetSex.male,
+              breed: const Value('b'),
+              sex: const Value(PetSex.male),
               createdAt: t,
               updatedAt: t,
             ),
@@ -267,7 +281,9 @@ void main() {
         wrapWithAppAndDb(db: db, child: const PoopRecordScreen()),
       );
       await tester.pumpAndSettle();
-      expect(find.text('NEW STOOL'), findsOneWidget);
+      expect(find.text('新しいうんち'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
   });
 }

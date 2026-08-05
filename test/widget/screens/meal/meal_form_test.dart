@@ -2,7 +2,10 @@
 // petlo - Meal Form Tests
 // ============================================================================
 
+// Value を使うため。native.dart だけでは Value が入ってこない。
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
+import 'package:petlo/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,6 +22,14 @@ import 'package:petlo/presentation/screens/meal/meal_record_screen.dart';
 import '../../../helpers/test_app.dart';
 
 void main() {
+  // validate() が AppLocalizations を取るようになったため、
+  // State 単体のテストでもロケールを用意する。
+  late AppLocalizations l10n;
+  setUpAll(() async {
+    await initTestLogger();
+    l10n = await loadTestL10n();
+  });
+
   // ==========================================================================
   // MealFormState (Pure DTO)
   // ==========================================================================
@@ -47,7 +58,7 @@ void main() {
     group('validate', () {
       test('rejects when no food info', () {
         const MealFormState s = MealFormState();
-        expect(s.validate().errors.foodName, isNotNull);
+        expect(s.validate(l10n).errors.foodName, isNotNull);
       });
 
       test('rejects negative amount', () {
@@ -56,7 +67,7 @@ void main() {
           amountG: -10,
           appetite: MealAppetite.ate_all,
         );
-        expect(s.validate().errors.amountG, isNotNull);
+        expect(s.validate(l10n).errors.amountG, isNotNull);
       });
 
       test('rejects too-large amount', () {
@@ -65,12 +76,12 @@ void main() {
           amountG: 99999,
           appetite: MealAppetite.ate_all,
         );
-        expect(s.validate().errors.amountG, isNotNull);
+        expect(s.validate(l10n).errors.amountG, isNotNull);
       });
 
       test('rejects null appetite', () {
         const MealFormState s = MealFormState(foodNameFreeText: 'A');
-        expect(s.validate().errors.appetite, isNotNull);
+        expect(s.validate(l10n).errors.appetite, isNotNull);
       });
 
       test('rejects future eatenAt', () {
@@ -79,7 +90,7 @@ void main() {
           appetite: MealAppetite.ate_all,
           eatenAt: DateTime.now().add(const Duration(hours: 2)),
         );
-        expect(s.validate().errors.eatenAt, isNotNull);
+        expect(s.validate(l10n).errors.eatenAt, isNotNull);
       });
 
       test('valid full state has no errors', () {
@@ -89,7 +100,7 @@ void main() {
           appetite: MealAppetite.ate_all,
           eatenAt: DateTime.now().subtract(const Duration(minutes: 1)),
         );
-        expect(s.validate().errors.hasAny, isFalse);
+        expect(s.validate(l10n).errors.hasAny, isFalse);
       });
     });
   });
@@ -110,8 +121,8 @@ void main() {
               groupId: const Value('personal'),
               name: 'Taro',
               type: PetType.dog,
-              breed: 'shiba',
-              sex: PetSex.male,
+              breed: const Value('shiba'),
+              sex: const Value(PetSex.male),
               createdAt: t,
               updatedAt: t,
             ),
@@ -151,7 +162,7 @@ void main() {
         ..updateAmountG(80)
         ..updateAppetite(MealAppetite.ate_all);
 
-      final r = await ctrl.save();
+      final r = await ctrl.save(l10n);
       expect(r, MealFormSaveOutcome.success);
 
       // foodsマスタに登録される
@@ -184,7 +195,7 @@ void main() {
       ctrl.selectExistingFood(food!);
       ctrl.updateAppetite(MealAppetite.ate_normal);
 
-      await ctrl.save();
+      await ctrl.save(l10n);
 
       final FoodEntity? after = await foodsRepo.getById(foodId);
       expect(after!.useCount, 2); // 1 → 2
@@ -196,7 +207,7 @@ void main() {
 
       final ctrl = container.read(mealFormControllerProvider(null).notifier);
       // 何も入れずsave
-      final r = await ctrl.save();
+      final r = await ctrl.save(l10n);
       expect(r, MealFormSaveOutcome.validationFailed);
 
       final mealsRepo = MealsRepository(db);
@@ -272,8 +283,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('NEW MEAL'), findsOneWidget);
-      expect(find.text('Save'), findsOneWidget);
+      expect(find.text('新しい食事'), findsOneWidget);
+      expect(find.text('保存'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('CANCEL pops with false', (WidgetTester tester) async {
@@ -298,14 +311,26 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('CANCEL'));
+      await tester.tap(find.text('キャンセル'));
       await tester.pumpAndSettle();
 
       expect(popResult, isFalse);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('shows validation error when Save tapped on empty form',
         (WidgetTester tester) async {
+      // 保存ボタンはフォーム末尾にあり、既定のテスト画面 (800x600) では
+      // 画面外 (y=1093) にいる。そのまま tap すると
+      // 「hit test しない Offset」という **警告が出るだけで何も起きない**。
+      // 警告はテスト失敗にならないので、症状は「バリデーションエラーが
+      // 表示されない」ようにしか見えず原因が分かりにくい。
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
         wrapWithAppAndDb(
           db: db,
@@ -314,11 +339,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Save'));
+      await tester.tap(find.text('保存'));
       await tester.pumpAndSettle();
 
       // 銘柄エラー
       expect(find.textContaining('銘柄'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
   });
 }

@@ -2,7 +2,10 @@
 // petlo - Vomit Tests (rev5.5)
 // ============================================================================
 
+// Value を使うため。native.dart だけでは Value が入ってこない。
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
+import 'package:petlo/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,6 +22,14 @@ import 'package:petlo/presentation/widgets/vomit/vomit_color_selector.dart';
 import '../../helpers/test_app.dart';
 
 void main() {
+  // validate() が AppLocalizations を取るようになったため、
+  // State 単体のテストでもロケールを用意する。
+  late AppLocalizations l10n;
+  setUpAll(() async {
+    await initTestLogger();
+    l10n = await loadTestL10n();
+  });
+
   // ==========================================================================
   // VomitFormState
   // ==========================================================================
@@ -29,7 +40,7 @@ void main() {
         colorOtherText: '',
         amount: RecordAmount.normal,
       );
-      expect(s.validate().errors.colorOtherText, isNotNull);
+      expect(s.validate(l10n).errors.colorOtherText, isNotNull);
     });
 
     test('accepts when color=other with description', () {
@@ -39,7 +50,7 @@ void main() {
         amount: RecordAmount.normal,
         vomitedAt: DateTime.now().subtract(const Duration(minutes: 1)),
       );
-      expect(s.validate().errors.hasAny, isFalse);
+      expect(s.validate(l10n).errors.hasAny, isFalse);
     });
 
     test('valid mainColor state passes', () {
@@ -48,7 +59,7 @@ void main() {
         amount: RecordAmount.little,
         vomitedAt: DateTime.now().subtract(const Duration(minutes: 1)),
       );
-      expect(s.validate().errors.hasAny, isFalse);
+      expect(s.validate(l10n).errors.hasAny, isFalse);
     });
   });
 
@@ -68,16 +79,18 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Clear'), findsOneWidget);
-      expect(find.text('Yellow'), findsOneWidget);
-      expect(find.text('Brown'), findsOneWidget);
-      expect(find.text('Food'), findsOneWidget);
+      expect(find.text('透明'), findsOneWidget);
+      expect(find.text('黄'), findsOneWidget);
+      expect(find.text('茶'), findsOneWidget);
+      expect(find.text('食べ物'), findsOneWidget);
       // 詳細色は最初は隠れている
-      expect(find.text('White foam'), findsNothing);
-      expect(find.text('Red'), findsNothing);
-      expect(find.text('Black'), findsNothing);
+      expect(find.text('白い泡'), findsNothing);
+      expect(find.text('赤'), findsNothing);
+      expect(find.text('黒'), findsNothing);
       // Otherボタンが見える
-      expect(find.text('Other'), findsOneWidget);
+      expect(find.text('他の色'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('reveals 5 detail colors when Other tapped',
@@ -92,14 +105,16 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.text('Other'));
+      await tester.tap(find.text('他の色'));
       await tester.pumpAndSettle();
 
-      expect(find.text('White foam'), findsOneWidget);
-      expect(find.text('Red'), findsOneWidget);
-      expect(find.text('Green'), findsOneWidget);
-      expect(find.text('Black'), findsOneWidget);
-      expect(find.textContaining('Other (describe)'), findsOneWidget);
+      expect(find.text('白い泡'), findsOneWidget);
+      expect(find.text('赤'), findsOneWidget);
+      expect(find.text('緑'), findsOneWidget);
+      expect(find.text('黒'), findsOneWidget);
+      expect(find.textContaining('その他(詳しく)'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('shows free-text field when "other" selected',
@@ -116,7 +131,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('DESCRIBE THE COLOR'), findsOneWidget);
+      expect(find.text('色を説明'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('auto-expands details when value is detail color',
@@ -134,8 +151,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // valueがredなのでdetail色エリアが自動展開
-      expect(find.text('Red'), findsOneWidget);
-      expect(find.text('White foam'), findsOneWidget);
+      expect(find.text('赤'), findsOneWidget);
+      expect(find.text('白い泡'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('triggers onChanged on color tap',
@@ -151,8 +170,10 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.text('Yellow'));
+      await tester.tap(find.text('黄'));
       expect(captured, VomitColor.yellow);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -257,8 +278,8 @@ void main() {
               groupId: const Value('personal'),
               name: 'T',
               type: PetType.dog,
-              breed: 'b',
-              sex: PetSex.male,
+              breed: const Value('b'),
+              sex: const Value(PetSex.male),
               createdAt: t,
               updatedAt: t,
             ),
@@ -297,7 +318,7 @@ void main() {
         ..updateContainsFood(true)
         ..updateSuspectIngestion(false);
 
-      final r = await ctrl.save();
+      final r = await ctrl.save(l10n);
       expect(r, VomitFormSaveOutcome.success);
 
       final repo = VomitsRepository(db);
@@ -327,7 +348,9 @@ void main() {
         wrapWithAppAndDb(db: db, child: const VomitRecordScreen()),
       );
       await tester.pumpAndSettle();
-      expect(find.text('NEW VOMIT'), findsOneWidget);
+      expect(find.text('新しい嘔吐'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
   });
 }

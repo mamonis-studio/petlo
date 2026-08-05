@@ -11,6 +11,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:petlo/data/local/app_database.dart';
 import 'package:petlo/data/local/database_enums.dart';
@@ -28,6 +29,10 @@ import '../helpers/test_app.dart';
 // ============================================================================
 
 void main() {
+  // アプリのプロバイダ群 (scope_providers など) が build 中に
+  // PetloLogger.instance を触るため、初期化しないと落ちる。
+  setUpAll(initTestLogger);
+
   group('PetSelectorPill.pet', () {
     testWidgets('renders name and meta', (WidgetTester tester) async {
       await tester.pumpWidget(
@@ -45,6 +50,8 @@ void main() {
 
       expect(find.text('Taro'), findsOneWidget);
       expect(find.text('shiba · 4Y'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('triggers onTap', (WidgetTester tester) async {
@@ -64,6 +71,8 @@ void main() {
 
       await tester.tap(find.text('Mike'));
       expect(taps, 1);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
 
     testWidgets('semantics include selected state',
@@ -83,16 +92,22 @@ void main() {
       );
 
       // selected フラグが立ったSemanticsノードがあるはず
+      // matchesSemantics の label は Matcher を受け付けなくなり
+      // String? のみになった。部分一致を見たいので label だけ分離する。
+      // matchesSemantics は「列挙した属性と完全一致」を要求するため、
+      // SDK が新しい action (focus) を足すたびに落ちる。
+      // 見たいのは「選択状態が伝わっているか」なので部分一致の
+      // containsSemantics を使う。
+      final SemanticsNode node =
+          tester.getSemantics(find.byType(PetSelectorPill));
       expect(
-        tester.getSemantics(find.byType(PetSelectorPill)),
-        matchesSemantics(
-          isSelected: true,
-          isButton: true,
-          hasTapAction: true,
-          label: contains('Hana'),
-        ),
+        node,
+        containsSemantics(isSelected: true, isButton: true, hasTapAction: true),
       );
+      expect(node.label, contains('Hana'));
       handle.dispose();
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -110,6 +125,8 @@ void main() {
       );
       expect(find.text('All pets'), findsOneWidget);
       expect(find.text('3 pets'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -121,7 +138,9 @@ void main() {
         ),
       );
       expect(find.text('+'), findsOneWidget);
-      expect(find.text('Add'), findsOneWidget);
+      expect(find.text('追加'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     });
   });
 
@@ -147,15 +166,13 @@ void main() {
     });
 
     Widget wrap({bool showAllPets = true, VoidCallback? onAdd}) {
-      return UncontrolledProviderScope(
+      // 素の MaterialApp を自前で組むとテーマ (AppColors extension) と
+      // l10n デリゲートが入らず AppColors.of() が投げる。
+      return wrapWithApp(
         container: container,
-        child: MaterialApp(
-          home: Scaffold(
-            body: PetSelectorBar(
-              showAllPets: showAllPets,
-              onAddPetTapped: onAdd,
-            ),
-          ),
+        child: PetSelectorBar(
+          showAllPets: showAllPets,
+          onAddPetTapped: onAdd,
         ),
       );
     }
@@ -167,6 +184,8 @@ void main() {
       // ペット0匹なら「No pets in this group yet」 or 「+」 ピル(canEdit=true)が出る
       // PersonalスコープはownerなのでcanEditはtrue → "+"が出る
       expect(find.text('+'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('shows pets when available', (WidgetTester tester) async {
@@ -194,6 +213,8 @@ void main() {
       expect(find.text('Mike'), findsOneWidget);
       // 2匹以上なので "All pets" ピル表示
       expect(find.text('All pets'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('hides All pets pill when only 1 pet',
@@ -212,6 +233,8 @@ void main() {
 
       expect(find.text('Solo'), findsOneWidget);
       expect(find.text('All pets'), findsNothing);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
 
     testWidgets('hides Add pill when canEdit is false (Viewer)',
@@ -220,9 +243,9 @@ void main() {
       await container
           .read(currentGroupIdProvider.notifier)
           .switchTo('group-x');
-      container
-          .read(currentRoleProvider.notifier)
-          .update(MemberPermission.viewer);
+      // build 73: currentRoleProvider は DB のグループ (myPermission) から
+      // 派生する算出プロバイダになったため .notifier を持たない。
+      // 権限は upsertGroupFromServer / DB の状態が唯一の真実。
 
       // ペット1匹追加(別スコープなのでgroup-xに作る)
       final PetsRepository repo = PetsRepository(db);
@@ -239,6 +262,8 @@ void main() {
 
       expect(find.text('Taro'), findsOneWidget);
       expect(find.text('+'), findsNothing); // Viewerには表示されない
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
   });
 }

@@ -47,6 +47,10 @@ import '../../../helpers/test_app.dart';
 const String kMarker = 'テスト333';
 
 void main() {
+  // アプリのプロバイダ群 (scope_providers など) が build 中に
+  // PetloLogger.instance を触るため、初期化しないと落ちる。
+  setUpAll(initTestLogger);
+
   late AppDatabase db;
 
   setUpAll(() async {
@@ -118,6 +122,8 @@ void main() {
 
     expect(texts.where((String s) => s == kMarker).length, 3,
         reason: '種類・病院名・メモの 3 欄すべてに入るべき: $texts');
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
   });
 
   testWidgets('★通院: 初回でも controller に値が入る',
@@ -138,6 +144,8 @@ void main() {
     expect(texts.where((String s) => s == kMarker).length,
         greaterThanOrEqualTo(4),
         reason: '理由・病院・獣医・メモが入るべき: $texts');
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
   });
 
   testWidgets('★日記: 初回でも controller に値が入る',
@@ -155,6 +163,8 @@ void main() {
 
     expect(texts.where((String s) => s == kMarker).length, greaterThanOrEqualTo(2),
         reason: 'タイトル・本文が入るべき: $texts');
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
   });
 
   testWidgets('★予防コース: 初回でも controller に値が入る',
@@ -176,6 +186,8 @@ void main() {
 
     expect(texts.where((String s) => s == kMarker).length, 2,
         reason: '薬剤名・用量が入るべき: $texts');
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
   });
 
   testWidgets('新規作成モードでは空のまま (誤検出しないこと)',
@@ -184,5 +196,7 @@ void main() {
         await openAndReadControllers(tester, const VaccinationRecordScreen());
     expect(texts.every((String s) => s.isEmpty), isTrue,
         reason: '新規作成で値が入ってはいけない: $texts');
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
   });
 }

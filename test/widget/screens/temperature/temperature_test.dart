@@ -2,7 +2,10 @@
 // petlo - Temperature Tests
 // ============================================================================
 
+// Value を使うため。native.dart だけでは Value が入ってこない。
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
+import 'package:petlo/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,23 +21,31 @@ import 'package:petlo/presentation/screens/temperature/temperature_record_screen
 import '../../../helpers/test_app.dart';
 
 void main() {
+  // validate() が AppLocalizations を取るようになったため、
+  // State 単体のテストでもロケールを用意する。
+  late AppLocalizations l10n;
+  setUpAll(() async {
+    await initTestLogger();
+    l10n = await loadTestL10n();
+  });
+
   // ==========================================================================
   // TemperatureFormState
   // ==========================================================================
   group('TemperatureFormState validate', () {
     test('rejects null temp', () {
       const TemperatureFormState s = TemperatureFormState();
-      expect(s.validate().errors.tempCelsiusX10, isNotNull);
+      expect(s.validate(l10n).errors.tempCelsiusX10, isNotNull);
     });
 
     test('rejects out-of-range temp (< 30°C)', () {
       const TemperatureFormState s = TemperatureFormState(tempCelsiusX10: 250);
-      expect(s.validate().errors.tempCelsiusX10, isNotNull);
+      expect(s.validate(l10n).errors.tempCelsiusX10, isNotNull);
     });
 
     test('rejects out-of-range temp (> 45°C)', () {
       const TemperatureFormState s = TemperatureFormState(tempCelsiusX10: 460);
-      expect(s.validate().errors.tempCelsiusX10, isNotNull);
+      expect(s.validate(l10n).errors.tempCelsiusX10, isNotNull);
     });
 
     test('valid normal range passes', () {
@@ -42,7 +53,7 @@ void main() {
         tempCelsiusX10: 385,
         measuredAt: DateTime.now().subtract(const Duration(minutes: 1)),
       );
-      expect(s.validate().errors.hasAny, isFalse);
+      expect(s.validate(l10n).errors.hasAny, isFalse);
     });
 
     test('rejects future measuredAt', () {
@@ -50,7 +61,7 @@ void main() {
         tempCelsiusX10: 385,
         measuredAt: DateTime.now().add(const Duration(hours: 1)),
       );
-      expect(s.validate().errors.measuredAt, isNotNull);
+      expect(s.validate(l10n).errors.measuredAt, isNotNull);
     });
   });
 
@@ -150,8 +161,8 @@ void main() {
               groupId: const Value('personal'),
               name: 'T',
               type: type,
-              breed: 'b',
-              sex: PetSex.male,
+              breed: const Value('b'),
+              sex: const Value(PetSex.male),
               createdAt: t,
               updatedAt: t,
             ),
@@ -166,7 +177,7 @@ void main() {
           .read(temperatureFormControllerProvider(null).notifier);
       ctrl.updateTempCelsiusX10(385);
 
-      final r = await ctrl.save();
+      final r = await ctrl.save(l10n);
       expect(r, TemperatureFormSaveOutcome.success);
 
       final repo = TemperaturesRepository(db);
@@ -209,7 +220,9 @@ void main() {
         wrapWithAppAndDb(db: db, child: const TemperatureRecordScreen()),
       );
       await tester.pumpAndSettle();
-      expect(find.text('NEW TEMP'), findsOneWidget);
+      expect(find.text('新しい体温'), findsOneWidget);
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
     }, tags: <String>['needs_codegen']);
   });
 }

@@ -39,6 +39,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../helpers/test_app.dart';
 
 void main() {
+  // アプリのプロバイダ群 (scope_providers など) が build 中に
+  // PetloLogger.instance を触るため、初期化しないと落ちる。
+  setUpAll(initTestLogger);
+
   late AppDatabase db;
 
   // 画面が currentPetIdProvider → PetloLogger / SharedPreferences を触るため
@@ -138,6 +142,8 @@ void main() {
           // RenderFlex overflow は tester が例外として拾う
           expect(tester.takeException(), isNull);
         });
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
       });
 
       testWidgets('種別チップの高さが揃う', (WidgetTester tester) async {
@@ -151,6 +157,8 @@ void main() {
           expect(hs.toSet(), hasLength(1),
               reason: '長いラベルの子だけ膨らんではいけない: $hs');
         });
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
       });
 
       testWidgets('剤型チップの高さが揃う', (WidgetTester tester) async {
@@ -164,6 +172,8 @@ void main() {
           expect(hs, hasLength(4));
           expect(hs.toSet(), hasLength(1), reason: '高さが不揃い: $hs');
         });
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
       });
 
       testWidgets('等倍ではラベルが実際に省略されない', (WidgetTester tester) async {
@@ -194,6 +204,8 @@ void main() {
             );
           }
         });
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
       });
 
       testWidgets('文字サイズ 200% でもオーバーフローしない',
@@ -231,6 +243,8 @@ void main() {
           },
           textScale: 2.0,
         );
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
       });
 
       testWidgets('文字サイズ 200% でもチップの高さは揃う',
@@ -250,6 +264,8 @@ void main() {
           },
           textScale: 2.0,
         );
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
       });
 
       testWidgets('修正後の見出しが出ている', (WidgetTester tester) async {
@@ -265,6 +281,8 @@ void main() {
           expect(textLike(l10n.prevention_period_end_label), findsWidgets,
               reason: '終了の見出し');
         });
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
       });
 
       testWidgets('通知トグルと時刻ピッカーが別々に出る', (WidgetTester tester) async {
@@ -285,6 +303,8 @@ void main() {
             findsWidgets,
           );
         });
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
       });
 
       testWidgets('期間ステッパーの値に月の単位が付く', (WidgetTester tester) async {
@@ -301,6 +321,8 @@ void main() {
             findsWidgets,
           );
         });
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
       });
 
       testWidgets('検査日の未入力表示が「未実施」相当になる',
@@ -308,6 +330,8 @@ void main() {
         await withForm(tester, locale, (AppLocalizations l10n) async {
           expect(find.text(l10n.prevention_test_date_empty), findsOneWidget);
         });
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
       });
 
       testWidgets('免責文が 2 つとも常設表示されている (v2 §9)',
@@ -317,6 +341,8 @@ void main() {
               find.text(l10n.prevention_disclaimer_period), findsOneWidget);
           expect(find.text(l10n.prevention_disclaimer_test), findsOneWidget);
         });
+      // drift のクエリストリームと SyncService の debounce タイマーを消化する。
+      await disposeTreeAndDrainTimers(tester);
       });
     });
   }
