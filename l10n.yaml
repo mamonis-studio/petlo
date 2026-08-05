@@ -1,9 +1,0 @@
-# L10n生成設定 (Flutter公式)
-# このファイルを root に置くと `flutter gen-l10n` が自動的に生成する
-
-arb-dir: lib/l10n
-output-dir: lib/l10n/generated
-template-arb-file: app_ja.arb
-output-localization-file: app_localizations.dart
-output-class: AppLocalizations
-nullable-getter: false
